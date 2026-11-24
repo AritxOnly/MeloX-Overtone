@@ -76,8 +76,8 @@ jobs:
               fi
               PLATFORMS='["macos"]'
             else
-              if [[ ! "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-                echo "::error::Mobile tags must use v<major>.<minor>.<patch> / 移动端标签格式错误"
+              if [[ ! "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+\.[1-9][0-9]*$ ]]; then
+                echo "::error::Mobile tags must use v<upstream-major>.<minor>.<patch>.<fork-revision> / 移动端标签格式错误"
                 exit 1
               fi
               if [[ "${HAS_IOS}" != "true" ]]; then
@@ -213,6 +213,7 @@ jobs:
       - select_run
       - build
     if: >-
+      vars.ENABLE_TELEGRAM == 'true' &&
       needs.select_run.outputs.should_build == 'true' &&
       needs.build.result == 'success' &&
       !startsWith(github.ref, 'refs/tags/v') &&
@@ -385,7 +386,7 @@ jobs:
             echo "release_name=MeloX-Overtone macOS ${GITHUB_REF_NAME}" >> "${GITHUB_OUTPUT}"
             echo "make_latest=false" >> "${GITHUB_OUTPUT}"
           else
-            echo "filename=MeloX-Overtone-iOS-unsigned.ipa" >> "${GITHUB_OUTPUT}"
+            echo "filename=MeloX-Overtone-${GITHUB_REF_NAME}-unsigned.ipa" >> "${GITHUB_OUTPUT}"
             echo "release_name=MeloX-Overtone iOS + Apple Watch ${GITHUB_REF_NAME}" >> "${GITHUB_OUTPUT}"
             echo "make_latest=true" >> "${GITHUB_OUTPUT}"
           fi
@@ -421,6 +422,9 @@ jobs:
             exit 1
           fi
 
+          if [[ "${PLATFORM}" == "ios" ]]; then
+            mv release-assets/MeloX-Overtone-iOS-unsigned.ipa "release-assets/MeloX-Overtone-${GITHUB_REF_NAME}-unsigned.ipa"
+          fi
           cp "${RELEASE_NOTES_PATH}" release_notes.md
           if [[ "${PLATFORM}" == "macos" ]]; then
             cat > release_body.md <<EOF
@@ -568,6 +572,7 @@ jobs:
       - build
       - release
     if: >-
+      vars.ENABLE_TELEGRAM == 'true' &&
       startsWith(github.ref, 'refs/tags/v') &&
       needs.build.result == 'success' &&
       needs.release.result == 'success'

@@ -19,10 +19,10 @@ The build generates a schema-version-3 `ReleaseNotes.json` containing `localized
 
 ### Tags and Versions
 
-- iOS + Apple Watch: `v<major>.<minor>.<patch>`, for example `v1.2.0`.
+- iOS + Apple Watch uses `v<upstream version>.<fork revision>`, for example `v1.4.1.1`. Set the three-part marketing version and integer build number on the app, Watch app and widget.
 - macOS: `v<major>.<minor>.<patch>_mac`, for example `v0.1.0_mac`.
 
-To release both platforms together, point both tags at the same commit and push them together. Each tag creates an independent GitHub Release and an independent bilingual Telegram release message.
+To release both platforms together, point both tags at the same commit and push them together. Each tag creates an independent GitHub Release and, when the repository variable `ENABLE_TELEGRAM` is `true`, a bilingual Telegram message.
 
 The macOS Release does not replace the repository's Latest release. Latest remains assigned to mobile for compatibility with older iOS clients that still request `/releases/latest`.
 
@@ -47,10 +47,10 @@ macOS DMGs distributed through the cloud drive are built locally with `Tools/Mac
 
 ### 标签与版本
 
-- iOS + Apple Watch：`v<major>.<minor>.<patch>`，例如 `v1.2.0`。
+- iOS + Apple Watch 使用 `v<上游版本>.<衍生修订号>`，例如 `v1.4.1.1`。主 App、Watch 和歌词组件使用相同的三段营销版本和整数构建号。
 - macOS：`v<major>.<minor>.<patch>_mac`，例如 `v0.1.0_mac`。
 
-两端同时发版时，将两个标签指向同一个 Commit 并一起推送。每个标签会独立创建 GitHub Release，并独立发送一条双语 Telegram 发版消息。
+两端同时发版时，将两个标签指向同一个 Commit 并一起推送。每个标签会独立创建 GitHub Release，仓库变量 `ENABLE_TELEGRAM` 为 `true` 时还会发送双语 Telegram 发版消息。
 
 macOS Release 不会替换仓库的 Latest；Latest 始终保留给移动端，以兼容仍请求 `/releases/latest` 的旧版 iOS 客户端。
 

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -152,11 +153,20 @@ def release_version(build_number: str) -> str:
     return f"{major}.{minor}.{patch}"
 
 
+def mobile_release_version(upstream_version: str, revision: str) -> str:
+    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", upstream_version):
+        raise ValueError("Expected a three-part upstream iOS version")
+    if not re.fullmatch(r"[1-9][0-9]*", revision):
+        raise ValueError("Expected a positive integer fork revision")
+    return f"{upstream_version}.{revision}"
+
+
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--current-ref", default="HEAD")
     parser.add_argument("--previous-ref")
     parser.add_argument("--platform", required=True, choices=PLATFORM_HEADINGS)
+    parser.add_argument("--upstream-version", default="")
     parser.add_argument("--build-number", required=True)
     parser.add_argument("--notes", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
@@ -170,7 +180,12 @@ def main() -> int:
 
     try:
         validate_tag_platform(arguments.current_ref, arguments.platform)
-        version = release_version(arguments.build_number)
+        if arguments.platform == "ios":
+            version = mobile_release_version(arguments.upstream_version, arguments.build_number)
+        else:
+            version = release_version(arguments.build_number)
+        if arguments.current_ref.startswith("refs/tags/") and version_label(arguments.current_ref) != version:
+            raise ValueError(f"Release tag {arguments.current_ref} does not match {version}")
         current_commit = resolve_commit(arguments.current_ref)
         current_tag = exact_version_tag(
             current_commit,
