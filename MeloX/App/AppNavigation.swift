@@ -252,7 +252,7 @@ extension View {
     func musicDestinations(in namespace: Namespace.ID) -> some View {
         navigationDestination(for: MusicRoute.self) { route in
             MusicRouteDestination(route: route)
-                .musicNavigationBarAtTop()
+                .visibleDetailNavigationBar()
                 .musicNavigationTransition(for: route, in: namespace)
         }
     }

@@ -10,6 +10,7 @@ struct TrackRowView: View {
     var index: Int?
     var showsArtwork = false
     var secondaryMetadata: String?
+    var subtitleOverride: String?
     var playAction: (() -> Void)?
 
     @State private var presentedSheet: TrackRowSheet?
@@ -195,7 +196,8 @@ struct TrackRowView: View {
     }
 
     private var subtitleText: String {
-        [song.artistText, secondaryMetadata]
+        if let subtitleOverride { return subtitleOverride }
+        return [song.artistText, secondaryMetadata]
             .compactMap { value in
                 guard let value else { return nil }
                 let normalized = value.trimmingCharacters(

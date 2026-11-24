@@ -38,7 +38,7 @@ settings = {
     "CODE_SIGNING_ALLOWED": "NO",
     "GENERATE_INFOPLIST_FILE": "YES",
     "IPHONEOS_DEPLOYMENT_TARGET": "26.0",
-    "PRODUCT_BUNDLE_IDENTIFIER": "local.MeloXTabletUITests",
+    "PRODUCT_BUNDLE_IDENTIFIER": "com.aritxonly.MeloXTabletUITests",
     "PRODUCT_NAME": "$(TARGET_NAME)",
     "SDKROOT": "iphoneos",
     "SUPPORTED_PLATFORMS": "iphoneos iphonesimulator",

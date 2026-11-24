@@ -213,7 +213,7 @@ struct DesktopFloatingLyricsWindow: View {
     private var chrome: some View {
         VStack {
             HStack {
-                Text(model.player.currentSong?.name ?? "MeloX")
+                Text(model.player.currentSong?.name ?? L10n.string("ui.app.name"))
                     .font(.caption2.weight(.semibold))
                     .lineLimit(1)
                 Spacer()

@@ -36,7 +36,7 @@ struct SettingsView: View {
                 .ignoresSafeArea()
         )
         .scrollDismissesKeyboard(.interactively)
-        .navigationTitle("MeloX")
+        .navigationTitle("ui.app.name")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText, prompt: "ui.settings.search.prompt")
         .toolbar(.visible, for: .navigationBar)

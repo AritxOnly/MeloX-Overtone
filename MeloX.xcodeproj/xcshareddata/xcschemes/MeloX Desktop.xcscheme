@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "D30000000000000000000007"
-               BuildableName = "MeloX Desktop.app"
+               BuildableName = "Overtone.app"
                BlueprintName = "MeloX Desktop"
                ReferencedContainer = "container:MeloX.xcodeproj">
             </BuildableReference>
@@ -45,7 +45,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D30000000000000000000007"
-            BuildableName = "MeloX Desktop.app"
+            BuildableName = "Overtone.app"
             BlueprintName = "MeloX Desktop"
             ReferencedContainer = "container:MeloX.xcodeproj">
          </BuildableReference>
@@ -62,7 +62,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "D30000000000000000000007"
-            BuildableName = "MeloX Desktop.app"
+            BuildableName = "Overtone.app"
             BlueprintName = "MeloX Desktop"
             ReferencedContainer = "container:MeloX.xcodeproj">
          </BuildableReference>

@@ -91,7 +91,7 @@ struct WatchMenuView: View {
                 }
             }
         }
-        .navigationTitle("MeloX")
+        .navigationTitle("ui.app.name")
     }
 
     private var repeatTitle: String {

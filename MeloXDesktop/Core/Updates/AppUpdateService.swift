@@ -14,20 +14,15 @@ struct AppUpdateResult: Equatable, Sendable {
 }
 
 enum AppUpdateService {
-    nonisolated static let repositoryURL = URL(string: "https://github.com/youshen2/MeloX")!
-    private nonisolated static let releasesURL = URL(
-        string: "https://api.github.com/repos/youshen2/MeloX/releases?per_page=100"
-    )!
-
     nonisolated static func checkLatestRelease(currentVersion: String) async throws -> AppUpdateResult {
         var request = URLRequest(
-            url: releasesURL,
+            url: AppProject.releasesAPI,
             cachePolicy: .reloadIgnoringLocalCacheData,
             timeoutInterval: 20
         )
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
-        request.setValue("MeloX-Desktop", forHTTPHeaderField: "User-Agent")
+        request.setValue("MeloX-Overtone-Desktop", forHTTPHeaderField: "User-Agent")
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {

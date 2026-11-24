@@ -139,7 +139,7 @@ struct NowPlayingArtworkPage: View {
                             ListenTogetherNowPlayingBadge()
                         }
 
-                        Text(song.artistText)
+                        NowPlayingArtistLink(song: song)
                             .font(.title3)
                             .foregroundStyle(.white.opacity(0.64))
                             .lineLimit(1)

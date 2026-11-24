@@ -1,9 +1,9 @@
-# MeloX macOS 本地签名公证
+# MeloX 弦外 macOS 本地签名公证
 
 GitHub Actions 继续发布未签名 DMG，但 Apple 芯片和 Intel 分别构建，不使用 Universal 二进制。网盘发布使用本工具生成的两份产物：
 
-- `build/MeloX-macOS-Apple-Silicon-notarized.dmg`：Apple 芯片（M 系列，`arm64`）。
-- `build/MeloX-macOS-Intel-notarized.dmg`：Intel（`x86_64`）。
+- `build/MeloX-Overtone-macOS-Apple-Silicon-notarized.dmg`：Apple 芯片（M 系列，`arm64`）。
+- `build/MeloX-Overtone-macOS-Intel-notarized.dmg`：Intel（`x86_64`）。
 
 默认流程只有在两份 DMG 都完成 Developer ID 签名、Apple 公证、票据装订和 Gatekeeper 验证后，才会将它们写入最终输出目录。使用 `--architectures` 显式只选一个架构时，则只处理该产物。
 

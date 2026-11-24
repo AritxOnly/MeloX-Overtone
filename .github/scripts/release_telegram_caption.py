@@ -102,7 +102,7 @@ def compose_caption(
             "",
             f"GitHub Release / 发版：{release_url}",
             f"Website / 官网：{website_url}",
-            "欢迎了解并分享 MeloX！ / Discover MeloX and share it with friends!",
+            "欢迎了解并分享弦外！ / Discover Overtone and share it with friends!",
         ]
     )
     return "\n".join(line for line in lines if line is not None)

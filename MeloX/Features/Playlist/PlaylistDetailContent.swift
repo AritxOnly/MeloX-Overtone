@@ -272,7 +272,7 @@ private struct ToplistDetailHero: View {
 
     private var standardHero: some View {
         VStack(spacing: 0) {
-            immersiveArtwork
+            ImmersiveCollectionArtwork(url: artworkURL, width: detailMetrics.viewport.width)
 
             Text(playlist.name)
                 .font(.title2.weight(.bold))
@@ -312,33 +312,6 @@ private struct ToplistDetailHero: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.bottom, 20)
-    }
-
-    private var immersiveArtwork: some View {
-        let width = detailMetrics.viewport.width
-        let topBleed = min(width * 0.03, 12)
-        let centerDrop = min(width * 0.035, 15)
-        let side = width + 2 * (topBleed + centerDrop)
-
-        return ArtworkImage(url: artworkURL, cornerRadius: 0)
-            .frame(width: side, height: side)
-            .frame(width: width)
-            .clipped()
-            .mask {
-                LinearGradient(
-                    stops: [
-                        .init(color: .white, location: 0.50),
-                        .init(color: .white.opacity(0.92), location: 0.60),
-                        .init(color: .white.opacity(0.70), location: 0.70),
-                        .init(color: .white.opacity(0.32), location: 0.82),
-                        .init(color: .white.opacity(0.06), location: 0.94),
-                        .init(color: .clear, location: 1),
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            }
-            .padding(.top, -topBleed)
     }
 
     private var creatorName: String {

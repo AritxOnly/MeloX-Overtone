@@ -39,6 +39,33 @@ extension View {
     }
 }
 
+struct NowPlayingArtistLink: View {
+    @Environment(\.openMusicRoute) private var openMusicRoute
+
+    let song: Song
+    var title: String? = nil
+
+    var body: some View {
+        let artists = song.artists.filter { $0.id > 0 }
+        let label = Text(verbatim: title ?? song.artistText)
+        if song.isPodcastProgram || artists.isEmpty {
+            label
+        } else if artists.count == 1, let artist = artists.first {
+            Button { openMusicRoute(.artist(artist.id)) } label: { label }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.format("ui.artist.go_to", artist.name))
+        } else {
+            Menu {
+                ForEach(artists) { artist in
+                    Button(artist.name) { openMusicRoute(.artist(artist.id)) }
+                }
+            } label: { label }
+            .buttonStyle(.plain)
+            .accessibilityHint("ui.artist.go_to_generic")
+        }
+    }
+}
+
 struct NowPlayingSongHeader: View {
     static let referenceHeight: CGFloat = 72
 
@@ -78,7 +105,7 @@ struct NowPlayingSongHeader: View {
                     ListenTogetherNowPlayingBadge()
                 }
 
-                Text(artistText)
+                NowPlayingArtistLink(song: song, title: artistText)
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.64))
                     .lineLimit(1)
@@ -145,7 +172,7 @@ struct NowPlayingLandscapeSongHeader: View {
                     ListenTogetherNowPlayingBadge()
                 }
 
-                Text(song.artistText)
+                NowPlayingArtistLink(song: song)
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.64))
                     .lineLimit(1)

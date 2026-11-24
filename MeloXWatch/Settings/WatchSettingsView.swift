@@ -51,6 +51,15 @@ struct WatchSettingsView: View {
                     Label("ui.watch.settings.lyrics", systemImage: "quote.bubble")
                 }
             }
+
+            NavigationLink {
+                List {
+                    ProjectAttribution()
+                }
+                .navigationTitle("ui.app.name")
+            } label: {
+                Label("ui.settings.catalog.about.title", systemImage: "info.circle")
+            }
         }
         .navigationTitle("ui.watch.settings.title")
     }

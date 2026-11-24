@@ -35,7 +35,7 @@ private struct AppLaunchExperienceModifier: ViewModifier {
                 titleVisibility: .visible
             ) {
                 ShareLink(
-                    item: AppUpdateService.repositoryURL,
+                    item: AppProject.repositoryURL,
                     subject: Text("ui.launch.recommend.share_subject"),
                     message: Text("ui.launch.recommend.share_message")
                 ) {

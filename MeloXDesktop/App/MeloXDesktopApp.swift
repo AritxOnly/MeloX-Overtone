@@ -16,7 +16,7 @@ struct MeloXDesktopApp: App {
     }
 
     var body: some Scene {
-        Window("MeloX", id: "main") {
+        Window("ui.app.name", id: "main") {
             DesktopRootView()
                 .environment(model)
                 .environment(model.screenAwakeCoordinator)
@@ -56,7 +56,7 @@ struct MeloXDesktopApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
         .windowBackgroundDragBehavior(.enabled)
-        .defaultSize(width: 600, height: 320)
+        .defaultSize(width: 600, height: 360)
         .defaultPosition(.center)
 
         Window("ui.legal.projects_licenses.title", id: "licenses") {

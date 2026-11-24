@@ -1,20 +1,16 @@
-# MeloX
+# MeloX 弦外
 
 [简体中文](README.md) | [English](README.en.md)
 
-[![License](https://img.shields.io/github/license/youshen2/MeloX)](https://github.com/youshen2/MeloX/blob/master/LICENSE)
-[![Download](https://img.shields.io/github/v/release/youshen2/MeloX)](https://github.com/youshen2/MeloX/releases)
-[![stars](https://img.shields.io/github/stars/youshen2/MeloX)](https://github.com/youshen2/MeloX/stargazers)
+**弦外**（英文名 Overtone，项目名 `MeloX-Overtone`）是基于 [MeloX](https://github.com/youshen2/MeloX) 独立维护的衍生版。
+
+[弦外发布页](https://github.com/AritxOnly/MeloX-Overtone/releases) · [GPLv3](LICENSE) · [上游官网](https://melox.luoxe.cn/) · [上游交流群](https://t.me/melox_official)
 
 <p align="center">
   面向 iPhone、iPad、Mac 与 Apple Watch，使用原生 SwiftUI 构建的第三方网易云音乐播放器
 </p>
 
-[![官网](https://img.shields.io/badge/MeloX-访问官网-red?style=for-the-badge&logo=music&logoColor=red)](https://melox.luoxe.cn)
-
-[![Telegram Group](https://img.shields.io/badge/Telegram-加入群组-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/melox_official)
-
-> MeloX 是非官方开源项目，与网易云音乐及其关联公司不存在隶属、合作或授权关系。项目仍在开发中，接口和功能可能随网易云音乐服务变化而失效。
+> 弦外是非官方开源项目，与网易云音乐及其关联公司不存在隶属、合作或授权关系。项目仍在开发中，接口和功能可能随网易云音乐服务变化而失效。
 
 > [!IMPORTANT]
 > **Apple Watch 版本仍在开发中。** 当前功能、交互和数据兼容性尚未稳定，不建议将其视为正式版本。
@@ -32,11 +28,11 @@
 
 ## 应用截图
 
-### MeloX Desktop（macOS）
+### 弦外（macOS）
 
-MeloX Desktop 使用为 Mac 原生设计的侧边栏、多栏内容区与常驻底部播放器，在更大的横向空间中同时呈现浏览、歌词和播放队列。沉浸式播放器支持封面、逐字歌词、播放控制与音量调节，并可在歌词和队列侧栏间切换；也可以留在首页直接并排查看同步歌词。
+弦外使用为 Mac 原生设计的侧边栏、多栏内容区与常驻底部播放器，在更大的横向空间中同时呈现浏览、歌词和播放队列。沉浸式播放器支持封面、逐字歌词、播放控制与音量调节，并可在歌词和队列侧栏间切换；也可以留在首页直接并排查看同步歌词。
 
-桌面端还提供自动续播队列、适配宽屏的歌单详情，以及消息、音乐云盘、下载与设置入口。官网提供经过 Developer ID 签名和 Apple 公证的 Apple Silicon 与 Intel DMG；GitHub Releases 中则提供对应架构的未签名 CI 构建。更多信息与下载方式见 [MeloX 官网](https://melox.luoxe.cn/)。
+桌面端还提供自动续播队列、适配宽屏的歌单详情，以及消息、音乐云盘、下载与设置入口。弦外构建见[本项目发布页](https://github.com/AritxOnly/MeloX-Overtone/releases)。
 
 <p align="center">
   <img src="https://melox.luoxe.cn/mac/home.png" alt="MeloX Desktop 首页" width="48%">
@@ -107,7 +103,7 @@ MeloX 将相关内容移植为原生 SwiftUI，并根据歌词播放进度实时
 
 > **许可提醒：** 文字 PV 模板、效果实现及相关衍生内容受 PV Tool
 > [Non-Commercial License](MeloX/Resources/PVTool-LICENSE.txt) 单独约束，仅可用于非商业用途。
-> MeloX 的 GPLv3 许可证不会覆盖或替代该许可。用于商业产品、付费服务或商业化嵌入前，
+> 弦外的 GPLv3 许可证不会覆盖或替代该许可。用于商业产品、付费服务或商业化嵌入前，
 > 必须另行取得原作者授权；详情请参阅[商业授权说明](MeloX/Resources/PVTool-COMMERCIAL.md)。
 
 <p align="center">
@@ -338,8 +334,8 @@ MeloX 使用固定 32 秒窗口、FP16 计算精度的 Core ML ML Program；模�
 1. 克隆仓库：
 
    ```bash
-   git clone https://github.com/youshen2/MeloX.git MeloX
-   cd MeloX
+   git clone https://github.com/AritxOnly/MeloX-Overtone.git
+   cd MeloX-Overtone
    ```
 
 2. 使用 Xcode 打开项目：
@@ -399,7 +395,7 @@ MeloX 使用固定 32 秒窗口、FP16 计算精度的 Core ML ML Program；模�
 - 试听、完整播放、音质和地区可用性取决于网易云音乐账号、版权与服务端策略。
 - MeloX 不以绕过付费、版权或地区限制为目标。
 - Apple Watch 版本仍在开发中，暂不保证功能完整性和数据兼容性。
-- GitHub Releases 中的 macOS DMG 为未签名 CI 构建；需要 Developer ID 签名与 Apple 公证版本时，请从官网下载。
+- GitHub Releases 中的 macOS DMG 为未签名 CI 构建。
 
 ## 股东
 

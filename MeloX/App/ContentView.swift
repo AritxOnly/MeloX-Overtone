@@ -23,6 +23,7 @@ struct ContentView: View {
     @Environment(LyricsStore.self) private var lyrics
     @Environment(FloatingLyricsController.self) private var floatingLyrics
 
+    @State private var searchFocusRequestToken = 0
     @State private var selectedTab: AppTab
     @State private var navigationPaths = Dictionary(
         uniqueKeysWithValues: AppTab.allCases.map {
@@ -364,8 +365,9 @@ struct ContentView: View {
     }
 
     private var tabs: some View {
-        TabView(selection: $selectedTab) {
-            ForEach(usesTabletNavigation ? [.search] + AppTab.allCases.filter { $0 != .search } : AppTab.allCases) { tab in
+        let visibleTabs = usesTabletNavigation ? [.search] + AppTab.allCases.filter { $0 != .search } : AppTab.allCases
+        return TabView(selection: $selectedTab) {
+            ForEach(visibleTabs) { tab in
                 Tab(value: tab, role: tab == .search ? .search : nil) {
                     tabNavigationStack(for: tab)
                 } label: {
@@ -396,6 +398,12 @@ struct ContentView: View {
             }
             .frame(maxWidth: .infinity, minHeight: 44)
         }
+        .background {
+            TabBarTapObserver(visibleTabs: visibleTabs, selectedTab: selectedTab) { tab in
+                guard #available(iOS 27.0, *), tab == .search else { return }
+                searchFocusRequestToken += 1
+            }
+        }
         .tabBarMinimizeBehavior(usesTabletNavigation ? .never : .onScrollDown)
         .environment(\.musicUsesSidebar, usesTabletNavigation)
         .environment(\.musicNavigationNamespace, musicNavigationNamespace)
@@ -419,7 +427,7 @@ struct ContentView: View {
         NavigationStack(path: navigationPathBinding(for: tab)) {
             tabRoot(for: tab)
                 .toolbarTitleDisplayMode(.inlineLarge)
-                .musicNavigationBarAtTop()
+                .modifier(TabRootNavigationBar())
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
@@ -461,7 +469,7 @@ struct ContentView: View {
         case .library:
             LibraryView()
         case .search:
-            SearchView()
+            SearchView(focusRequestToken: searchFocusRequestToken)
         }
     }
 
@@ -565,12 +573,18 @@ struct ContentView: View {
 }
 
 extension View {
-    func musicNavigationBarAtTop() -> some View {
-        modifier(MusicNavigationBarAtTop())
+    @ViewBuilder
+    func visibleDetailNavigationBar() -> some View {
+        if #available(iOS 27, *) {
+            toolbarMinimizationBehavior(.never, for: .navigationBar)
+                .toolbarVisibility(.visible, for: .navigationBar)
+        } else {
+            toolbarVisibility(.visible, for: .navigationBar)
+        }
     }
 }
 
-private struct MusicNavigationBarAtTop: ViewModifier {
+private struct TabRootNavigationBar: ViewModifier {
     @State private var atTop = true
 
     func body(content: Content) -> some View {

@@ -97,7 +97,7 @@ struct DesktopOnboardingDialog: View {
                 .shadow(color: .black.opacity(0.14), radius: 16, y: 8)
 
             VStack(spacing: 10) {
-                Text("MeloX")
+                Text("ui.app.name")
                     .font(.system(size: 38, weight: .bold))
                 Text("ui.desktop.onboarding.subtitle")
                     .font(.title3)

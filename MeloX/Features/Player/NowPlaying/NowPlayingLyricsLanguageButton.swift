@@ -62,9 +62,9 @@ struct NowPlayingLyricsLanguageButton: View {
                 Label("ui.settings.lyrics.content.section.translation_pronunciation", systemImage: "translate")
             } else {
                 Image(systemName: "translate")
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.white)
-                    .frame(width: 44, height: 44)
+                    .frame(width: 32, height: 32)
                     .background(
                         .white.opacity(
                             hasEnabledAnnotation
@@ -73,6 +73,7 @@ struct NowPlayingLyricsLanguageButton: View {
                         ),
                         in: .circle
                     )
+                    .frame(width: 44, height: 44)
                     .contentShape(.circle)
             }
         }

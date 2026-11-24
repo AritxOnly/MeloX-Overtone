@@ -60,7 +60,7 @@ struct LibraryView: View {
         .navigationTitle("ui.navigation.library")
         .navigationDestination(for: LibraryPage.self) { page in
             LibraryCategoryView(section: page)
-                .musicNavigationBarAtTop()
+                .visibleDetailNavigationBar()
         }
         .refreshable { await library.refresh(force: true) }
     }
@@ -89,8 +89,12 @@ private struct LibraryCategoryView: View {
         Group {
             if section == .downloads {
                 LibraryDownloadsView(searchQuery: searchQuery)
-            } else if section == .songs, AppFeatureAvailability.downloads, !downloads.downloads.isEmpty {
-                LibrarySongsView(searchQuery: searchQuery)
+            } else if hasLocalMusic {
+                if section == .albums {
+                    LibraryAlbumsView(searchQuery: searchQuery)
+                } else {
+                    LibrarySongsView(searchQuery: searchQuery)
+                }
             } else if !library.isLoggedIn {
                 loginUnavailableView
             } else if section == .cloud {
@@ -100,10 +104,10 @@ private struct LibraryCategoryView: View {
             }
         }
         .navigationTitle(section.title)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(section == .albums ? .inline : .large)
         .librarySearchable(text: $searchQuery, prompt: searchPrompt,
-                           isEnabled: section == .downloads || library.isLoggedIn || (section == .songs && !downloads.downloads.isEmpty),
-                           hidesSearchInitially: section == .songs)
+                           isEnabled: section == .downloads || library.isLoggedIn || hasLocalMusic,
+                           hidesSearchInitially: section == .songs || section == .albums)
         .sheet(isPresented: $showsLogin) {
             NavigationStack { NeteaseLoginView() }
         }
@@ -116,6 +120,10 @@ private struct LibraryCategoryView: View {
         } message: {
             Text(library.errorMessage ?? L10n.string("ui.common.unknown_error"))
         }
+    }
+
+    private var hasLocalMusic: Bool {
+        (section == .songs || section == .albums) && AppFeatureAvailability.downloads && !downloads.downloads.isEmpty
     }
 
     private var loginUnavailableView: some View {
@@ -175,7 +183,7 @@ private struct LibraryCategoryView: View {
         case .artists:
             L10n.string("ui.library.artists.search")
         case .albums:
-            L10n.string("ui.library.search.favorite_albums")
+            L10n.string("ui.library.albums.search")
         case .podcasts:
             L10n.string("ui.library.search.subscribed_podcasts")
         case .downloads:

@@ -271,7 +271,7 @@ private struct DesktopHomeQuickActionButton: View {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack {
                         Spacer()
-                        Label("MeloX", systemImage: "music.note")
+                        Label("ui.app.name", systemImage: "music.note")
                             .font(.system(size: 15, weight: .bold))
                             .foregroundStyle(.white)
                     }

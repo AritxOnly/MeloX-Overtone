@@ -88,7 +88,7 @@ nonisolated struct LibrarySongIndex {
         return index
     }
 
-    private static func collationKey(_ text: String, locale: Locale) -> String {
+    static func collationKey(_ text: String, locale: Locale) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let latin = trimmed.utf8.allSatisfy { $0 < 128 } ? trimmed
             : trimmed.applyingTransform(.toLatin, reverse: false) ?? trimmed

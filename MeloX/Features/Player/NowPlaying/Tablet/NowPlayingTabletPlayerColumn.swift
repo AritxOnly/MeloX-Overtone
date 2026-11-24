@@ -52,11 +52,13 @@ private struct NowPlayingTabletMetadata: View {
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text(
-                    [song.artistText, song.album?.name]
-                        .compactMap { $0 }
-                        .joined(separator: L10n.string("ui.common.title_detail_separator"))
-                )
+                HStack(spacing: 0) {
+                    NowPlayingArtistLink(song: song)
+                        .layoutPriority(1)
+                    if let albumName = song.album?.name {
+                        Text(verbatim: L10n.string("ui.common.title_detail_separator") + albumName)
+                    }
+                }
                 .font(.body)
                 .foregroundStyle(.white.opacity(0.6))
                 .lineLimit(1)

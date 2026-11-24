@@ -258,7 +258,7 @@ def format_summary(
     )
     footer = [
         f"Website / 官网：{website_url}",
-        "Discover MeloX and share it with friends! / 欢迎了解并分享 MeloX！",
+        "Discover Overtone and share it with friends! / 欢迎了解并分享弦外！",
         f"Repository / 仓库：{repository}",
         f"Details / 详情：{run_url}",
     ]
@@ -273,7 +273,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--repository", required=True)
     parser.add_argument("--workflow", default="build-unsigned.yml")
     parser.add_argument("--build-job-name", default=DEFAULT_BUILD_JOB_NAME)
-    parser.add_argument("--project", default="MeloX")
+    parser.add_argument("--project", default="MeloX-Overtone")
     parser.add_argument("--fallback-sha", default="")
     parser.add_argument("--previous-sha")
     parser.add_argument("--run-url", required=True)

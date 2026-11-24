@@ -1,4 +1,4 @@
-# MeloX Release Guide / MeloX 发版规则
+# MeloX-Overtone Release Guide / 弦外发版规则
 
 [English](#english) | [简体中文](#简体中文)
 
@@ -26,9 +26,9 @@ To release both platforms together, point both tags at the same commit and push 
 
 The macOS Release does not replace the repository's Latest release. Latest remains assigned to mobile for compatibility with older iOS clients that still request `/releases/latest`.
 
-GitHub Actions produces `MeloX-macOS-Apple-Silicon.dmg` and `MeloX-macOS-Intel.dmg` as unsigned builds. The GitHub Release body and website Release area retain Gatekeeper instructions. The platform download menu labels these builds as unsigned without embedding the `xattr` command in the menu itself.
+GitHub Actions produces `MeloX-Overtone-macOS-Apple-Silicon.dmg` and `MeloX-Overtone-macOS-Intel.dmg` as unsigned builds. The GitHub Release body and website Release area retain Gatekeeper instructions. The platform download menu labels these builds as unsigned without embedding the `xattr` command in the menu itself.
 
-macOS DMGs distributed through the cloud drive are built locally with `Tools/MacRelease/build_macos_release.py`. Apple silicon (`arm64`) and Intel (`x86_64`) are built, signed, and notarized separately. The website may label these downloads as notarized only after the tool completes Developer ID signing, Apple notarization, ticket stapling, and Gatekeeper verification for both DMGs. The bilingual Telegram release message also directs users to the website for signed and notarized builds.
+macOS DMGs distributed through the cloud drive are built locally with `Tools/MacRelease/build_macos_release.py`. Apple silicon (`arm64`) and Intel (`x86_64`) are built, signed, and notarized separately. The website may label these downloads as notarized only after the tool completes Developer ID signing, Apple notarization, ticket stapling, and Gatekeeper verification for both DMGs.
 
 ## 简体中文
 
@@ -54,6 +54,6 @@ macOS DMGs distributed through the cloud drive are built locally with `Tools/Mac
 
 macOS Release 不会替换仓库的 Latest；Latest 始终保留给移动端，以兼容仍请求 `/releases/latest` 的旧版 iOS 客户端。
 
-GitHub Actions 生成 `MeloX-macOS-Apple-Silicon.dmg` 和 `MeloX-macOS-Intel.dmg`，两者仅作为未签名构建发布。GitHub Release 正文和官网 Release 区域保留 Gatekeeper 处理说明；“选择平台下载”下拉菜单只标注“未签名”，不附带 `xattr` 文案。
+GitHub Actions 生成 `MeloX-Overtone-macOS-Apple-Silicon.dmg` 和 `MeloX-Overtone-macOS-Intel.dmg`，两者仅作为未签名构建发布。GitHub Release 正文和官网 Release 区域保留 Gatekeeper 处理说明；“选择平台下载”下拉菜单只标注“未签名”，不附带 `xattr` 文案。
 
-网盘中的 macOS DMG 使用 `Tools/MacRelease/build_macos_release.py` 在本地生成。Apple Silicon（`arm64`）与 Intel（`x86_64`）分别构建、签名和公证。只有该工具完成两份 DMG 的 Developer ID 签名、Apple 公证、票据装订和 Gatekeeper 验证后，官网网盘入口才标注“已公证”。双语 macOS Telegram 发版消息同时说明，已签名公证版需前往官网获取。
+网盘中的 macOS DMG 使用 `Tools/MacRelease/build_macos_release.py` 在本地生成。Apple Silicon（`arm64`）与 Intel（`x86_64`）分别构建、签名和公证。只有该工具完成两份 DMG 的 Developer ID 签名、Apple 公证、票据装订和 Gatekeeper 验证后，官网网盘入口才标注“已公证”。

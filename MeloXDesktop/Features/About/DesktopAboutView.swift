@@ -16,7 +16,7 @@ struct DesktopAboutView: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 0) {
-                Text("MeloX")
+                Text("ui.app.name")
                     .font(.system(size: 34, weight: .semibold))
 
                 Text(versionDescription)
@@ -24,9 +24,10 @@ struct DesktopAboutView: View {
                     .foregroundStyle(.secondary)
                     .padding(.top, 10)
 
-                Text("ui.desktop.about.developer")
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 6)
+                VStack(alignment: .leading, spacing: 6) {
+                    ProjectAttribution()
+                }
+                .padding(.top, 10)
 
                 Spacer(minLength: 20)
 
@@ -58,10 +59,6 @@ struct DesktopAboutView: View {
                     }
                     .disabled(isCheckingUpdate)
 
-                    Button("ui.about.github") {
-                        openURL(AppUpdateService.repositoryURL)
-                    }
-
                     Button("ui.legal.projects_licenses.title") {
                         openWindow(id: "licenses")
                     }
@@ -73,7 +70,7 @@ struct DesktopAboutView: View {
         .padding(.top, 52)
         .padding(.horizontal, 40)
         .padding(.bottom, 28)
-        .frame(width: 600, height: 320)
+        .frame(width: 600, height: 360)
         .alert(item: $updateAlert) { alert in
             if let releaseURL = alert.releaseURL {
                 Alert(

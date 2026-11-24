@@ -1,4 +1,4 @@
-# MeloX Release Notes / MeloX 更新日志
+# Overtone Release Notes / 弦外更新日志
 
 ## iOS + Apple Watch
 

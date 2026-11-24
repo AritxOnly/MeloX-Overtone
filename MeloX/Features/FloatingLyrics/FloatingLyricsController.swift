@@ -341,7 +341,7 @@ final class FloatingLyricsController: NSObject {
         guard let song = player.currentSong else {
             return FloatingLyricsPresentation(
                 songID: nil,
-                title: "MeloX",
+                title: L10n.string("ui.app.name"),
                 artist: L10n.string("ui.floating_lyrics.title"),
                 currentLine: nil,
                 upcomingLines: [],

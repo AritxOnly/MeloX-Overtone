@@ -387,6 +387,9 @@ struct NowPlayingView: View {
         NowPlayingBottomControls(
             song: song,
             page: pageSelection,
+            showsLyricsUtilities: page == .lyrics && settings.lyricsStyle == .appleMusic,
+            hasLyricsTranslations: lyrics.contains(where: \.hasTranslation),
+            hasLyricsRomanizations: lyrics.contains(where: \.hasRomanization),
             isInterfaceHidden: hidesLyricsControls
         )
     }

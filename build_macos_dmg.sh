@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD="${BUILD_DIR:-$ROOT/build}"
 PROJECT="$ROOT/MeloX.xcodeproj"
 SCHEME="MeloX Desktop"
-APP_NAME="MeloX Desktop"
+APP_NAME="Overtone"
 RELEASE_NOTES_PATH="$BUILD/ReleaseNotes.json"
 RELEASE_NOTES_MARKDOWN_PATH="$BUILD/ReleaseNotes.md"
 
@@ -17,9 +17,9 @@ fi
 
 mkdir -p "$BUILD"
 rm -f -- \
-  "$BUILD/MeloX-macOS.dmg" \
-  "$BUILD/MeloX-macOS-Apple-Silicon.dmg" \
-  "$BUILD/MeloX-macOS-Intel.dmg" \
+  "$BUILD/MeloX-Overtone-macOS.dmg" \
+  "$BUILD/MeloX-Overtone-macOS-Apple-Silicon.dmg" \
+  "$BUILD/MeloX-Overtone-macOS-Intel.dmg" \
   "$RELEASE_NOTES_PATH" \
   "$RELEASE_NOTES_MARKDOWN_PATH"
 
@@ -43,7 +43,7 @@ for ARCHITECTURE in "${ARCHITECTURES[@]}"; do
 
   DERIVED_DATA="$BUILD/DerivedData-macOS-$ARCHITECTURE"
   STAGING="$BUILD/DMG-$ARCHITECTURE"
-  DMG_PATH="$BUILD/MeloX-macOS-$FILE_VARIANT.dmg"
+  DMG_PATH="$BUILD/MeloX-Overtone-macOS-$FILE_VARIANT.dmg"
 
   rm -rf -- "$DERIVED_DATA" "$STAGING"
   rm -f -- "$DMG_PATH"
@@ -76,7 +76,7 @@ for ARCHITECTURE in "${ARCHITECTURES[@]}"; do
   fi
 
   ACTUAL_BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Contents/Info.plist")"
-  if [[ "$ACTUAL_BUNDLE_ID" != "azki.moye.MeloX.desktop" ]]; then
+  if [[ "$ACTUAL_BUNDLE_ID" != "com.aritxonly.MeloX.desktop" ]]; then
     echo "Incorrect MeloX Desktop Bundle ID / Bundle ID 不正确：$ACTUAL_BUNDLE_ID"
     exit 1
   fi
@@ -117,7 +117,7 @@ for ARCHITECTURE in "${ARCHITECTURES[@]}"; do
   codesign --verify --deep --strict "$STAGED_APP"
 
   hdiutil create \
-    -volname "MeloX" \
+    -volname "Overtone" \
     -srcfolder "$STAGING" \
     -ov \
     -format UDZO \

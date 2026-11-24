@@ -20,7 +20,7 @@ struct AboutView: View {
                         .frame(width: 72, height: 72)
                         .accessibilityHidden(true)
 
-                    Text("MeloX")
+                    Text("ui.app.name")
                         .font(.title2.bold())
 
                     Text("ui.about.tagline")
@@ -48,7 +48,7 @@ struct AboutView: View {
 
                         Spacer()
 
-                        Text("MeloX \(releaseVersion)")
+                        Text(L10n.format("ui.app.name_version", releaseVersion))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -85,6 +85,7 @@ struct AboutView: View {
 
             Section("ui.about.melox.section") {
                 Text("ui.about.description")
+                ProjectAttribution()
             }
 
             Section("ui.about.shareholders.section") {
@@ -104,10 +105,6 @@ struct AboutView: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
-                }
-
-                Link(destination: AppUpdateService.repositoryURL) {
-                    Label("ui.about.github", systemImage: "chevron.left.forwardslash.chevron.right")
                 }
 
                 Link(destination: telegramURL) {

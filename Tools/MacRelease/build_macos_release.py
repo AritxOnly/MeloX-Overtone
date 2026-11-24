@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build, Developer ID sign, notarize, and staple the MeloX macOS DMG.
+"""Build, Developer ID sign, notarize, and staple the Overtone macOS DMG.
 
 The tool intentionally keeps GitHub's unsigned build separate from the locally
 notarized cloud-drive artifact. It has no third-party Python dependencies.
@@ -32,9 +32,9 @@ BUILD_DIRECTORY = PROJECT_ROOT / "build"
 BUILD_SCRIPT = PROJECT_ROOT / "build_macos_dmg.sh"
 DEFAULT_APP_PATHS = {
     "arm64": BUILD_DIRECTORY
-    / "DerivedData-macOS-arm64/Build/Products/Release/MeloX Desktop.app",
+    / "DerivedData-macOS-arm64/Build/Products/Release/Overtone.app",
     "x86_64": BUILD_DIRECTORY
-    / "DerivedData-macOS-x86_64/Build/Products/Release/MeloX Desktop.app",
+    / "DerivedData-macOS-x86_64/Build/Products/Release/Overtone.app",
 }
 DEFAULT_OUTPUT_DIRECTORY = BUILD_DIRECTORY
 ARCHITECTURE_VARIANTS = {
@@ -48,8 +48,8 @@ TESTFLIGHT_TOOL_PATH = (
 TESTFLIGHT_CREDENTIALS_DIRECTORY = (
     PROJECT_ROOT / "Tools/TestFlightUploader/.credentials"
 )
-EXPECTED_BUNDLE_ID = "azki.moye.MeloX.desktop"
-APP_NAME = "MeloX Desktop"
+EXPECTED_BUNDLE_ID = "com.aritxonly.MeloX.desktop"
+APP_NAME = "Overtone"
 
 
 class ReleaseError(RuntimeError):
@@ -462,7 +462,7 @@ def create_and_sign_dmg(
             "/usr/bin/hdiutil",
             "create",
             "-volname",
-            "MeloX",
+            "Overtone",
             "-srcfolder",
             str(staging),
             "-ov",
@@ -624,7 +624,7 @@ def install_output(source: Path, destination: Path, allow_overwrite: bool) -> No
 
 def output_path_for_architecture(output_directory: Path, architecture: str) -> Path:
     file_variant = ARCHITECTURE_VARIANTS[architecture][1]
-    return output_directory / f"MeloX-macOS-{file_variant}-notarized.dmg"
+    return output_directory / f"MeloX-Overtone-macOS-{file_variant}-notarized.dmg"
 
 
 def run(arguments: argparse.Namespace) -> None:
@@ -740,7 +740,7 @@ def run(arguments: argparse.Namespace) -> None:
 
 def parse_arguments(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="本地构建、Developer ID 签名并公证 MeloX macOS DMG"
+        description="本地构建、Developer ID 签名并公证 Overtone macOS DMG"
     )
     parser.add_argument(
         "--architectures",

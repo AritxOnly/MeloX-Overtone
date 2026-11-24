@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct SearchView: View {
+    let focusRequestToken: Int
+    @FocusState private var isSearchFieldFocused: Bool
+
     @Environment(NeteaseAPI.self) private var api
     @Environment(PlayerStore.self) private var player
     @Environment(LibraryStore.self) private var library
@@ -38,6 +41,14 @@ struct SearchView: View {
             placement: searchPlacement,
             prompt: "ui.search.prompt"
         )
+        .searchFocused($isSearchFieldFocused)
+        .onChange(of: focusRequestToken) { _, _ in
+            // The native search field may still be reattaching after navigation.
+            Task { @MainActor in
+                await Task.yield()
+                isSearchFieldFocused = true
+            }
+        }
         .searchSuggestions {
             if settings.searchSuggestionsEnabled {
                 ForEach(suggestions, id: \.self) { suggestion in

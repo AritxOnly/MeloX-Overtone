@@ -81,25 +81,16 @@ struct LibrarySongsView: View {
         .listSectionIndexVisibility(sort == .added ? .hidden : .visible)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                Menu {
-                    Picker("ui.library.songs.filter", selection: $filter) {
-                        Text("ui.library.songs.filter.all").tag(LibrarySongFilter.all)
-                        Text("ui.library.songs.filter.favorites").tag(LibrarySongFilter.favorites)
-                        if AppFeatureAvailability.downloads {
-                            Text("ui.downloads.downloaded").tag(LibrarySongFilter.downloaded)
-                        }
-                    }
-                } label: {
-                    Label("ui.library.songs.filter", systemImage: "line.3.horizontal.decrease")
-                }
-                .tint(.primary)
+                LibraryFilterMenu(selection: $filter, allTitle: "ui.library.songs.filter.all",
+                                  allSymbol: "music.note.list")
 
                 Menu {
                     Picker("ui.library.songs.sort", selection: $sort) {
-                        Text("ui.library.songs.sort.artist").tag(LibrarySongSort.artist)
-                        Text("ui.library.songs.sort.added").tag(LibrarySongSort.added)
-                        Text("ui.library.songs.sort.name").tag(LibrarySongSort.name)
+                        Label("ui.library.songs.sort.artist", systemImage: "music.microphone").tag(LibrarySongSort.artist)
+                        Label("ui.library.songs.sort.added", systemImage: "calendar").tag(LibrarySongSort.added)
+                        Label("ui.library.songs.sort.name", systemImage: "textformat").tag(LibrarySongSort.name)
                     }
+                    Divider()
                     Button("ui.home.action.heart_mode", systemImage: "heart.circle.fill", action: startHeartMode)
                         .disabled(!library.canStartHeartMode || isStartingHeartMode)
                 } label: {

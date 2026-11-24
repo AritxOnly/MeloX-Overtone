@@ -9,7 +9,7 @@ SCHEME="MeloX"
 APP_NAME="MeloX"
 DERIVED_DATA="$BUILD/DerivedData-iOS"
 STAGING="$BUILD/IPA"
-IPA_PATH="$BUILD/MeloX-iOS-unsigned.ipa"
+IPA_PATH="$BUILD/MeloX-Overtone-iOS-unsigned.ipa"
 RELEASE_NOTES_PATH="$BUILD/ReleaseNotes.json"
 RELEASE_NOTES_MARKDOWN_PATH="$BUILD/ReleaseNotes.md"
 TEMPORARY_PROJECT=""
@@ -32,7 +32,7 @@ mkdir -p "$BUILD"
 
 case "$BUILD_VARIANT" in
   legacy)
-    # GitHub CI、Release 和 Telegram 继续使用原有发布身份。只修改临时
+    # GitHub CI、Release 和 Telegram 继续使用独立的 legacy 发布身份。只修改临时
     # xcodeproj/Info.plist 副本，避免污染当前用于 TestFlight 的项目配置。
     TEMPORARY_PROJECT="$ROOT/.MeloX-Legacy-Build-$$.xcodeproj"
     TEMPORARY_WATCH_INFO="$BUILD/MeloXWatch-Legacy-Info-$$.plist"
@@ -53,24 +53,23 @@ case "$BUILD_VARIANT" in
         {} +
 
     sed -i '' \
-      -e 's/azki\.moye\.MeloX/moye.MeloX/g' \
-      -e 's/LAW363CUU8/YG7LA7A4T5/g' \
+      -e 's/com\.aritxonly\.MeloX/com.aritxonly.legacy.MeloX/g' \
       -e "s#INFOPLIST_FILE = MeloXWatch/Info.plist;#INFOPLIST_FILE = \"$TEMPORARY_WATCH_INFO\";#g" \
       "$TEMPORARY_PROJECT/project.pbxproj"
     /usr/libexec/PlistBuddy \
-      -c "Set :WKCompanionAppBundleIdentifier moye.MeloX" \
+      -c "Set :WKCompanionAppBundleIdentifier com.aritxonly.legacy.MeloX" \
       "$TEMPORARY_WATCH_INFO"
 
     PROJECT="$TEMPORARY_PROJECT"
-    EXPECTED_APP_BUNDLE_ID="moye.MeloX"
-    EXPECTED_WIDGET_BUNDLE_ID="moye.MeloX.LyricsWidget"
-    EXPECTED_WATCH_BUNDLE_ID="moye.MeloX.watchkitapp"
+    EXPECTED_APP_BUNDLE_ID="com.aritxonly.legacy.MeloX"
+    EXPECTED_WIDGET_BUNDLE_ID="com.aritxonly.legacy.MeloX.LyricsWidget"
+    EXPECTED_WATCH_BUNDLE_ID="com.aritxonly.legacy.MeloX.watchkitapp"
     ;;
   testflight)
     # TestFlight 使用项目当前的 App Store Connect 身份。
-    EXPECTED_APP_BUNDLE_ID="azki.moye.MeloX"
-    EXPECTED_WIDGET_BUNDLE_ID="azki.moye.MeloX.LyricsWidget"
-    EXPECTED_WATCH_BUNDLE_ID="azki.moye.MeloX.watchkitapp"
+    EXPECTED_APP_BUNDLE_ID="com.aritxonly.MeloX"
+    EXPECTED_WIDGET_BUNDLE_ID="com.aritxonly.MeloX.LyricsWidget"
+    EXPECTED_WATCH_BUNDLE_ID="com.aritxonly.MeloX.watchkitapp"
     ;;
   *)
     echo "Unknown MELOX_BUILD_BUNDLE_VARIANT / 未知构建变体：${BUILD_VARIANT}"

@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>MeloX</string>
+	<string>Overtone</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>$(PRODUCT_NAME)</string>
+	<string>Overtone</string>
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
@@ -27,7 +27,7 @@
 		<string>audio</string>
 	</array>
 	<key>WKCompanionAppBundleIdentifier</key>
-	<string>azki.moye.MeloX</string>
+	<string>com.aritxonly.MeloX</string>
 	<key>WKPrefersNetworkUponForeground</key>
 	<true/>
 	<key>WKRunsIndependentlyOfCompanionApp</key>

@@ -49,6 +49,7 @@ nonisolated struct Artist: Codable, Hashable, Identifiable {
     let name: String
     let picURL: String?
     let avatarURL: String?
+    let biography: String?
     let aliases: [String]
     let isFollowed: Bool
 
@@ -60,6 +61,7 @@ nonisolated struct Artist: Codable, Hashable, Identifiable {
 
     enum CodingKeys: String, CodingKey {
         case id, name, alias, picUrl, img1v1Url
+        case biography = "briefDesc"
         case isFollowed = "followed"
     }
 
@@ -75,6 +77,7 @@ nonisolated struct Artist: Codable, Hashable, Identifiable {
         self.name = name
         self.picURL = picURL
         self.avatarURL = avatarURL
+        self.biography = nil
         self.aliases = aliases
         self.isFollowed = isFollowed
     }
@@ -86,6 +89,7 @@ nonisolated struct Artist: Codable, Hashable, Identifiable {
             ?? L10n.string("ui.metadata.unknown_artist")
         picURL = try container.decodeIfPresent(String.self, forKey: .picUrl)
         avatarURL = try container.decodeIfPresent(String.self, forKey: .img1v1Url)
+        biography = try container.decodeIfPresent(String.self, forKey: .biography)
         aliases = try container.decodeIfPresent([String].self, forKey: .alias) ?? []
         isFollowed = try container.decodeIfPresent(
             Bool.self,
@@ -99,6 +103,7 @@ nonisolated struct Artist: Codable, Hashable, Identifiable {
         try container.encode(name, forKey: .name)
         try container.encodeIfPresent(picURL, forKey: .picUrl)
         try container.encodeIfPresent(avatarURL, forKey: .img1v1Url)
+        try container.encodeIfPresent(biography, forKey: .biography)
         try container.encode(aliases, forKey: .alias)
         try container.encode(isFollowed, forKey: .isFollowed)
     }
@@ -111,6 +116,7 @@ nonisolated struct Album: Codable, Hashable, Identifiable {
     let picID: Int64?
     let artists: [Artist]
     let publishTime: Double?
+    let subscriptionTime: Double?
     let size: Int?
     let type: String?
     let albumDescription: String?
@@ -130,7 +136,7 @@ nonisolated struct Album: Codable, Hashable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id, name, picUrl, blurPicUrl, artists, artist
         case pic, picStr = "pic_str", picId, picIdStr = "picId_str"
-        case publishTime, size, type, description
+        case publishTime, subTime, size, type, description
     }
 
     init(
@@ -150,6 +156,7 @@ nonisolated struct Album: Codable, Hashable, Identifiable {
         self.picID = picID
         self.artists = artists
         self.publishTime = publishTime
+        self.subscriptionTime = nil
         self.size = size
         self.type = type
         self.albumDescription = albumDescription
@@ -171,6 +178,7 @@ nonisolated struct Album: Codable, Hashable, Identifiable {
             artists = []
         }
         publishTime = try container.decodeIfPresent(Double.self, forKey: .publishTime)
+        subscriptionTime = try container.decodeIfPresent(Double.self, forKey: .subTime)
         size = try container.decodeIfPresent(Int.self, forKey: .size)
         type = try container.decodeIfPresent(String.self, forKey: .type)
         albumDescription = try container.decodeIfPresent(String.self, forKey: .description)
@@ -184,6 +192,7 @@ nonisolated struct Album: Codable, Hashable, Identifiable {
         try container.encodeIfPresent(picID, forKey: .pic)
         try container.encode(artists, forKey: .artists)
         try container.encodeIfPresent(publishTime, forKey: .publishTime)
+        try container.encodeIfPresent(subscriptionTime, forKey: .subTime)
         try container.encodeIfPresent(size, forKey: .size)
         try container.encodeIfPresent(type, forKey: .type)
         try container.encodeIfPresent(albumDescription, forKey: .description)

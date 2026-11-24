@@ -14,7 +14,7 @@ class ReleaseNotesTests(unittest.TestCase):
 
     def test_parses_both_platforms_and_languages(self) -> None:
         sections = self.parse(
-            "# MeloX Release Notes / MeloX 更新日志\n\n"
+            "# Overtone Release Notes / 弦外更新日志\n\n"
             "## iOS + Apple Watch\n\n"
             "### 简体中文\n\n"
             "- iOS 更新\n\n"

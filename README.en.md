@@ -1,20 +1,16 @@
-# MeloX
+# MeloX-Overtone
 
 [简体中文](README.md) | [English](README.en.md)
 
-[![License](https://img.shields.io/github/license/youshen2/MeloX)](https://github.com/youshen2/MeloX/blob/master/LICENSE)
-[![Download](https://img.shields.io/github/v/release/youshen2/MeloX)](https://github.com/youshen2/MeloX/releases)
-[![stars](https://img.shields.io/github/stars/youshen2/MeloX)](https://github.com/youshen2/MeloX/stargazers)
+**Overtone** (弦外) is an independently maintained fork of [MeloX](https://github.com/youshen2/MeloX).
+
+[Releases](https://github.com/AritxOnly/MeloX-Overtone/releases) · [GPLv3](LICENSE) · [Upstream website](https://melox.luoxe.cn/) · [Upstream Telegram group](https://t.me/melox_official)
 
 <p align="center">
   A third-party NetEase Cloud Music player built with native SwiftUI for iPhone, iPad, Mac, and Apple Watch
 </p>
 
-[![Website](https://img.shields.io/badge/MeloX-Visit_Website-red?style=for-the-badge&logo=music&logoColor=red)](https://melox.luoxe.cn)
-
-[![Telegram Group](https://img.shields.io/badge/Telegram-Join_Group-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/melox_official)
-
-> MeloX is an unofficial open-source project and is not affiliated with, sponsored by, or authorized by NetEase Cloud Music or its related companies. The project is under active development, and APIs or features may stop working when the NetEase Cloud Music service changes.
+> Overtone is an unofficial open-source project and is not affiliated with, sponsored by, or authorized by NetEase Cloud Music or its related companies. The project is under active development, and APIs or features may stop working when the NetEase Cloud Music service changes.
 
 > [!IMPORTANT]
 > **The Apple Watch version is still under development.** Its features, interactions, and data compatibility are not yet stable and should not be treated as production-ready.
@@ -29,11 +25,11 @@ Delete downloaded copies within 24 hours.
 
 ## Screenshots
 
-### MeloX Desktop (macOS)
+### Overtone (macOS)
 
-MeloX Desktop uses a Mac-native sidebar, multi-column content area, and persistent bottom player. Its wider layout keeps browsing, lyrics, and the play queue close at hand. The immersive player combines artwork, word-synced lyrics, playback controls, and volume, and can switch between lyrics and queue sidebars. Synced lyrics can also remain visible beside the Home page.
+Overtone uses a Mac-native sidebar, multi-column content area, and persistent bottom player. Its wider layout keeps browsing, lyrics, and the play queue close at hand. The immersive player combines artwork, word-synced lyrics, playback controls, and volume, and can switch between lyrics and queue sidebars. Synced lyrics can also remain visible beside the Home page.
 
-The desktop app also provides an autoplay queue, playlist details designed for horizontal space, and direct access to messages, Music Cloud Drive, downloads, and settings. The website provides Developer ID-signed and Apple-notarized DMGs for Apple silicon and Intel. GitHub Releases provide separate unsigned CI builds for both architectures. See the [MeloX website](https://melox.luoxe.cn/) for details and downloads.
+The desktop app also provides an autoplay queue, playlist details designed for horizontal space, and direct access to messages, Music Cloud Drive, downloads, and settings. Download Overtone builds from [this fork’s releases](https://github.com/AritxOnly/MeloX-Overtone/releases).
 
 <p align="center">
   <img src="https://melox.luoxe.cn/mac/home.png" alt="MeloX Desktop Home" width="48%">
@@ -321,8 +317,8 @@ MeloX uses a fixed 32-second window and an FP16 Core ML ML Program. MeloX perfor
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/youshen2/MeloX.git MeloX
-   cd MeloX
+   git clone https://github.com/AritxOnly/MeloX-Overtone.git
+   cd MeloX-Overtone
    ```
 
 2. Open the project in Xcode:
@@ -382,7 +378,7 @@ No additional backend service or third-party API endpoint is required.
 - Preview access, full playback, quality levels, and regional availability depend on the NetEase Cloud Music account, licensing, and server policy.
 - MeloX is not intended to bypass payment, copyright, or regional restrictions.
 - The Apple Watch version remains under development and does not yet guarantee complete features or data compatibility.
-- macOS DMGs on GitHub Releases are unsigned CI builds. Download Developer ID-signed and Apple-notarized builds from the website.
+- macOS DMGs on GitHub Releases are unsigned CI builds.
 
 ## Shareholders
 

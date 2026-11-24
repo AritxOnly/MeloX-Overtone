@@ -19,7 +19,8 @@ LOCALE_HEADINGS = {
     "zh-Hans": "简体中文",
     "en": "English",
 }
-DOCUMENT_TITLE = "MeloX Release Notes / MeloX 更新日志"
+DOCUMENT_TITLE = "Overtone Release Notes / 弦外更新日志"
+UPSTREAM_DOCUMENT_TITLE = "MeloX Release Notes / MeloX 更新日志"
 HEADING_PATTERN = re.compile(r"^(?P<level>#{1,6})\s+(?P<title>.+?)\s*$")
 
 LocalizedEntries = dict[str, list[str]]
@@ -69,7 +70,7 @@ def parse_release_notes(path: Path) -> ReleaseSections:
         if heading_match:
             level = len(heading_match.group("level"))
             heading = heading_match.group("title")
-            if level == 1 and heading == DOCUMENT_TITLE and not saw_title:
+            if level == 1 and heading in (DOCUMENT_TITLE, UPSTREAM_DOCUMENT_TITLE) and not saw_title:
                 saw_title = True
                 current_platform = None
                 current_locale = None

@@ -1,4 +1,4 @@
-name: Build MeloX release artifacts / 构建 MeloX 发版产物
+name: Build MeloX-Overtone release artifacts / 构建弦外发版产物
 
 on:
   push:
@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 env:
-  MELOX_WEBSITE_URL: https://melox.luoxe.cn/
+  MELOX_WEBSITE_URL: ${{ github.server_url }}/${{ github.repository }}
 
 concurrency:
   group: build-melox-${{ github.ref }}
@@ -151,11 +151,11 @@ jobs:
           case "${PLATFORM}" in
             ios)
               echo "build_script=build_ios_unsigned.sh" >> "${GITHUB_OUTPUT}"
-              echo "asset_path=build/MeloX-iOS-unsigned.ipa" >> "${GITHUB_OUTPUT}"
+              echo "asset_path=build/MeloX-Overtone-iOS-unsigned.ipa" >> "${GITHUB_OUTPUT}"
               ;;
             macos)
               echo "build_script=build_macos_dmg.sh" >> "${GITHUB_OUTPUT}"
-              echo "asset_path=build/MeloX-macOS-*.dmg" >> "${GITHUB_OUTPUT}"
+              echo "asset_path=build/MeloX-Overtone-macOS-*.dmg" >> "${GITHUB_OUTPUT}"
               ;;
             *)
               echo "Unknown platform / 未知平台：${PLATFORM}"
@@ -199,7 +199,7 @@ jobs:
       - name: Upload release artifact / 上传发版产物
         uses: actions/upload-artifact@v7
         with:
-          name: MeloX-${{ matrix.platform }}-${{ github.run_number }}
+          name: MeloX-Overtone-${{ matrix.platform }}-${{ github.run_number }}
           path: |
             ${{ steps.target.outputs.asset_path }}
             build/ReleaseNotes.json
@@ -236,7 +236,7 @@ jobs:
       - name: Download release artifact / 下载发版产物
         uses: actions/download-artifact@v8
         with:
-          name: MeloX-${{ matrix.platform }}-${{ github.run_number }}
+          name: MeloX-Overtone-${{ matrix.platform }}-${{ github.run_number }}
           path: telegram-assets
 
       - name: Configure Telegram artifact / 配置 Telegram 产物
@@ -248,12 +248,12 @@ jobs:
           set -euo pipefail
           if [[ "${PLATFORM}" == "macos" ]]; then
             echo "is_macos=true" >> "${GITHUB_OUTPUT}"
-            echo "project=MeloX macOS" >> "${GITHUB_OUTPUT}"
+            echo "project=MeloX-Overtone macOS" >> "${GITHUB_OUTPUT}"
             echo "build_job=Build macos artifact / 构建 macos 产物" >> "${GITHUB_OUTPUT}"
           else
             echo "is_macos=false" >> "${GITHUB_OUTPUT}"
-            echo "filename=MeloX-iOS-unsigned.ipa" >> "${GITHUB_OUTPUT}"
-            echo "project=MeloX iOS + Apple Watch" >> "${GITHUB_OUTPUT}"
+            echo "filename=MeloX-Overtone-iOS-unsigned.ipa" >> "${GITHUB_OUTPUT}"
+            echo "project=MeloX-Overtone iOS + Apple Watch" >> "${GITHUB_OUTPUT}"
             echo "build_job=Build ios artifact / 构建 ios 产物" >> "${GITHUB_OUTPUT}"
           fi
 
@@ -300,8 +300,8 @@ jobs:
 
           CAPTION="$(< "${CAPTION_PATH}")"
           if [[ "${{ steps.target.outputs.is_macos }}" == "true" ]]; then
-            APPLE_SILICON_PATH="telegram-assets/MeloX-macOS-Apple-Silicon.dmg"
-            INTEL_PATH="telegram-assets/MeloX-macOS-Intel.dmg"
+            APPLE_SILICON_PATH="telegram-assets/MeloX-Overtone-macOS-Apple-Silicon.dmg"
+            INTEL_PATH="telegram-assets/MeloX-Overtone-macOS-Intel.dmg"
             if [[ ! -f "${APPLE_SILICON_PATH}" || ! -f "${INTEL_PATH}" ]]; then
               echo "::error::Apple Silicon or Intel DMG is missing / 找不到对应 DMG"
               exit 1
@@ -370,7 +370,7 @@ jobs:
       - name: Download release artifact / 下载发版产物
         uses: actions/download-artifact@v8
         with:
-          name: MeloX-${{ matrix.platform }}-${{ github.run_number }}
+          name: MeloX-Overtone-${{ matrix.platform }}-${{ github.run_number }}
           path: release-assets
 
       - name: Configure release / 配置发版
@@ -381,12 +381,12 @@ jobs:
         run: |
           set -euo pipefail
           if [[ "${PLATFORM}" == "macos" ]]; then
-            echo "filename=MeloX-macOS-*.dmg" >> "${GITHUB_OUTPUT}"
-            echo "release_name=MeloX macOS ${GITHUB_REF_NAME}" >> "${GITHUB_OUTPUT}"
+            echo "filename=MeloX-Overtone-macOS-*.dmg" >> "${GITHUB_OUTPUT}"
+            echo "release_name=MeloX-Overtone macOS ${GITHUB_REF_NAME}" >> "${GITHUB_OUTPUT}"
             echo "make_latest=false" >> "${GITHUB_OUTPUT}"
           else
-            echo "filename=MeloX-iOS-unsigned.ipa" >> "${GITHUB_OUTPUT}"
-            echo "release_name=MeloX iOS + Apple Watch ${GITHUB_REF_NAME}" >> "${GITHUB_OUTPUT}"
+            echo "filename=MeloX-Overtone-iOS-unsigned.ipa" >> "${GITHUB_OUTPUT}"
+            echo "release_name=MeloX-Overtone iOS + Apple Watch ${GITHUB_REF_NAME}" >> "${GITHUB_OUTPUT}"
             echo "make_latest=true" >> "${GITHUB_OUTPUT}"
           fi
 
@@ -426,28 +426,28 @@ jobs:
             cat > release_body.md <<EOF
           ## English
 
-          This MeloX macOS release was built automatically by GitHub Actions.
+          This MeloX-Overtone macOS release was built automatically by GitHub Actions.
 
-          ### MeloX Website
+          ### MeloX-Overtone Project
 
-          Visit the [MeloX website](${MELOX_WEBSITE_URL}) for project information, notarized downloads, and the latest news.
+          Visit the [project repository](${MELOX_WEBSITE_URL}) for project information and the latest news.
 
           ### Downloads
 
-          - \`MeloX-macOS-Apple-Silicon.dmg\`: unsigned image for Apple silicon (M-series, \`arm64\`)
-          - \`MeloX-macOS-Intel.dmg\`: unsigned image for Intel Macs (\`x86_64\`)
+          - \`MeloX-Overtone-macOS-Apple-Silicon.dmg\`: unsigned image for Apple silicon (M-series, \`arm64\`)
+          - \`MeloX-Overtone-macOS-Intel.dmg\`: unsigned image for Intel Macs (\`x86_64\`)
 
           ### Installation
 
-          Drag MeloX Desktop into Applications. These GitHub Actions builds are neither Developer ID signed nor notarized by Apple.
+          Drag Overtone into Applications. These GitHub Actions builds are neither Developer ID signed nor notarized by Apple.
 
           If macOS reports that the app is damaged or cannot verify its developer, open Terminal and run:
 
           \`\`\`bash
-          xattr -dr com.apple.quarantine "/Applications/MeloX Desktop.app"
+          xattr -dr com.apple.quarantine "/Applications/Overtone.app"
           \`\`\`
 
-          Reopen MeloX Desktop afterward. Only run this command for files downloaded from this project's official Releases or website links.
+          Reopen Overtone afterward. Only run this command for files downloaded from this project's official Releases or website links.
 
           ### Build Information
 
@@ -457,28 +457,28 @@ jobs:
 
           ## 简体中文
 
-          这是由 GitHub Actions 自动构建的 MeloX macOS 发行版本。
+          这是由 GitHub Actions 自动构建的 MeloX-Overtone macOS 发行版本。
 
-          ### MeloX 官网
+          ### 弦外项目主页
 
-          访问 [MeloX 官网](${MELOX_WEBSITE_URL}) 了解项目、获取已公证版本与查看最新动态。
+          访问 [弦外项目主页](${MELOX_WEBSITE_URL}) 了解项目和最新动态。
 
           ### 下载说明
 
-          - \`MeloX-macOS-Apple-Silicon.dmg\`：Apple 芯片（M 系列，\`arm64\`）未签名安装镜像
-          - \`MeloX-macOS-Intel.dmg\`：Intel（\`x86_64\`）未签名安装镜像
+          - \`MeloX-Overtone-macOS-Apple-Silicon.dmg\`：Apple 芯片（M 系列，\`arm64\`）未签名安装镜像
+          - \`MeloX-Overtone-macOS-Intel.dmg\`：Intel（\`x86_64\`）未签名安装镜像
 
           ### 安装说明
 
-          将 MeloX Desktop 拖入“应用程序”。该 GitHub Actions 构建未使用 Developer ID 签名，也未经 Apple 公证。
+          将 Overtone 拖入“应用程序”。该 GitHub Actions 构建未使用 Developer ID 签名，也未经 Apple 公证。
 
           如果 macOS 提示应用“已损坏”或无法验证开发者，请打开“终端”并运行：
 
           \`\`\`bash
-          xattr -dr com.apple.quarantine "/Applications/MeloX Desktop.app"
+          xattr -dr com.apple.quarantine "/Applications/Overtone.app"
           \`\`\`
 
-          运行后重新打开 MeloX Desktop。只有从本项目官方 Release 或官网链接下载时才应执行该命令。
+          运行后重新打开 Overtone。只有从本项目官方 Release 或官网链接下载时才应执行该命令。
 
           ### 版本信息
 
@@ -493,15 +493,15 @@ jobs:
             cat > release_body.md <<EOF
           ## English
 
-          This MeloX iOS + Apple Watch release was built automatically by GitHub Actions.
+          This MeloX-Overtone iOS + Apple Watch release was built automatically by GitHub Actions.
 
-          ### MeloX Website
+          ### MeloX-Overtone Project
 
-          Visit the [MeloX website](${MELOX_WEBSITE_URL}) for project information and the latest news.
+          Visit the [project repository](${MELOX_WEBSITE_URL}) for project information and the latest news.
 
           ### Download
 
-          - \`MeloX-iOS-unsigned.ipa\`: unsigned iOS package containing the Apple Watch app
+          - \`MeloX-Overtone-iOS-unsigned.ipa\`: unsigned iOS package containing the Apple Watch app
 
           ### Installation
 
@@ -515,15 +515,15 @@ jobs:
 
           ## 简体中文
 
-          这是由 GitHub Actions 自动构建的 MeloX iOS + Apple Watch 发行版本。
+          这是由 GitHub Actions 自动构建的 MeloX-Overtone iOS + Apple Watch 发行版本。
 
-          ### MeloX 官网
+          ### 弦外项目主页
 
-          访问 [MeloX 官网](${MELOX_WEBSITE_URL}) 了解项目与最新动态。
+          访问 [弦外项目主页](${MELOX_WEBSITE_URL}) 了解项目与最新动态。
 
           ### 下载说明
 
-          - \`MeloX-iOS-unsigned.ipa\`：包含 Apple Watch App 的 iOS 未签名安装包
+          - \`MeloX-Overtone-iOS-unsigned.ipa\`：包含 Apple Watch App 的 iOS 未签名安装包
 
           ### 安装说明
 
@@ -556,7 +556,7 @@ jobs:
       - name: Upload release metadata / 上传发版元数据
         uses: actions/upload-artifact@v7
         with:
-          name: MeloX-release-metadata-${{ matrix.platform }}-${{ github.run_number }}
+          name: MeloX-Overtone-release-metadata-${{ matrix.platform }}-${{ github.run_number }}
           path: release_notes.md
           if-no-files-found: error
           retention-days: 14
@@ -586,13 +586,13 @@ jobs:
       - name: Download release artifact / 下载发版产物
         uses: actions/download-artifact@v8
         with:
-          name: MeloX-${{ matrix.platform }}-${{ github.run_number }}
+          name: MeloX-Overtone-${{ matrix.platform }}-${{ github.run_number }}
           path: telegram-assets
 
       - name: Download release metadata / 下载发版元数据
         uses: actions/download-artifact@v8
         with:
-          name: MeloX-release-metadata-${{ matrix.platform }}-${{ github.run_number }}
+          name: MeloX-Overtone-release-metadata-${{ matrix.platform }}-${{ github.run_number }}
           path: release-metadata
 
       - name: Configure Telegram release / 配置 Telegram 发版
@@ -604,15 +604,15 @@ jobs:
           set -euo pipefail
           if [[ "${PLATFORM}" == "macos" ]]; then
             echo "is_macos=true" >> "${GITHUB_OUTPUT}"
-            echo "project=MeloX macOS" >> "${GITHUB_OUTPUT}"
-            echo "install_note_zh=若提示应用已损坏或无法验证开发者，请运行：xattr -dr com.apple.quarantine '/Applications/MeloX Desktop.app'" >> "${GITHUB_OUTPUT}"
-            echo "install_note_en=If macOS reports that the app is damaged or cannot verify its developer, run: xattr -dr com.apple.quarantine '/Applications/MeloX Desktop.app'" >> "${GITHUB_OUTPUT}"
-            echo "distribution_note_zh=附件包含 Apple 芯片与 Intel 两份未签名 DMG；已签名并经 Apple 公证的版本请前往官网获取。" >> "${GITHUB_OUTPUT}"
-            echo "distribution_note_en=The attachments contain separate unsigned DMGs for Apple silicon and Intel. Signed and notarized builds are available from the website." >> "${GITHUB_OUTPUT}"
+            echo "project=MeloX-Overtone macOS" >> "${GITHUB_OUTPUT}"
+            echo "install_note_zh=若提示应用已损坏或无法验证开发者，请运行：xattr -dr com.apple.quarantine '/Applications/Overtone.app'" >> "${GITHUB_OUTPUT}"
+            echo "install_note_en=If macOS reports that the app is damaged or cannot verify its developer, run: xattr -dr com.apple.quarantine '/Applications/Overtone.app'" >> "${GITHUB_OUTPUT}"
+            echo "distribution_note_zh=附件包含 Apple 芯片与 Intel 两份未签名 DMG。" >> "${GITHUB_OUTPUT}"
+            echo "distribution_note_en=The attachments contain separate unsigned DMGs for Apple silicon and Intel." >> "${GITHUB_OUTPUT}"
           else
             echo "is_macos=false" >> "${GITHUB_OUTPUT}"
-            echo "filename=MeloX-iOS-unsigned.ipa" >> "${GITHUB_OUTPUT}"
-            echo "project=MeloX iOS + Apple Watch" >> "${GITHUB_OUTPUT}"
+            echo "filename=MeloX-Overtone-iOS-unsigned.ipa" >> "${GITHUB_OUTPUT}"
+            echo "project=MeloX-Overtone iOS + Apple Watch" >> "${GITHUB_OUTPUT}"
             echo "install_note_zh=该 IPA 未签名，需要自行签名后安装。" >> "${GITHUB_OUTPUT}"
             echo "install_note_en=The IPA is unsigned and must be signed before installation." >> "${GITHUB_OUTPUT}"
             echo "distribution_note_zh=" >> "${GITHUB_OUTPUT}"
@@ -655,8 +655,8 @@ jobs:
           CAPTION="$(< "${RUNNER_TEMP}/telegram-release-caption.txt")"
           RESPONSE_FILE="${RUNNER_TEMP}/telegram-release-response.json"
           if [[ "${{ steps.target.outputs.is_macos }}" == "true" ]]; then
-            APPLE_SILICON_PATH="telegram-assets/MeloX-macOS-Apple-Silicon.dmg"
-            INTEL_PATH="telegram-assets/MeloX-macOS-Intel.dmg"
+            APPLE_SILICON_PATH="telegram-assets/MeloX-Overtone-macOS-Apple-Silicon.dmg"
+            INTEL_PATH="telegram-assets/MeloX-Overtone-macOS-Intel.dmg"
             if [[ ! -f "${APPLE_SILICON_PATH}" || ! -f "${INTEL_PATH}" ]]; then
               echo "::error::Apple Silicon or Intel DMG is missing / 找不到对应 DMG"
               exit 1

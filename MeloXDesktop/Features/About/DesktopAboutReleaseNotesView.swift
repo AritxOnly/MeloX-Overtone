@@ -27,7 +27,7 @@ struct DesktopAboutReleaseNotesView: View {
                         .foregroundStyle(Color.accentColor)
                         .accessibilityHidden(true)
 
-                    Text("MeloX \(displayVersion)")
+                    Text(L10n.format("ui.app.name_version", displayVersion))
                         .font(.title2.bold())
 
                     Text("ui.release_notes.current_version")
