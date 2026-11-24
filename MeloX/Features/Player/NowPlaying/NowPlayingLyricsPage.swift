@@ -142,7 +142,7 @@ struct NowPlayingLyricsPage: View {
 
     private var lyricsContentSpacing: CGFloat {
         guard presentation == .portrait else { return 0 }
-        return usesReferencePortraitLayout ? 16 : 18
+        return usesReferencePortraitLayout ? 30 : 18
     }
 
     private var sharedSongHeaderInset: CGFloat {

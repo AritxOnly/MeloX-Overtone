@@ -70,11 +70,7 @@ struct NowPlayingSongHeader: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 8) {
                     Text(song.name)
-                        .font(
-                            usesReferenceLayout
-                                ? .title3.weight(.semibold)
-                                : .headline
-                        )
+                        .font(.headline)
                         .lineLimit(1)
                         .layoutPriority(1)
 
@@ -83,7 +79,7 @@ struct NowPlayingSongHeader: View {
                 }
 
                 Text(artistText)
-                    .font(usesReferenceLayout ? .title3 : .subheadline)
+                    .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.64))
                     .lineLimit(1)
             }
@@ -91,7 +87,7 @@ struct NowPlayingSongHeader: View {
 
             NowPlayingSongActions(
                 song: song,
-                showsFavoriteButton: !usesReferenceLayout
+                portrait: usesReferenceLayout
             )
         }
     }

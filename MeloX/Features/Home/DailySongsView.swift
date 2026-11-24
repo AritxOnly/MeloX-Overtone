@@ -22,54 +22,15 @@ struct DailySongsView: View {
                 }
             case .loaded:
                 List {
-                    Section {
-                        HStack {
-                            Button {
-                                Task { await player.playAll(songs) }
-                            } label: {
-                                Label("ui.common.play_all", systemImage: "play.fill")
-                                    .font(.headline)
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(songs.isEmpty)
-
-                            Spacer()
-
-                            Button {
-                                Task { await refresh() }
-                            } label: {
-                                HStack(spacing: 6) {
-                                    if isRefreshing {
-                                        ProgressView()
-                                            .controlSize(.small)
-                                    } else {
-                                        Image(systemName: "arrow.triangle.2.circlepath")
-                                    }
-
-                                    Text(
-                                        isRefreshing
-                                            ? L10n.string("ui.home.daily_songs.refreshing")
-                                            : L10n.string("ui.home.daily_songs.refresh")
-                                    )
-                                }
-                            }
-                            .buttonStyle(.bordered)
-                            .disabled(isRefreshing)
-                            .accessibilityLabel(
-                                isRefreshing
-                                    ? L10n.string("ui.home.daily_songs.refreshing_accessibility")
-                                    : L10n.string("ui.home.daily_songs.refresh_accessibility")
-                            )
-                            .accessibilityHint("ui.home.daily_songs.refresh_hint")
+                    if !songs.isEmpty {
+                        SongListPlaybackActions { shuffled in
+                            Task { await player.playAll(shuffled ? songs.shuffled() : songs) }
                         }
                     }
-                    ForEach(Array(songs.enumerated()), id: \.element.id) { index, song in
-                        Button {
+                    ForEach(songs) { song in
+                        TrackRowView(song: song, showsArtwork: true) {
                             Task { await player.play(song, in: songs) }
-                        } label: {
-                            TrackRowView(song: song, index: index, showsArtwork: true)
                         }
-                        .buttonStyle(.plain)
                         .swipeActions(edge: .trailing) {
                             Button {
                                 library.toggle(song: song)
@@ -86,9 +47,22 @@ struct DailySongsView: View {
                     }
                 }
                 .listStyle(.plain)
+                .listRowSpacing(0)
+                .environment(\.defaultMinListRowHeight, 56)
+                .refreshable { await refresh() }
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("ui.home.daily_songs.refresh", systemImage: "arrow.clockwise") {
+                            Task { await refresh() }
+                        }
+                        .tint(.primary)
+                        .disabled(isRefreshing)
+                    }
+                }
             }
         }
         .navigationTitle("ui.home.action.daily_songs")
+        .navigationBarTitleDisplayMode(.large)
         .task(id: reloadToken) {
             guard phase != .loaded else { return }
             await load()

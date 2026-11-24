@@ -53,6 +53,7 @@ struct SettingsView: View {
                 }
                 .accessibilityLabel("ui.common.close")
                 .accessibilityHint("ui.settings.close.hint")
+                .tint(.primary)
             }
         }
         .navigationDestination(for: SettingsRoute.self) { route in
@@ -113,6 +114,10 @@ struct SettingsView: View {
         for route: SettingsRoute
     ) -> some View {
         switch route {
+        case .recognition:
+            SongRecognitionView()
+        case .privateMessages:
+            NeteasePrivateMessagesView()
         case .accountHome:
             if let profile = library.profile {
                 AccountHomeView(
@@ -137,8 +142,6 @@ struct SettingsView: View {
             SystemPlaybackSettingsView()
         case .general:
             GeneralSettingsView()
-        case .tabLayout:
-            TabLayoutSettingsView()
         case .contentFeatures:
             ContentFeatureSettingsView()
         case .content:

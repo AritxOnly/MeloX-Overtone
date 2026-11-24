@@ -16,6 +16,7 @@ struct ReleaseNotesSheet: View {
                     Button("ui.release_notes.start") {
                         dismiss()
                     }
+                    .tint(.primary)
                 }
             }
         }

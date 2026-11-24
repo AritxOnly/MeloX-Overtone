@@ -39,12 +39,12 @@ struct NowPlayingArtworkPage: View {
             let artworkSize = max(
                 1,
                 min(
-                    proxy.size.width + 16,
+                    proxy.size.width,
                     max(
                         170,
                         proxy.size.height
                             - NowPlayingBottomControls.coreHeight
-                            - 92
+                            - 108
                     )
                 )
             )
@@ -57,13 +57,13 @@ struct NowPlayingArtworkPage: View {
                 )
 
             VStack(spacing: 0) {
-                Spacer(minLength: 8)
+                Color.clear.frame(height: 14)
 
                 ZStack {
                     if showsArtwork {
                         ArtworkImage(
                             url: song.album?.artworkURL,
-                            cornerRadius: 12
+                            cornerRadius: 10
                         )
                         .frame(
                             width: displayedArtworkSize,
@@ -125,7 +125,7 @@ struct NowPlayingArtworkPage: View {
                     )
                 }
 
-                Spacer(minLength: 22)
+                Spacer(minLength: 8)
 
                 HStack(spacing: 14) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -148,11 +148,11 @@ struct NowPlayingArtworkPage: View {
 
                     NowPlayingSongActions(
                         song: song,
-                        showsFavoriteButton: false
+                        portrait: true
                     )
                 }
             }
-            .padding(.bottom, NowPlayingBottomControls.coreHeight)
+            .padding(.bottom, NowPlayingBottomControls.coreHeight + 15)
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
     }

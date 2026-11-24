@@ -5,118 +5,132 @@ struct LibrarySongsView: View {
 
     @Environment(LibraryStore.self) private var library
     @Environment(PlayerStore.self) private var player
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var searchReloadToken = 0
-    @State private var searchPreparationID: UUID?
+    @Environment(DownloadStore.self) private var downloads
+    @Environment(\.locale) private var locale
+
+    @AppStorage("library.songs.sort") private var sort: LibrarySongSort = .artist
+    @State private var filter: LibrarySongFilter = .all
+    @State private var index = LibrarySongIndex()
+    @State private var indexedRequest: LibrarySongIndex.Request?
     @State private var isStartingHeartMode = false
     @State private var heartModeErrorMessage: String?
     @State private var isPreparingPlayback = false
     @State private var playbackErrorMessage: String?
-    @State private var trackLocator = MusicCollectionTrackLocator()
-    @State private var songToLocate: Int?
-    @State private var locateErrorMessage: String?
+
+    private var request: LibrarySongIndex.Request {
+        LibrarySongIndex.Request(favorites: library.favoriteSongs, favoriteDates: library.favoriteAddedDates,
+                                 downloads: AppFeatureAvailability.downloads ? downloads.downloads : [],
+                                 filter: filter, sort: sort, query: normalizedLibrarySearchQuery(searchQuery),
+                                 locale: locale)
+    }
 
     var body: some View {
-        ScrollViewReader { proxy in
-            List {
-                if !displayedSongs.isEmpty {
-                    Button(action: playDisplayedSongs) {
-                        HStack {
-                            Label(
-                                isSearching
-                                    ? L10n.string("ui.common.play_search_results")
-                                    : L10n.string("ui.common.play_all"),
-                                systemImage: "play.fill"
-                            )
-                            Spacer()
-                            if isPreparingPlayback {
-                                ProgressView()
-                                    .controlSize(.small)
+        let request = request
+        List {
+            if !index.songs.isEmpty {
+                SongListPlaybackActions(isPreparing: isPreparingPlayback) { shuffled in
+                    playDisplayedSongs(shuffled: shuffled)
+                }
+            }
+            ForEach(index.sections) { section in
+                Section {
+                    ForEach(section.songs) { song in
+                        TrackRowView(song: song, showsArtwork: true) {
+                            Task { await player.play(song, in: index.songs) }
+                        }
+                        .overlay(alignment: .leading) {
+                            if library.contains(song: song) {
+                                Image(systemName: "star.fill")
+                                    .font(.system(size: 9))
+                                    .foregroundStyle(.yellow)
+                                    .offset(x: -14)
+                                    .accessibilityHidden(true)
+                            }
+                        }
+                        .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 16))
+                        .swipeActions {
+                            if library.contains(song: song) {
+                                Button("ui.common.unfavorite", systemImage: "heart.slash", role: .destructive) {
+                                    library.toggle(song: song)
+                                }
                             }
                         }
                     }
-                    .disabled(isPreparingPlayback)
-
-                    if !isSearching {
-                        heartModeButton
+                } header: {
+                    if !section.title.isEmpty {
+                        Text(section.title)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
                     }
                 }
+                .sectionIndexLabel(section.title.isEmpty ? nil : section.title)
+            }
 
-                ForEach(displayedSongs) { song in
-                    Button {
-                        Task { await player.play(song, in: displayedSongs) }
-                    } label: {
-                        TrackRowView(song: song, showsArtwork: true)
+            if library.hasMoreFavoriteSongs, filter != .downloaded {
+                if let message = library.favoriteSongsLoadMoreError {
+                    ConnectionUnavailableView(message: message) {
+                        Task { await library.loadRemainingFavoriteSongs() }
                     }
-                    .buttonStyle(.plain)
-                    .id(song.id)
-                    .listRowBackground(
-                        trackLocator.highlightedSongID == song.id
-                            ? Color.accentColor.opacity(0.16) : nil
-                    )
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            library.toggle(song: song)
-                        } label: {
-                            Label("ui.common.unfavorite", systemImage: "heart.slash")
-                        }
-                    }
+                } else {
+                    ProgressView().frame(maxWidth: .infinity)
                 }
-
-                paginationFooter
-            }
-            .task(id: songToLocate) {
-                if let songToLocate { await locateSong(songToLocate) }
-            }
-            .task(id: trackLocator.request) {
-                await trackLocator.scroll(using: proxy, reduceMotion: reduceMotion)
             }
         }
         .listStyle(.plain)
+        .listSectionIndexVisibility(sort == .added ? .hidden : .visible)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                if songToLocate != nil {
-                    ProgressView()
-                        .accessibilityLabel("ui.collection.locating_playing")
-                }
                 Menu {
-                    Button("ui.collection.locate_playing", systemImage: "scope") {
-                        songToLocate = currentSongID
+                    Picker("ui.library.songs.filter", selection: $filter) {
+                        Text("ui.library.songs.filter.all").tag(LibrarySongFilter.all)
+                        Text("ui.library.songs.filter.favorites").tag(LibrarySongFilter.favorites)
+                        if AppFeatureAvailability.downloads {
+                            Text("ui.downloads.downloaded").tag(LibrarySongFilter.downloaded)
+                        }
                     }
-                    .disabled(currentSongID == nil || songToLocate != nil || isPreparingSearchResults)
                 } label: {
-                    Image(systemName: "ellipsis")
+                    Label("ui.library.songs.filter", systemImage: "line.3.horizontal.decrease")
                 }
-                .accessibilityLabel("ui.common.more")
+                .tint(.primary)
+
+                Menu {
+                    Picker("ui.library.songs.sort", selection: $sort) {
+                        Text("ui.library.songs.sort.artist").tag(LibrarySongSort.artist)
+                        Text("ui.library.songs.sort.added").tag(LibrarySongSort.added)
+                        Text("ui.library.songs.sort.name").tag(LibrarySongSort.name)
+                    }
+                    Button("ui.home.action.heart_mode", systemImage: "heart.circle.fill", action: startHeartMode)
+                        .disabled(!library.canStartHeartMode || isStartingHeartMode)
+                } label: {
+                    Label("ui.common.more", systemImage: "ellipsis")
+                }
+                .tint(.primary)
             }
-        }
-        .alert("ui.collection.locate_failed", isPresented: Binding(
-            get: { locateErrorMessage != nil },
-            set: { if !$0 { locateErrorMessage = nil } }
-        )) {
-            Button("ui.common.ok", role: .cancel) { locateErrorMessage = nil }
-        } message: {
-            Text(locateErrorMessage ?? "")
         }
         .refreshable {
-            songToLocate = nil
-            trackLocator.reset()
             await library.refresh(force: true)
-            if isSearching {
-                await prepareSearchResults(debounced: false)
+            await library.loadRemainingFavoriteSongs()
+        }
+        .task(id: library.hasMoreFavoriteSongs && filter != .downloaded) {
+            if library.hasMoreFavoriteSongs && filter != .downloaded {
+                await library.loadRemainingFavoriteSongs()
             }
         }
-        .overlay {
-            emptyState
+        .task(id: request) {
+            guard let result = try? await LibrarySongIndex.build(request), !Task.isCancelled else { return }
+            index = result
+            indexedRequest = request
         }
-        .task(
-            id: LibrarySongSearchRequest(
-                query: normalizedSearchQuery,
-                reloadToken: searchReloadToken
-            )
-        ) {
-            await prepareSearchResults(debounced: true)
+        .overlay {
+            if index.songs.isEmpty, indexedRequest == request,
+               !library.hasMoreFavoriteSongs || filter == .downloaded {
+                if !request.query.isEmpty {
+                    ContentUnavailableView.search(text: request.query)
+                } else {
+                    ContentUnavailableView("ui.songs.empty", systemImage: "music.note.list")
+                }
+            }
         }
         .alert(
             "ui.library.heart_mode_failed",
@@ -154,157 +168,6 @@ struct LibrarySongsView: View {
         }
     }
 
-    private var normalizedSearchQuery: String {
-        normalizedLibrarySearchQuery(searchQuery)
-    }
-
-    private var currentSongID: Int? {
-        guard let song = player.currentSong, library.contains(song: song),
-              !filterMusicCollectionTracks([song], query: normalizedSearchQuery).isEmpty else {
-            return nil
-        }
-        return song.id
-    }
-
-    private func locateSong(_ songID: Int) async {
-        defer { songToLocate = nil }
-        locateErrorMessage = nil
-        let isLoaded = await library.loadFavoriteSongForLocation(songID)
-        guard !Task.isCancelled else { return }
-        guard isLoaded else {
-            locateErrorMessage = library.favoriteSongsLoadMoreError
-                ?? L10n.string("ui.collection.locate_unavailable")
-            return
-        }
-        guard displayedSongs.contains(where: { $0.id == songID }) else { return }
-        trackLocator.locate(songID)
-    }
-
-    private var isSearching: Bool {
-        !normalizedSearchQuery.isEmpty
-    }
-
-    private var isPreparingSearchResults: Bool {
-        searchPreparationID != nil
-    }
-
-    private var displayedSongs: [Song] {
-        filterMusicCollectionTracks(
-            library.favoriteSongs,
-            query: normalizedSearchQuery
-        )
-    }
-
-    private var heartModeButton: some View {
-        Button(action: startHeartMode) {
-            HStack {
-                Label("ui.home.action.heart_mode", systemImage: "heart.circle.fill")
-                Spacer()
-                if isStartingHeartMode {
-                    ProgressView()
-                        .controlSize(.small)
-                }
-            }
-        }
-        .disabled(!library.canStartHeartMode || isStartingHeartMode)
-    }
-
-    @ViewBuilder
-    private var paginationFooter: some View {
-        if isSearching {
-            if isPreparingSearchResults {
-                HStack(spacing: 8) {
-                    ProgressView()
-                    Text("ui.library.searching_all_favorite_songs")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 18)
-                .listRowSeparator(.hidden)
-            } else if let failureMessage = library.favoriteSongsLoadMoreError,
-                      library.hasMoreFavoriteSongs {
-                VStack(spacing: 8) {
-                    Text(failureMessage)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-
-                    Button("ui.library.search_again") {
-                        searchReloadToken += 1
-                    }
-                    .buttonStyle(.bordered)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 18)
-                .listRowSeparator(.hidden)
-            }
-        } else if library.hasMoreFavoriteSongs {
-            MusicCollectionPaginationFooter(
-                isLoading: library.isLoadingMoreFavoriteSongs,
-                failureMessage: library.favoriteSongsLoadMoreError,
-                loadToken: library.favoriteSongsNextOffset,
-                action: {
-                    await library.loadMoreFavoriteSongs()
-                }
-            )
-            .listRowSeparator(.hidden)
-        }
-    }
-
-    @ViewBuilder
-    private var emptyState: some View {
-        if displayedSongs.isEmpty,
-           !isPreparingSearchResults,
-           !hasSearchLoadFailure {
-            if isSearching {
-                ContentUnavailableView.search(text: normalizedSearchQuery)
-            } else if !library.hasMoreFavoriteSongs {
-                ContentUnavailableView(
-                    "ui.library.no_favorite_songs",
-                    systemImage: "heart",
-                    description: Text(
-                        "ui.library.no_favorite_songs.message"
-                    )
-                )
-            }
-        }
-    }
-
-    private var hasSearchLoadFailure: Bool {
-        isSearching
-            && library.favoriteSongsLoadMoreError != nil
-            && library.hasMoreFavoriteSongs
-    }
-
-    private func prepareSearchResults(debounced: Bool) async {
-        guard isSearching else {
-            searchPreparationID = nil
-            return
-        }
-
-        guard library.hasMoreFavoriteSongs else { return }
-
-        let preparationID = UUID()
-        searchPreparationID = preparationID
-        defer {
-            if searchPreparationID == preparationID {
-                searchPreparationID = nil
-            }
-        }
-
-        if debounced {
-            do {
-                try await Task.sleep(for: .milliseconds(300))
-            } catch {
-                return
-            }
-        }
-
-        guard !Task.isCancelled else { return }
-        await library.loadRemainingFavoriteSongs()
-    }
-
     private func startHeartMode() {
         guard !isStartingHeartMode,
               let playlistID = library.likedPlaylistID,
@@ -329,21 +192,19 @@ struct LibrarySongsView: View {
         }
     }
 
-    private func playDisplayedSongs() {
+    private func playDisplayedSongs(shuffled: Bool) {
         guard !isPreparingPlayback else { return }
         isPreparingPlayback = true
-        playbackErrorMessage = nil
-
+        var selection = request
         Task { @MainActor in
             defer { isPreparingPlayback = false }
             do {
-                let songs = if isSearching {
-                    displayedSongs
-                } else {
-                    try await library.favoriteSongsForPlayback()
+                if selection.filter != .downloaded && library.hasMoreFavoriteSongs {
+                    selection.favorites = try await library.favoriteSongsForPlayback()
                 }
+                let songs = try await LibrarySongIndex.build(selection).songs
                 try Task.checkCancellation()
-                await player.playAll(songs)
+                await player.playAll(shuffled ? songs.shuffled() : songs)
             } catch is CancellationError {
                 return
             } catch {
@@ -351,9 +212,4 @@ struct LibrarySongsView: View {
             }
         }
     }
-}
-
-private struct LibrarySongSearchRequest: Hashable {
-    let query: String
-    let reloadToken: Int
 }

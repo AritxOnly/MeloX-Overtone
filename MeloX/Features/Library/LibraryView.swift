@@ -1,57 +1,96 @@
 import SwiftUI
 
 struct LibraryView: View {
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(LibraryStore.self) private var library
-    @Environment(AppSettings.self) private var settings
+    @Environment(PlayerStore.self) private var player
 
-    private let fixedPage: LibraryPage?
-    private let showsNavigationTitle: Bool
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                VStack(spacing: 0) {
+                    ForEach(LibraryPage.availableCases) { page in
+                        NavigationLink(value: page) {
+                            HStack(spacing: 16) {
+                                Image(systemName: page.systemImage)
+                                    .font(.title2)
+                                    .frame(width: 32)
+                                Text(page.title)
+                                    .font(.title3)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.footnote.bold())
+                                    .foregroundStyle(.tertiary)
+                            }
+                            .frame(minHeight: 52)
+                            .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        Divider().padding(.leading, 48)
+                    }
+                }
 
-    @State private var section: LibraryPage
-    @State private var hasAppliedInitialPage = false
+                if !library.favoriteSongs.isEmpty || !library.favoriteAlbums.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("ui.library.recently_added")
+                            .font(.title2.bold())
+                            .accessibilityAddTraits(.isHeader)
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 14)], alignment: .leading, spacing: 16) {
+                            ForEach(library.favoriteSongs.prefix(12)) { song in
+                                Button {
+                                    Task { await player.play(song, in: library.favoriteSongs) }
+                                } label: {
+                                    coverCard(song.name, artist: song.artistText, url: song.album?.artworkURL)
+                                }
+                            }
+                            if library.favoriteSongs.isEmpty {
+                                ForEach(library.favoriteAlbums.prefix(12)) { album in
+                                    NavigationLink(value: MusicRoute.album(album)) {
+                                        coverCard(album.name, artist: album.artistText, url: album.artworkURL)
+                                    }
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 20)
+        }
+        .navigationTitle("ui.navigation.library")
+        .navigationDestination(for: LibraryPage.self) { page in
+            LibraryCategoryView(section: page)
+                .musicNavigationBarAtTop()
+        }
+        .refreshable { await library.refresh(force: true) }
+    }
+
+    private func coverCard(_ title: String, artist: String, url: URL?) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ArtworkImage(url: url, cornerRadius: 6)
+            Text(title)
+                .font(.subheadline.weight(.medium))
+            Text(artist)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .lineLimit(1)
+    }
+}
+
+private struct LibraryCategoryView: View {
+    let section: LibraryPage
+    @Environment(LibraryStore.self) private var library
+    @Environment(DownloadStore.self) private var downloads
     @State private var showsLogin = false
     @State private var searchQuery = ""
 
-    init(
-        fixedPage: LibraryPage? = nil,
-        showsNavigationTitle: Bool = true
-    ) {
-        let resolvedFixedPage = fixedPage.flatMap { page in
-            LibraryPage.availableCases.contains(page) ? page : nil
-        }
-        self.fixedPage = resolvedFixedPage
-        self.showsNavigationTitle = showsNavigationTitle
-        _section = State(initialValue: resolvedFixedPage ?? .songs)
-    }
-
-    private var availablePages: [LibraryPage] {
-        fixedPage.map { [$0] } ?? settings.embeddedLibraryPages
-    }
-
     var body: some View {
-        VStack(spacing: 0) {
-            if !showsNavigationTitle, fixedPage == nil, availablePages.count > 1 {
-                Group {
-                    if availablePages.count > 4, horizontalSizeClass == .compact {
-                        pagePicker.pickerStyle(.menu)
-                    } else {
-                        pagePicker.pickerStyle(.segmented)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(.background)
-            }
-
-            if availablePages.isEmpty {
-                ContentUnavailableView(
-                    "ui.library.pages_separated.title",
-                    systemImage: "rectangle.3.group",
-                    description: Text("ui.library.pages_separated.message")
-                )
-            } else if section == .downloads {
+        Group {
+            if section == .downloads {
                 LibraryDownloadsView(searchQuery: searchQuery)
+            } else if section == .songs, AppFeatureAvailability.downloads, !downloads.downloads.isEmpty {
+                LibrarySongsView(searchQuery: searchQuery)
             } else if !library.isLoggedIn {
                 loginUnavailableView
             } else if section == .cloud {
@@ -60,88 +99,22 @@ struct LibraryView: View {
                 libraryContent
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .libraryNavigationTitle(
-            fixedPage.map { AppTab(libraryPage: $0).title }
-                ?? L10n.string("ui.navigation.library"),
-            isPresented: showsNavigationTitle,
-            usesInlineTitle: fixedPage == nil && availablePages.count > 1
-        )
-        .librarySearchable(
-            text: $searchQuery,
-            prompt: searchPrompt,
-            isEnabled: canSearchCurrentPage
-        )
-        .toolbar {
-            if showsNavigationTitle, fixedPage == nil, availablePages.count > 1 {
-                ToolbarTitleMenu {
-                    pagePicker.pickerStyle(.inline)
-                }
-            }
-        }
-        .onAppear {
-            guard !hasAppliedInitialPage else { return }
-            hasAppliedInitialPage = true
-            if let fixedPage {
-                section = fixedPage
-            } else {
-                section = availablePages.contains(settings.initialLibraryPage)
-                    ? settings.initialLibraryPage
-                    : availablePages.first ?? .songs
-            }
-        }
-        .onChange(of: section) { _, page in
-            if fixedPage == nil {
-                settings.lastLibraryPage = page
-            }
-        }
-        .onChange(of: settings.lastLibraryPage) { _, page in
-            guard fixedPage == nil,
-                  settings.restoresLastLibraryPage,
-                  availablePages.contains(page),
-                  section != page else { return }
-            section = page
-        }
-        .onChange(of: availablePages) { _, pages in
-            guard fixedPage == nil,
-                  let firstPage = pages.first,
-                  !pages.contains(section) else {
-                return
-            }
-            section = firstPage
-        }
+        .navigationTitle(section.title)
+        .navigationBarTitleDisplayMode(.large)
+        .librarySearchable(text: $searchQuery, prompt: searchPrompt,
+                           isEnabled: section == .downloads || library.isLoggedIn || (section == .songs && !downloads.downloads.isEmpty),
+                           hidesSearchInitially: section == .songs)
         .sheet(isPresented: $showsLogin) {
-            NavigationStack {
-                NeteaseLoginView()
-            }
+            NavigationStack { NeteaseLoginView() }
         }
-        .task(id: settings.cookie) {
-            await library.refresh()
-        }
-        .alert(
-            "ui.library.error.title",
-            isPresented: Binding(
-                get: { library.errorMessage != nil },
-                set: { presented in
-                    if !presented {
-                        library.clearError()
-                    }
-                }
-            )
-        ) {
-            Button("ui.common.ok", role: .cancel) {
-                library.clearError()
-            }
+        .task(id: library.isLoggedIn) { await library.refresh() }
+        .alert("ui.library.error.title", isPresented: Binding(
+            get: { library.errorMessage != nil },
+            set: { if !$0 { library.clearError() } }
+        )) {
+            Button("ui.common.ok", role: .cancel) { library.clearError() }
         } message: {
             Text(library.errorMessage ?? L10n.string("ui.common.unknown_error"))
-        }
-    }
-
-    private var pagePicker: some View {
-        Picker("ui.library.category_picker", selection: $section) {
-            ForEach(availablePages) { item in
-                Text(item.title).tag(item)
-            }
         }
     }
 
@@ -193,11 +166,6 @@ struct LibraryView: View {
         }
     }
 
-    private var canSearchCurrentPage: Bool {
-        !availablePages.isEmpty
-            && (section == .downloads || library.isLoggedIn)
-    }
-
     private var searchPrompt: String {
         switch section {
         case .songs:
@@ -224,29 +192,16 @@ struct LibraryView: View {
 
 private extension View {
     @ViewBuilder
-    func libraryNavigationTitle(
-        _ title: String,
-        isPresented: Bool,
-        usesInlineTitle: Bool
-    ) -> some View {
-        if isPresented {
-            navigationTitle(title)
-                .navigationBarTitleDisplayMode(usesInlineTitle ? .inline : .automatic)
-        } else {
-            self
-        }
-    }
-
-    @ViewBuilder
     func librarySearchable(
         text: Binding<String>,
         prompt: String,
-        isEnabled: Bool
+        isEnabled: Bool,
+        hidesSearchInitially: Bool
     ) -> some View {
         if isEnabled {
             searchable(
                 text: text,
-                placement: .navigationBarDrawer(displayMode: .always),
+                placement: .navigationBarDrawer(displayMode: hidesSearchInitially ? .automatic : .always),
                 prompt: Text(prompt)
             )
         } else {

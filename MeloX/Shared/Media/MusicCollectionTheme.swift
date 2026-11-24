@@ -5,6 +5,16 @@ extension ArtworkDetailPalette {
         prefersDarkAppearance ? .dark : .light
     }
 
+    func collectionPalette(for scheme: ColorScheme) -> Self {
+        let dark = scheme == .dark
+        guard let sourceRGB else { return .fallback(prefersDarkAppearance: dark) }
+        let background = dark
+            ? sourceRGB * 0.29 + SIMD3(repeating: 0.035)
+            : sourceRGB * 0.18 + SIMD3(repeating: 0.80)
+        return Self(backgroundRGB: background, accentRGB: accentRGB,
+                    prefersDarkAppearance: dark, sourceRGB: sourceRGB)
+    }
+
     var backgroundColor: Color {
         Color(
             red: backgroundRGB.x,

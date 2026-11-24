@@ -3,6 +3,8 @@ import SwiftUI
 struct HomeRecommendationSectionView: View {
     @Environment(PlayerStore.self) private var player
 
+    @Environment(\.musicShelfLayout) private var layout
+
     let section: HomeRecommendationSection
 
     var body: some View {
@@ -40,13 +42,22 @@ struct HomeRecommendationSectionView: View {
                 Task { await player.playAll(songs) }
             }
         ) {
-            ForEach(songs) { song in
-                Button {
-                    Task { await player.play(song, in: songs) }
-                } label: {
-                    HomeSongCard(song: song)
+            ForEach(Array(stride(from: 0, to: songs.count, by: 3)), id: \.self) { start in
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(songs[start..<min(start + 3, songs.count)]) { song in
+                        Button {
+                            Task { await player.play(song, in: songs) }
+                        } label: {
+                            TrackRowView(song: song, showsArtwork: true)
+                                .frame(minHeight: 58)
+                        }
+                        .buttonStyle(.plain)
+                        if song.id != songs[min(start + 2, songs.count - 1)].id {
+                            Divider().padding(.leading, 56)
+                        }
+                    }
                 }
-                .buttonStyle(.plain)
+                .frame(width: min(layout.containerWidth * 0.83, 390))
             }
         }
     }
@@ -76,17 +87,29 @@ struct HomeRecommendationSectionView: View {
     }
 }
 
-private struct HomeMediaStrip<Content: View>: View {
+struct HomeMediaStrip<Content: View>: View {
     @Environment(\.musicShelfLayout) private var layout
     let title: String
+    var destination: MusicRoute?
     var playAll: (() -> Void)?
     @ViewBuilder let content: () -> Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .firstTextBaseline) {
-                Text(title)
-                    .font(.title2.bold())
+                if let destination {
+                    NavigationLink(value: destination) {
+                        HStack(spacing: 5) {
+                            Text(title)
+                            Image(systemName: "chevron.right")
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Text(title)
+                }
 
                 Spacer()
 
@@ -100,20 +123,23 @@ private struct HomeMediaStrip<Content: View>: View {
                     .accessibilityLabel(L10n.format("ui.common.play_named", title))
                 }
             }
-            .padding(.horizontal, layout.horizontalPadding)
+            .font(.title3.bold())
+            .padding(.horizontal, layout.homeInset)
 
             ScrollView(.horizontal) {
-                LazyHStack(alignment: .top, spacing: layout.spacing) {
+                LazyHStack(alignment: .top, spacing: 12) {
                     content()
                 }
+                .scrollTargetLayout()
             }
-            .contentMargins(.horizontal, layout.horizontalPadding, for: .scrollContent)
+            .contentMargins(.horizontal, layout.homeInset, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
             .scrollIndicators(.hidden)
         }
     }
 }
 
-private struct HomeSongCard: View {
+struct HomeSongCard: View {
     @Environment(\.musicShelfLayout) private var layout
     let song: Song
 
@@ -122,9 +148,9 @@ private struct HomeSongCard: View {
             title: song.name,
             subtitle: song.artistText,
             artworkURL: song.album?.artworkURL,
-            artworkSize: layout.artworkSize(compact: 154)
+            artworkSize: layout.homeCoverSize
         )
-        .frame(width: layout.artworkSize(compact: 154))
+        .frame(width: layout.homeCoverSize)
         .contentShape(.rect)
         .accessibilityElement(children: .combine)
     }
@@ -139,10 +165,30 @@ private struct HomePodcastProgramCard: View {
             title: program.name,
             subtitle: program.radio.name,
             artworkURL: program.artworkURL,
-            artworkSize: layout.artworkSize(compact: 154)
+            artworkSize: layout.homeCoverSize
         )
-        .frame(width: layout.artworkSize(compact: 154))
+        .frame(width: layout.homeCoverSize)
         .contentShape(.rect)
         .accessibilityElement(children: .combine)
+    }
+}
+
+struct HomeAlbumSection: View {
+    @Environment(\.musicShelfLayout) private var layout
+    let albums: [Album]
+
+    var body: some View {
+        HomeMediaStrip(title: L10n.string("ui.albums.new.title"), destination: .newAlbums) {
+            ForEach(albums) { album in
+                let route = MusicRoute.album(album)
+                NavigationLink(value: route) {
+                    MediaCardView(title: album.name, subtitle: album.artistText,
+                                  artworkURL: album.artworkURL, artworkSize: layout.homeCoverSize)
+                        .frame(width: layout.homeCoverSize)
+                }
+                .buttonStyle(.plain)
+                .musicMatchedTransitionSource(for: route)
+            }
+        }
     }
 }

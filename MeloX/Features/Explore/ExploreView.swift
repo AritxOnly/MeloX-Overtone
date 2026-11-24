@@ -8,6 +8,7 @@ struct ExploreView: View {
     let showsNavigationTitle: Bool
     let navigationTitle: String
 
+    @State private var isCategoryBarPinned = false
     @State private var category = "推荐歌单"
     @State private var playlists: [Playlist] = []
     @State private var playlistsByCategory: [String: [Playlist]] = [:]
@@ -52,17 +53,25 @@ struct ExploreView: View {
 
     private var content: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 26) {
-                ExploreCategoryPicker(
-                    categories: categories,
-                    selection: category,
-                    select: selectCategory
-                )
-
-                categoryContent
+            LazyVStack(alignment: .leading, spacing: 26, pinnedViews: [.sectionHeaders]) {
+                Section {
+                    categoryContent
+                } header: {
+                    ExploreCategoryPicker(
+                        categories: categories,
+                        selection: category,
+                        isPinned: isCategoryBarPinned,
+                        select: selectCategory
+                    )
+                }
             }
             .padding(.horizontal, featuredMetrics.horizontalPadding)
             .padding(.bottom, 28)
+        }
+        .onScrollGeometryChange(for: Bool.self) { geometry in
+            geometry.contentOffset.y + geometry.contentInsets.top > 1
+        } action: { _, scrolled in
+            isCategoryBarPinned = scrolled
         }
         .onGeometryChange(for: CGSize.self) { proxy in
             proxy.size

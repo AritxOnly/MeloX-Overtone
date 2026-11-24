@@ -10,14 +10,48 @@ struct TrackRowView: View {
     var index: Int?
     var showsArtwork = false
     var secondaryMetadata: String?
+    var playAction: (() -> Void)?
 
     @State private var presentedSheet: TrackRowSheet?
 
     var body: some View {
+        Group {
+            if let playAction {
+                HStack(spacing: 4) {
+                    Button(action: playAction) { trackLabel }
+                        .buttonStyle(.plain)
+                    Menu {
+                        actions
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .frame(width: 44, height: 44)
+                            .contentShape(.rect)
+                    }
+                    .tint(.primary)
+                    .accessibilityLabel(L10n.format("ui.song.more_actions", song.name))
+                }
+                .alignmentGuide(.listRowSeparatorLeading) { _ in 60 }
+            } else {
+                trackLabel
+            }
+        }
+        .sheet(item: $presentedSheet) { sheet in
+            switch sheet {
+            case .comments(let selectedSong):
+                SongCommentsSheet(song: selectedSong)
+            case .addToPlaylist(let selectedSong):
+                AddToPlaylistSheet(song: selectedSong)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+            }
+        }
+    }
+
+    private var trackLabel: some View {
         HStack(spacing: 12) {
             if showsArtwork {
                 ArtworkImage(url: song.album?.artworkURL, cornerRadius: 6)
-                    .frame(width: 44, height: 44)
+                    .frame(width: playAction == nil ? 44 : 48, height: playAction == nil ? 44 : 48)
             } else if let index {
                 Text(
                     (index + 1).formatted(
@@ -34,7 +68,7 @@ struct TrackRowView: View {
                     .font(.body)
                     .lineLimit(1)
                 Text(subtitleText)
-                    .font(.caption)
+                    .font(playAction == nil ? .caption : .subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -51,7 +85,7 @@ struct TrackRowView: View {
                         .accessibilityLabel("ui.downloads.downloaded")
                 }
             }
-            if song.durationMS > 0 {
+            if playAction == nil, song.durationMS > 0 {
                 Text(song.durationText)
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
@@ -59,88 +93,7 @@ struct TrackRowView: View {
         }
         .contentShape(.rect)
         .musicMatchedTransitionSource(for: .song(song))
-        .contextMenu {
-            Button {
-                Task { await player.playNext(song) }
-            } label: {
-                Label(
-                    "ui.player.play_next",
-                    systemImage:
-                        "text.line.first.and.arrowtriangle.forward"
-                )
-            }
-
-            Button {
-                presentedSheet = .addToPlaylist(song)
-            } label: {
-                Label("ui.playlists.add_to", systemImage: "text.badge.plus")
-            }
-
-            if !song.isPodcastProgram {
-                Button {
-                    library.toggle(song: song)
-                } label: {
-                    Label(
-                        favoriteActionTitle,
-                        systemImage: favoriteActionSystemImage
-                    )
-                }
-            }
-
-            if AppFeatureAvailability.downloads {
-                if downloads.isDownloading(songID: song.id) {
-                    Button {
-                        downloads.cancel(songID: song.id)
-                    } label: {
-                        Label("ui.downloads.cancel", systemImage: "xmark.circle")
-                    }
-                } else if downloads.contains(songID: song.id) {
-                    Button(role: .destructive) {
-                        downloads.remove(songID: song.id)
-                    } label: {
-                        Label("ui.downloads.delete", systemImage: "trash")
-                    }
-                } else {
-                    Menu {
-                        ForEach(MusicQuality.allCases) { quality in
-                            Button(quality.title) {
-                                downloads.start(song, quality: quality)
-                            }
-                        }
-                    } label: {
-                        Label("ui.downloads.download_song", systemImage: "arrow.down.circle")
-                    }
-                }
-            }
-
-            Button {
-                openMusicRoute(.song(song))
-            } label: {
-                Label("ui.song.information", systemImage: "info.circle")
-            }
-
-            Button {
-                presentedSheet = .comments(song)
-            } label: {
-                Label("ui.comments.title", systemImage: "bubble.left.and.bubble.right")
-            }
-
-            Menu {
-                NeteaseShareMenuContent(resource: .song(song))
-            } label: {
-                Label("ui.common.share", systemImage: "square.and.arrow.up")
-            }
-        }
-        .sheet(item: $presentedSheet) { sheet in
-            switch sheet {
-            case .comments(let selectedSong):
-                SongCommentsSheet(song: selectedSong)
-            case .addToPlaylist(let selectedSong):
-                AddToPlaylistSheet(song: selectedSong)
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
-            }
-        }
+        .contextMenu { actions }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityText)
         .accessibilityAction(named: L10n.string("ui.song.view_information")) {
@@ -158,6 +111,80 @@ struct TrackRowView: View {
         )
         .accessibilityAction(named: L10n.string("ui.comments.view")) {
             presentedSheet = .comments(song)
+        }
+    }
+
+    @ViewBuilder
+    private var actions: some View {
+        Button {
+            Task { await player.playNext(song) }
+        } label: {
+            Label(
+                "ui.player.play_next",
+                systemImage:
+                    "text.line.first.and.arrowtriangle.forward"
+            )
+        }
+
+        Button {
+            presentedSheet = .addToPlaylist(song)
+        } label: {
+            Label("ui.playlists.add_to", systemImage: "text.badge.plus")
+        }
+
+        if !song.isPodcastProgram {
+            Button {
+                library.toggle(song: song)
+            } label: {
+                Label(
+                    favoriteActionTitle,
+                    systemImage: favoriteActionSystemImage
+                )
+            }
+        }
+
+        if AppFeatureAvailability.downloads {
+            if downloads.isDownloading(songID: song.id) {
+                Button {
+                    downloads.cancel(songID: song.id)
+                } label: {
+                    Label("ui.downloads.cancel", systemImage: "xmark.circle")
+                }
+            } else if downloads.contains(songID: song.id) {
+                Button(role: .destructive) {
+                    downloads.remove(songID: song.id)
+                } label: {
+                    Label("ui.downloads.delete", systemImage: "trash")
+                }
+            } else {
+                Menu {
+                    ForEach(MusicQuality.allCases) { quality in
+                        Button(quality.title) {
+                            downloads.start(song, quality: quality)
+                        }
+                    }
+                } label: {
+                    Label("ui.downloads.download_song", systemImage: "arrow.down.circle")
+                }
+            }
+        }
+
+        Button {
+            openMusicRoute(.song(song))
+        } label: {
+            Label("ui.song.information", systemImage: "info.circle")
+        }
+
+        Button {
+            presentedSheet = .comments(song)
+        } label: {
+            Label("ui.comments.title", systemImage: "bubble.left.and.bubble.right")
+        }
+
+        Menu {
+            NeteaseShareMenuContent(resource: .song(song))
+        } label: {
+            Label("ui.common.share", systemImage: "square.and.arrow.up")
         }
     }
 

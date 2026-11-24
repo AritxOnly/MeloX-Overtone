@@ -7,11 +7,6 @@ private enum ContentSheet: String, Identifiable {
     var id: String { rawValue }
 }
 
-private enum ContentRoute: Hashable {
-    case privateMessages
-    case songRecognition
-}
-
 private struct HeartModeLaunchReadiness: Equatable {
     let hasRestoredPlayback: Bool
     let isLoggedIn: Bool
@@ -176,30 +171,6 @@ struct ContentView: View {
                 )
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
-            }
-            .onAppear {
-                guard usesTabletNavigation,
-                      settings.restoresLastSelectedTab,
-                      navigationTabs.contains(settings.lastSelectedTab) else { return }
-                selectedTab = settings.lastSelectedTab
-            }
-            .onChange(of: selectedTab) { _, tab in
-                settings.lastSelectedTab = tab
-            }
-            .onChange(of: navigationTabs) { _, tabs in
-                guard !tabs.contains(selectedTab) else { return }
-                if settings.homeTabs.contains(selectedTab),
-                   tabs.contains(.home) {
-                    selectedTab = .home
-                } else if selectedTab.libraryPage != nil,
-                   tabs.contains(.library) {
-                    if let page = selectedTab.libraryPage {
-                        settings.lastLibraryPage = page
-                    }
-                    selectedTab = .library
-                } else {
-                    selectedTab = settings.fallbackNavigationTab
-                }
             }
             .onChange(of: scenePhase) { _, phase in
                 player.refreshLyricsNotification()
@@ -392,68 +363,17 @@ struct ContentView: View {
             && horizontalSizeClass == .regular
     }
 
-    private var sidebarHomeTabs: [AppTab] {
-        settings.homeTabs.filter {
-            $0 != .recommended && $0.libraryPage == nil
-                && !settings.visibleTabs.contains($0)
-        }
-    }
-
-    private var sidebarLibraryTabs: [AppTab] {
-        let embedded = settings.embeddedLibraryPages.map { AppTab(libraryPage: $0) }
-        let homeLibraryPages = settings.homeTabs.filter { $0.libraryPage != nil }
-        var seen = Set(settings.visibleTabs)
-        return (embedded + homeLibraryPages).filter { seen.insert($0).inserted }
-    }
-
-    private var navigationTabs: [AppTab] {
-        settings.visibleTabs
-            + (usesTabletNavigation ? sidebarHomeTabs + sidebarLibraryTabs : [])
-    }
-
-    private var displayedPrimaryTabs: [AppTab] {
-        guard usesTabletNavigation, settings.visibleTabs.contains(.search) else { return settings.visibleTabs }
-        return [.search] + settings.visibleTabs.filter { $0 != .search }
-    }
-
     private var tabs: some View {
         TabView(selection: $selectedTab) {
-            ForEach(displayedPrimaryTabs) { tab in
-                Tab(
-                    tab.title,
-                    systemImage: tab.systemImage,
-                    value: tab,
-                    role: tab == .search ? .search : nil
-                ) {
+            ForEach(usesTabletNavigation ? [.search] + AppTab.allCases.filter { $0 != .search } : AppTab.allCases) { tab in
+                Tab(value: tab, role: tab == .search ? .search : nil) {
                     tabNavigationStack(for: tab)
-                }
-            }
-
-            if usesTabletNavigation {
-                if !sidebarHomeTabs.isEmpty {
-                    TabSection("ui.navigation.explore") {
-                        ForEach(sidebarHomeTabs) { tab in
-                            Tab(tab.title, systemImage: tab.systemImage, value: tab) {
-                                tabNavigationStack(for: tab)
-                            }
-                        }
+                } label: {
+                    Label {
+                        Text(tab.title)
+                    } icon: {
+                        tabBarIcon(for: tab)
                     }
-                    .tabPlacement(.sidebarOnly)
-                }
-
-                if !sidebarLibraryTabs.isEmpty {
-                    TabSection("ui.navigation.library") {
-                        ForEach(sidebarLibraryTabs) { tab in
-                            Tab(
-                                tab.libraryPage?.title ?? tab.title,
-                                systemImage: tab.systemImage,
-                                value: tab
-                            ) {
-                                tabNavigationStack(for: tab)
-                            }
-                        }
-                    }
-                    .tabPlacement(.sidebarOnly)
                 }
             }
         }
@@ -465,7 +385,7 @@ struct ContentView: View {
             } label: {
                 HStack(spacing: 10) {
                     accountToolbarLabel
-                        .frame(width: 28, height: 28)
+                        .frame(width: 38, height: 38)
                     Text(library.profile?.nickname ?? L10n.string("ui.account.login_settings"))
                         .font(.subheadline.weight(.medium))
                         .lineLimit(2)
@@ -481,14 +401,41 @@ struct ContentView: View {
         .environment(\.musicNavigationNamespace, musicNavigationNamespace)
     }
 
+    private func tabBarIcon(for tab: AppTab) -> Image {
+        let name: String
+        switch tab {
+        case .home: name = "home.fill"
+        case .library: name = "music.square.stack.fill"
+        default: return Image(systemName: tab.systemImage)
+        }
+        if let bundle = Bundle(path: "/System/Library/CoreServices/CoreGlyphsPrivate.bundle"),
+           let symbol = UIImage(named: name, in: bundle, with: nil) {
+            return Image(uiImage: symbol.withRenderingMode(.alwaysTemplate))
+        }
+        return Image(systemName: tab.systemImage)
+    }
+
     private func tabNavigationStack(for tab: AppTab) -> some View {
         NavigationStack(path: navigationPathBinding(for: tab)) {
             tabRoot(for: tab)
+                .toolbarTitleDisplayMode(.inlineLarge)
+                .musicNavigationBarAtTop()
                 .toolbar {
-                    primaryToolbar(for: tab)
-                }
-                .navigationDestination(for: ContentRoute.self) { route in
-                    contentDestination(for: route)
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            presentedSheet = .settings
+                        } label: {
+                            accountToolbarLabel
+                                .padding(2)
+                                .glassEffect(.regular.interactive(), in: .circle)
+                                .contentShape(.circle)
+                        }
+                        .offset(x: 2)
+                        .accessibilityLabel(accountToolbarAccessibilityLabel)
+                        .accessibilityIdentifier("navigation-account")
+                        .tint(.primary)
+                    }
+                    .sharedBackgroundVisibility(.hidden)
                 }
                 .musicDestinations(in: musicNavigationNamespace)
         }
@@ -505,13 +452,8 @@ struct ContentView: View {
     private func tabRoot(for tab: AppTab) -> some View {
         switch tab {
         case .home:
-            HomeView()
-        case .recommended:
             HomeRecommendedView()
-                .navigationTitle("ui.navigation.recommended")
-                .navigationBarTitleDisplayMode(.large)
-        case .music:
-            ExploreView(navigationTitle: L10n.string("ui.navigation.music"))
+                .navigationTitle(tab.title)
         case .podcasts:
             PodcastHomeView()
         case .explore:
@@ -520,64 +462,6 @@ struct ContentView: View {
             LibraryView()
         case .search:
             SearchView()
-        case .librarySongs,
-             .libraryPlaylists,
-             .libraryAlbums,
-             .libraryArtists,
-             .libraryPodcasts,
-             .libraryDownloads,
-             .libraryCloud,
-             .libraryHistory:
-            if let page = tab.libraryPage {
-                LibraryView(fixedPage: page)
-            }
-        }
-    }
-
-    @ToolbarContentBuilder
-    private func primaryToolbar(
-        for tab: AppTab
-    ) -> some ToolbarContent {
-        ToolbarItemGroup(placement: .topBarTrailing) {
-            if library.isLoggedIn {
-                Button {
-                    navigate(to: .privateMessages, in: tab)
-                } label: {
-                    MusicToolbarSymbol(systemName: "bubble.left.and.bubble.right")
-                }
-                .accessibilityLabel("ui.messages.private.title")
-                .accessibilityHint("ui.messages.private.open_hint")
-                .accessibilityIdentifier("navigation-private-messages")
-            }
-
-            Button {
-                navigate(to: .songRecognition, in: tab)
-            } label: {
-                MusicToolbarSymbol(systemName: "waveform")
-            }
-            .accessibilityLabel("ui.recognition.title")
-            .accessibilityIdentifier("navigation-recognition")
-
-            if !usesTabletNavigation {
-                Button {
-                    presentedSheet = .settings
-                } label: {
-                    accountToolbarLabel
-                }
-                .accessibilityLabel(accountToolbarAccessibilityLabel)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func contentDestination(
-        for route: ContentRoute
-    ) -> some View {
-        switch route {
-        case .privateMessages:
-            NeteasePrivateMessagesView()
-        case .songRecognition:
-            SongRecognitionView()
         }
     }
 
@@ -594,15 +478,18 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .frame(width: 28, height: 28)
+            .frame(width: 38, height: 38)
             .background(.quaternary, in: .circle)
             .clipShape(.circle)
         } else {
-            MusicToolbarSymbol(
+            Image(
                 systemName: library.isLoggedIn
                     ? "person.crop.circle.fill"
                     : "person.crop.circle"
             )
+            .resizable()
+            .scaledToFit()
+            .frame(width: 38, height: 38)
         }
     }
 
@@ -670,18 +557,35 @@ struct ContentView: View {
         navigate(to: route)
     }
 
-    private func navigate(
-        to route: ContentRoute,
-        in tab: AppTab
-    ) {
-        var path = navigationPaths[tab] ?? NavigationPath()
-        path.append(route)
-        navigationPaths[tab] = path
-    }
-
     private func navigate(to route: MusicRoute) {
         var path = navigationPaths[selectedTab] ?? NavigationPath()
         path.append(route)
         navigationPaths[selectedTab] = path
+    }
+}
+
+extension View {
+    func musicNavigationBarAtTop() -> some View {
+        modifier(MusicNavigationBarAtTop())
+    }
+}
+
+private struct MusicNavigationBarAtTop: ViewModifier {
+    @State private var atTop = true
+
+    func body(content: Content) -> some View {
+        if #available(iOS 27, *) {
+            content
+                .toolbarMinimizationBehavior(.onScrollDown, for: .navigationBar)
+                .toolbarMinimizationRestoration(.atScrollEdge, for: .navigationBar)
+        } else {
+            content
+                .onScrollGeometryChange(for: Bool.self) {
+                    $0.contentOffset.y + $0.contentInsets.top <= 0.5
+                } action: { _, value in
+                    atTop = value
+                }
+                .toolbarVisibility(atTop ? .visible : .hidden, for: .navigationBar)
+        }
     }
 }

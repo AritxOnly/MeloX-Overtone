@@ -8,12 +8,14 @@ struct NowPlayingSongActions: View {
     @Environment(ListenTogetherStore.self) private var listenTogether
 
     let song: Song
-    var showsFavoriteButton = true
+    var portrait = false
+    @Environment(LyricsStore.self) private var lyricsStore
+    @Environment(FloatingLyricsController.self) private var floatingLyrics
 
     @State private var presentedSheet: NowPlayingSongSheet?
     var body: some View {
-        HStack(spacing: 10) {
-            if showsFavoriteButton, !song.isPodcastProgram {
+        HStack(spacing: portrait ? 4 : 10) {
+            if !song.isPodcastProgram {
                 favoriteButton
             }
             songMenu
@@ -53,8 +55,8 @@ struct NowPlayingSongActions: View {
                     : "star"
             )
             .font(.title3.weight(.medium))
-            .frame(width: 40, height: 40)
-            .background(.white.opacity(0.13), in: .circle)
+            .frame(width: portrait ? 44 : 40, height: portrait ? 44 : 40)
+            .background(.white.opacity(portrait ? 0 : 0.13), in: .circle)
             .contentShape(.circle)
         }
         .buttonStyle(.plain)
@@ -66,6 +68,19 @@ struct NowPlayingSongActions: View {
     }
     private var songMenu: some View {
         Menu {
+            if portrait {
+                NowPlayingQualityMenu()
+                if !song.isPodcastProgram {
+                    let translations = lyricsStore.lyrics.contains { $0.hasTranslation }
+                    let romanizations = lyricsStore.lyrics.contains { $0.hasRomanization }
+                    if translations || romanizations {
+                        NowPlayingLyricsLanguageButton(hasTranslations: translations, hasRomanizations: romanizations, usesMenuLabel: true)
+                    }
+                    Button(floatingLyrics.isActive ? "ui.floating_lyrics.close" : "ui.floating_lyrics.open",
+                           systemImage: "pip") { floatingLyrics.toggle() }
+                        .disabled(!floatingLyrics.isActive && !floatingLyrics.isPossible)
+                }
+            }
             lyricsSourceMenu
 
             Divider()
@@ -216,8 +231,8 @@ struct NowPlayingSongActions: View {
             Image(systemName: "ellipsis")
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(.white)
-                .frame(width: 40, height: 40)
-                .background(.white.opacity(0.15), in: .circle)
+                .frame(width: portrait ? 44 : 40, height: portrait ? 44 : 40)
+                .background(.white.opacity(portrait ? 0 : 0.15), in: .circle)
                 .contentShape(.circle)
         }
         .tint(.white)

@@ -13,25 +13,22 @@ struct MiniPlayerView: View {
         if let song = player.currentSong {
             HStack(spacing: isInline ? 8 : 10) {
                 Button(action: onExpand) {
-                    HStack(spacing: isInline ? 8 : 10) {
+                    HStack(spacing: 8) {
                         ArtworkImage(url: song.album?.artworkURL, cornerRadius: 6)
-                            .frame(width: artworkSize, height: artworkSize)
+                            .frame(width: 32, height: 32)
                             .matchedTransitionSource(
                                 id: artworkTransitionID,
                                 in: artworkTransitionNamespace
                             )
 
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(song.name)
-                                .font(.subheadline.weight(.semibold))
+                        VStack(alignment: .leading, spacing: 0) {
+                            MiniPlayerMarquee(text: song.name)
+                                .font(.footnote.weight(.semibold))
                                 .lineLimit(1)
 
-                            if !isInline {
-                                Text(song.artistText)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                            }
+                            MiniPlayerMarquee(text: song.artistText)
+                                .font(.footnote)
+                                .lineLimit(1)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -89,7 +86,8 @@ struct MiniPlayerView: View {
                     .accessibilityLabel("ui.player.next")
                 }
             }
-            .padding(.horizontal, isInline ? 8 : 12)
+            .padding(.leading, 16)
+            .padding(.trailing, 14)
             .padding(.vertical, isInline ? 3 : 6)
             .frame(maxWidth: .infinity)
             .contentShape(.rect)
@@ -105,10 +103,6 @@ struct MiniPlayerView: View {
 
     private var isInline: Bool {
         placement == .inline
-    }
-
-    private var artworkSize: CGFloat {
-        isInline ? 30 : 40
     }
 
     private var trackSwipeGesture: some Gesture {

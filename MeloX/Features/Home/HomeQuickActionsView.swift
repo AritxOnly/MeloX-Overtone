@@ -81,7 +81,7 @@ enum HomeQuickAction: String, CaseIterable, Identifiable {
     var colors: [Color] {
         switch self {
         case .dailySongs:
-            [.pink, .red]
+            [.indigo, .purple, .pink]
         case .hotSongs:
             [.orange, .red]
         case .heartMode:
@@ -97,44 +97,50 @@ enum HomeQuickAction: String, CaseIterable, Identifiable {
 }
 
 struct HomeQuickActionsView: View {
-    @Environment(AppSettings.self) private var settings
     @Environment(\.musicShelfLayout) private var layout
-    @ScaledMetric(relativeTo: .body) private var compactCardWidth = 230.0
+    @Environment(LibraryStore.self) private var library
+    @Environment(PlayerStore.self) private var player
+
+    let dailySongs: [Song]
+    let hotChart: Playlist?
+    let radar: Playlist?
 
     let activeAction: HomeQuickAction?
     let perform: (HomeQuickAction) -> Void
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("ui.home.section.quick_actions")
+                .font(.title3.bold())
+                .padding(.horizontal, layout.homeInset)
+                .accessibilityAddTraits(.isHeader)
+            cards
+        }
+    }
+
+    private var cards: some View {
         ScrollView(.horizontal) {
-            LazyHStack(alignment: .top, spacing: 16) {
+            LazyHStack(alignment: .top, spacing: 12) {
                 ForEach(HomeQuickAction.allCases) { action in
                     Button {
                         perform(action)
                     } label: {
                         HomeEditorialCard(
-                            eyebrow: action.eyebrow,
-                            title: action.title,
-                            subtitle: action.subtitle,
-                            systemImage: action.systemImage,
-                            colors: action.colors,
-                            isCompact: settings.compactHomeQuickActions
+                            action: action,
+                            artworkURL: artworkURL(for: action),
+                            detail: detail(for: action)
                         )
                         .overlay {
                             if activeAction == action {
                                 ProgressView()
-                                    .controlSize(settings.compactHomeQuickActions ? .regular : .large)
-                                    .padding(settings.compactHomeQuickActions ? 14 : 22)
+                                    .controlSize(.regular)
+                                    .padding(14)
                                     .background(.regularMaterial)
                                     .clipShape(.circle)
                             }
                         }
                     }
-                    .containerRelativeFrame(.horizontal) {
-                        length, _ in
-                        settings.compactHomeQuickActions
-                            ? min(length, compactCardWidth)
-                            : min(length * 0.86, 340)
-                    }
+                    .frame(width: min(layout.containerWidth * 0.615, 290))
                     .buttonStyle(.plain)
                     .disabled(activeAction != nil)
                     .accessibilityHint(accessibilityHint(for: action))
@@ -143,9 +149,35 @@ struct HomeQuickActionsView: View {
             }
             .scrollTargetLayout()
         }
-        .contentMargins(.horizontal, layout.horizontalPadding, for: .scrollContent)
+        .contentMargins(.horizontal, layout.homeInset, for: .scrollContent)
         .scrollIndicators(.hidden)
         .scrollTargetBehavior(.viewAligned)
+    }
+
+    private func artworkURL(for action: HomeQuickAction) -> URL? {
+        switch action {
+        case .dailySongs, .privateRoaming: nil
+        case .hotSongs: hotChart?.artworkURL
+        case .privateRadar: radar?.artworkURL
+        case .heartMode: library.favoriteSongs.first?.album?.artworkURL
+        case .similarSongs: player.currentSong?.album?.artworkURL
+        }
+    }
+
+    private func detail(for action: HomeQuickAction) -> String {
+        switch action {
+        case .dailySongs:
+            var seen = Set<String>()
+            let artists = dailySongs.flatMap(\.artists).map(\.name)
+                .filter { !$0.isEmpty && seen.insert($0).inserted }.prefix(6)
+            return artists.isEmpty ? action.subtitle : artists.formatted(.list(type: .and).locale(L10n.locale))
+        case .privateRadar:
+            return radar?.name ?? action.subtitle
+        case .similarSongs:
+            return player.currentSong?.name ?? action.subtitle
+        default:
+            return action.subtitle
+        }
     }
 
     private func accessibilityHint(

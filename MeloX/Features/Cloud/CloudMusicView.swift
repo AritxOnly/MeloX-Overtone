@@ -33,6 +33,7 @@ struct CloudMusicView: View {
                             ? L10n.string("ui.cloud.uploading_music")
                             : L10n.string("ui.cloud.upload_music")
                     )
+                    .tint(.primary)
                 }
             }
             .fileImporter(
@@ -115,15 +116,9 @@ struct CloudMusicView: View {
 
             if !displayedItems.isEmpty {
                 Section {
-                    Button {
-                        Task { await player.playAll(displayedSongs) }
-                    } label: {
-                        Label(
-                            isSearching
-                                ? L10n.string("ui.common.play_search_results")
-                                : L10n.string("ui.common.play_all"),
-                            systemImage: "play.fill"
-                        )
+                    SongListPlaybackActions { shuffled in
+                        let songs = displayedSongs
+                        Task { await player.playAll(shuffled ? songs.shuffled() : songs) }
                     }
                 } header: {
                     if isSearching {
@@ -137,17 +132,9 @@ struct CloudMusicView: View {
             }
 
             ForEach(displayedItems) { item in
-                Button {
-                    Task {
-                        await player.play(
-                            item.simpleSong,
-                            in: displayedSongs
-                        )
-                    }
-                } label: {
-                    TrackRowView(song: item.simpleSong, showsArtwork: true)
+                TrackRowView(song: item.simpleSong, showsArtwork: true) {
+                    Task { await player.play(item.simpleSong, in: displayedSongs) }
                 }
-                .buttonStyle(.plain)
                 .disabled(cloud.isDeleting(item))
                 .swipeActions(edge: .trailing) {
                     Button(role: .destructive) {

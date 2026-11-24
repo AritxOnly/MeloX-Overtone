@@ -26,6 +26,8 @@ struct SettingsAccountSection: View {
                 }
             }
 
+            accountActions
+
             if library.isLoggedIn {
                 logoutCard
             }
@@ -158,6 +160,36 @@ struct SettingsAccountSection: View {
                     )
                 )
             }
+    }
+
+    private var accountActions: some View {
+        Section {
+            VStack(spacing: 0) {
+                accountLink(.recognition, title: "ui.recognition.title", symbol: "waveform")
+                Divider()
+                accountLink(.privateMessages, title: "ui.messages.private.title", symbol: "bubble.left.and.bubble.right")
+                    .disabled(!library.isLoggedIn)
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 4)
+            .background(Color(uiColor: .secondarySystemGroupedBackground), in: .rect(cornerRadius: 26))
+        }
+    }
+
+    private func accountLink(_ route: SettingsRoute, title: LocalizedStringKey, symbol: String) -> some View {
+        NavigationLink(value: route) {
+            HStack(spacing: 14) {
+                Image(systemName: symbol).frame(width: 30)
+                Text(title)
+                Spacer()
+                Image(systemName: "chevron.forward")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(minHeight: 48)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
     }
 
     private var logoutCard: some View {

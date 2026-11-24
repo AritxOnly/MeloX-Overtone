@@ -3,26 +3,38 @@ import SwiftUI
 struct ExploreCategoryPicker: View {
     let categories: [String]
     let selection: String
+    let isPinned: Bool
     let select: (String) -> Void
 
     var body: some View {
         ScrollView(.horizontal) {
-            LazyHStack(spacing: 8) {
-                ForEach(categories, id: \.self) { category in
-                    Button(categoryTitle(for: category)) {
-                        select(category)
+            GlassEffectContainer(spacing: 0) {
+                HStack(spacing: 8) {
+                    ForEach(categories, id: \.self) { category in
+                        let selected = category == selection
+                        let fill = selected ? Color.accentColor : Color.secondary.opacity(0.14)
+                        Button {
+                            select(category)
+                        } label: {
+                            Text(categoryTitle(for: category))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(selected ? Color.white : .primary)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 7)
+                                .frame(minHeight: 34)
+                                .background(isPinned ? .clear : fill, in: .capsule)
+                                .glassEffect(isPinned ? .regular.tint(selected ? .accentColor : nil).interactive() : .identity, in: .capsule)
+                                .contentShape(.capsule)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(selected ? .isSelected : [])
                     }
-                    .buttonStyle(.borderedProminent)
-                    .buttonBorderShape(.capsule)
-                    .controlSize(.small)
-                    .tint(category == selection ? .accentColor : Color.secondary.opacity(0.14))
-                    .foregroundStyle(category == selection ? .white : .primary)
-                    .accessibilityAddTraits(category == selection ? .isSelected : [])
                 }
+                .padding(4)
             }
         }
         .scrollIndicators(.hidden)
-        .scrollClipDisabled()
+        .accessibilityIdentifier("explore-categories")
     }
 
     private func categoryTitle(for category: String) -> String {

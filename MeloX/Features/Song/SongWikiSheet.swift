@@ -19,6 +19,7 @@ struct SongWikiSheet: View {
                             Image(systemName: "xmark")
                         }
                         .accessibilityLabel("ui.song.wiki.close")
+                        .tint(.primary)
                     }
                 }
         }

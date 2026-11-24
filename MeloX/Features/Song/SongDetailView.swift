@@ -54,6 +54,7 @@ struct SongDetailView: View {
                                 : "arrow.down.circle"
                         )
                     }
+                    .tint(.primary)
                     .accessibilityLabel(
                         downloads.contains(songID: song.id)
                             ? L10n.string("ui.downloads.downloaded")
@@ -66,6 +67,7 @@ struct SongDetailView: View {
                 } label: {
                     Image(systemName: "bubble.left.and.bubble.right")
                 }
+                .tint(.primary)
                 .accessibilityLabel("ui.comments.view")
 
                 Menu {
@@ -73,6 +75,7 @@ struct SongDetailView: View {
                 } label: {
                     MusicToolbarSymbol(systemName: "square.and.arrow.up")
                 }
+                .tint(.primary)
                 .accessibilityLabel("ui.song.share")
             }
         }

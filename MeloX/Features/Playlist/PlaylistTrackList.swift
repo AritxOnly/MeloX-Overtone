@@ -15,6 +15,7 @@ struct PlaylistTrackList: View {
                 .frame(maxWidth: .infinity, minHeight: 180)
         } else {
             LazyVStack(spacing: 0) {
+                Divider().padding(.horizontal, 20)
                 ForEach(Array(tracks.enumerated()), id: \.element.id) { index, song in
                     PlaylistTrackRow(
                         song: song,
@@ -33,7 +34,7 @@ struct PlaylistTrackList: View {
                             .overlay(Color.primary.opacity(0.12))
                             .padding(
                                 .leading,
-                                (showsArtwork ? 80 : 66)
+                                (showsArtwork ? 80 : 51)
                                     + (isSelectingDownloads ? 36 : 0)
                             )
                             .padding(.trailing, 20)
@@ -87,14 +88,14 @@ private struct PlaylistTrackRow: View {
     var body: some View {
         HStack(spacing: 4) {
             Button(action: primaryAction) {
-                HStack(spacing: 12) {
+                HStack(spacing: showsArtwork ? 12 : 7) {
                     if isSelectingDownloads {
                         Image(
                             systemName: isSelectedForDownload
                                 ? "checkmark.circle.fill"
                                 : "circle"
                         )
-                        .font(.title3)
+                        .font(.body)
                         .symbolRenderingMode(.hierarchical)
                         .foregroundStyle(
                             canSelectForDownload ? .primary : .tertiary
@@ -234,7 +235,8 @@ private struct PlaylistTrackRow: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis")
-                        .font(.body.weight(.semibold))
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(.secondary)
                         .frame(width: 42, height: 44)
                         .contentShape(.rect)
                 }
@@ -242,8 +244,8 @@ private struct PlaylistTrackRow: View {
             }
         }
         .padding(.leading, 20)
-        .padding(.trailing, 8)
-        .padding(.vertical, showsArtwork ? 8 : 11)
+        .padding(.trailing, 12)
+        .padding(.vertical, showsArtwork ? 8 : 4)
         .background(
             isHighlighted ? Color.accentColor.opacity(0.16)
                 : isCurrentSong ? Color.primary.opacity(0.10) : .clear
@@ -280,20 +282,19 @@ private struct PlaylistTrackRow: View {
                         .font(.caption.weight(.bold))
                 }
             }
-            .frame(width: 32, height: 32)
-            .frame(width: 40)
+            .frame(width: 24, height: 24)
         } else {
             Text(
                 (index + 1).formatted(
                     .number.locale(L10n.locale)
                 )
             )
-                .font(.title3)
+                .font(.body)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-                .frame(width: 40, alignment: .center)
+                .frame(width: 24, alignment: .center)
         }
     }
 

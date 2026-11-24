@@ -19,6 +19,7 @@ struct AddToPlaylistSheet: View {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("ui.playlists.create.title", systemImage: "plus") { showsCreation = true }
                             .disabled(!library.isLoggedIn || addingToPlaylistID != nil)
+                            .tint(.primary)
                     }
                     ToolbarItem(placement: .cancellationAction) {
                         Button("ui.common.cancel") {

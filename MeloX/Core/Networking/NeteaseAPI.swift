@@ -677,10 +677,10 @@ final class NeteaseAPI {
         )
     }
 
-    func likedSongIDs(
+    func likedSongReferences(
         userID: Int,
         likedPlaylistID: Int? = nil
-    ) async throws -> [Int] {
+    ) async throws -> [TrackReference] {
         if let likedPlaylistID {
             do {
                 // Only request playlist metadata and ordered track IDs here.
@@ -691,7 +691,7 @@ final class NeteaseAPI {
                 )
                 if !likedPlaylist.trackIDs.isEmpty
                     || likedPlaylist.trackCount == 0 {
-                    return likedPlaylist.trackIDs.map(\.id)
+                    return likedPlaylist.trackIDs
                 }
             } catch is CancellationError {
                 throw CancellationError()
@@ -708,7 +708,7 @@ final class NeteaseAPI {
             authenticated: true
         )
         try validate(responseCode: response.code)
-        return response.ids
+        return response.ids.map { TrackReference(id: $0) }
     }
 
     func userPlaylists(userID: Int, limit: Int = 2_000) async throws -> [Playlist] {

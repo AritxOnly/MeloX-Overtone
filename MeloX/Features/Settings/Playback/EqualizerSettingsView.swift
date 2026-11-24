@@ -77,6 +77,7 @@ struct EqualizerSettingsView: View {
                 Button("ui.common.restore_defaults") {
                     settings.equalizer.resetCurve()
                 }
+                .tint(.primary)
             }
         }
         .onChange(

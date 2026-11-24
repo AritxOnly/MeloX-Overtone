@@ -93,6 +93,7 @@ private struct NeteaseTimelineShareView: View {
                     }
                 }
                 .disabled(isSending)
+                .tint(.primary)
             }
         }
         .interactiveDismissDisabled(isSending)

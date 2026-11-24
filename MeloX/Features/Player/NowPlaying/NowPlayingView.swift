@@ -331,7 +331,7 @@ struct NowPlayingView: View {
                 }
         }
         .padding(.horizontal, Self.portraitHorizontalPadding)
-        .safeAreaPadding(.bottom, 3)
+        .safeAreaPadding(.bottom, 20)
     }
 
     @ViewBuilder
@@ -387,10 +387,6 @@ struct NowPlayingView: View {
         NowPlayingBottomControls(
             song: song,
             page: pageSelection,
-            showsLyricsUtilities:
-                usesExpandedAppleMusicLyricsLayout,
-            hasLyricsTranslations: hasLyricsTranslations,
-            hasLyricsRomanizations: hasLyricsRomanizations,
             isInterfaceHidden: hidesLyricsControls
         )
     }
@@ -429,14 +425,6 @@ struct NowPlayingView: View {
         lyricsStore.errorMessage
     }
 
-    private var hasLyricsTranslations: Bool {
-        lyrics.contains { $0.hasTranslation }
-    }
-
-    private var hasLyricsRomanizations: Bool {
-        lyrics.contains { $0.hasRomanization }
-    }
-
     private var keepsPlayerScreenAwake: Bool {
         switch settings.playerScreenAwakeMode {
         case .disabled:
@@ -448,10 +436,6 @@ struct NowPlayingView: View {
         case .hiddenLyricsInterface:
             hidesLyricsControls
         }
-    }
-
-    private var usesExpandedAppleMusicLyricsLayout: Bool {
-        page == .lyrics && settings.lyricsStyle == .appleMusic
     }
 
     private var usesFullScreenTextPV: Bool {
@@ -474,11 +458,11 @@ struct NowPlayingView: View {
         ZStack(alignment: .top) {
             Capsule()
                 .fill(.white.opacity(0.52))
-                .frame(width: 60, height: 5)
-                .padding(.top, 8)
+                .frame(width: 60, height: 4)
+                .padding(.top, 7)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 34)
+        .frame(height: 19, alignment: .top)
         .contentShape(.rect)
         .onTapGesture {
             dismiss()

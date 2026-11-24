@@ -51,6 +51,7 @@ struct PlaybackSleepTimerSheet: View {
                     Button("ui.common.done") {
                         dismiss()
                     }
+                    .tint(.primary)
                 }
             }
         }

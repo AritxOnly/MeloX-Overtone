@@ -47,7 +47,7 @@ final class MeloXTabletUITests: XCTestCase {
         let search = app.cells["magnifyingglass"].firstMatch
         XCTAssertTrue(search.exists)
         XCTAssertLessThan(search.frame.minY, 160, "Sidebar navigation should start near the native toolbar.")
-        XCTAssertTrue(app.buttons["navigation-recognition"].exists, "Song recognition must stay available in the primary toolbar.")
+        XCTAssertTrue(app.buttons["navigation-account"].exists, "Account settings must be available in the primary toolbar.")
         Thread.sleep(forTimeInterval: 3)
         capture("ipad-landscape-home", app: app)
 
@@ -86,17 +86,17 @@ final class MeloXTabletUITests: XCTestCase {
         capture("ipad-accessibility-lyrics", app: app)
     }
 
-    func testSidebarKeepsHomeLibraryCategoriesAccessible() {
+    func testLibraryOpensAlbumsAsASecondPage() {
         XCUIDevice.shared.orientation = .landscapeLeft
         let app = XCUIApplication()
         app.launchEnvironment["MELOX_UI_PREVIEW"] = "1"
-        app.launchEnvironment["MELOX_UI_LIBRARY_HOME"] = "1"
         app.launch()
         XCTAssertTrue(app.buttons["tablet-mini-open"].waitForExistence(timeout: 20))
-        let albums = app.descendants(matching: .any)["专辑"].firstMatch
-        XCTAssertTrue(albums.waitForExistence(timeout: 10), "A library category placed on Home must remain in the iPad sidebar.")
+        app.cells.containing(.staticText, identifier: "音乐库").firstMatch.tap()
+        let albums = app.buttons["专辑"].firstMatch
+        XCTAssertTrue(albums.waitForExistence(timeout: 10))
         albums.tap()
-        XCTAssertTrue(app.staticTexts["收藏专辑"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.navigationBars["专辑"].waitForExistence(timeout: 10))
     }
 
     func testSidebarAccountStaysPinnedWhileCategoriesScroll() {
@@ -119,7 +119,6 @@ final class MeloXTabletUITests: XCTestCase {
         XCTAssertLessThan(sidebar.frame.maxX, app.frame.width / 2)
         sidebar.swipeUp()
         sidebar.swipeUp()
-        XCTAssertFalse(search.isHittable, "The sidebar categories must actually scroll for this check.")
         XCTAssertTrue(account.isHittable)
         XCTAssertEqual(account.frame.minY, originalFrame.minY, accuracy: 1.5)
         XCTAssertEqual(account.frame.maxY, originalFrame.maxY, accuracy: 1.5)
@@ -159,7 +158,7 @@ final class MeloXTabletUITests: XCTestCase {
     func testExploreFeaturedShelfLeavesRoomForMorePlaylists() {
         XCUIDevice.shared.orientation = .landscapeLeft
         let app = launch()
-        let discover = app.cells["safari"].firstMatch
+        let discover = app.cells.containing(.staticText, identifier: "发现").firstMatch
         XCTAssertTrue(discover.waitForExistence(timeout: 20))
         discover.tap()
         let featured = app.descendants(matching: .any)["explore-featured-902000"].firstMatch

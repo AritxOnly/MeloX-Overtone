@@ -1,31 +1,18 @@
 import SwiftUI
 
 struct NowPlayingBottomControls: View {
-    static let utilityHeight: CGFloat = 62
     static let coreHeight: CGFloat = 279
-    static let overlayHeight = utilityHeight + coreHeight
+    static let overlayHeight = coreHeight
 
     @Environment(\.accessibilityReduceMotion)
     private var accessibilityReduceMotion
 
     let song: Song
     @Binding var page: NowPlayingPage
-    let showsLyricsUtilities: Bool
-    let hasLyricsTranslations: Bool
-    let hasLyricsRomanizations: Bool
     let isInterfaceHidden: Bool
 
     var body: some View {
         VStack(spacing: 0) {
-            NowPlayingLyricsUtilityControls(
-                isVisible:
-                    showsLyricsUtilities
-                    && !isInterfaceHidden,
-                hasTranslations: hasLyricsTranslations,
-                hasRomanizations: hasLyricsRomanizations
-            )
-            .frame(height: Self.utilityHeight, alignment: .top)
-
             coreControls
         }
         .frame(height: Self.overlayHeight)
@@ -34,7 +21,7 @@ struct NowPlayingBottomControls: View {
     private var coreControls: some View {
         VStack(spacing: 0) {
             interfaceLayer(.progress) {
-                NowPlayingProgressControl(song: song)
+                NowPlayingProgressControl(song: song, showsQuality: false)
             }
 
             Color.clear
@@ -55,7 +42,7 @@ struct NowPlayingBottomControls: View {
                 .frame(height: 3)
 
             interfaceLayer(.pageSelector) {
-                NowPlayingPageSelector(page: $page)
+                NowPlayingPageSelector(page: $page, showsRoutePicker: true)
             }
         }
         .frame(height: Self.coreHeight)
@@ -87,49 +74,5 @@ struct NowPlayingBottomControls: View {
                 ),
                 value: isInterfaceHidden
             )
-    }
-}
-
-private struct NowPlayingLyricsUtilityControls: View {
-    @Environment(\.accessibilityReduceMotion)
-    private var accessibilityReduceMotion
-
-    let isVisible: Bool
-    let hasTranslations: Bool
-    let hasRomanizations: Bool
-
-    var body: some View {
-        HStack {
-            if hasTranslations || hasRomanizations {
-                NowPlayingLyricsLanguageButton(
-                    hasTranslations: hasTranslations,
-                    hasRomanizations: hasRomanizations
-                )
-                    .scaleEffect(
-                        isVisible
-                            ? 1
-                            : NowPlayingInterfaceTransition
-                                .utilityHiddenScale
-                    )
-            }
-
-            Spacer()
-        }
-        .offset(
-            y: isVisible
-                ? 0
-                : NowPlayingInterfaceTransition
-                    .utilityHiddenOffset
-        )
-        .opacity(isVisible ? 1 : 0)
-        .allowsHitTesting(isVisible)
-        .accessibilityHidden(!isVisible)
-        .animation(
-            NowPlayingInterfaceTransition.utilityAnimation(
-                isVisible: isVisible,
-                reducesMotion: accessibilityReduceMotion
-            ),
-            value: isVisible
-        )
     }
 }

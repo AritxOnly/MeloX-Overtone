@@ -148,16 +148,6 @@ final class AppSettings {
         static let appLanguage = AppLanguage.storageKey
         static let searchSuggestionsEnabled = "searchSuggestionsEnabled"
         static let appearance = "appAppearance"
-        static let defaultLaunchTab = "defaultLaunchTab"
-        static let restoresLastSelectedTab = "restoresLastSelectedTab"
-        static let lastSelectedTab = "lastSelectedTab"
-        static let defaultLibraryPage = "defaultLibraryPage"
-        static let restoresLastLibraryPage = "restoresLastLibraryPage"
-        static let lastLibraryPage = "lastLibraryPage"
-        static let separatedLibraryPages =
-            "melox.navigation.separatedLibraryPages"
-        static let homeTabOrder = "melox.navigation.homeTabOrder"
-        static let tabOrder = "melox.navigation.tabOrder"
         static let area = "musicArea"
         static let showPlayCount = "showPlayCount"
         static let playerBackgroundStyle = "playerBackgroundStyle"
@@ -262,7 +252,6 @@ final class AppSettings {
         static let recognizesClipboardLinksOnLaunch =
             "recognizesClipboardLinksOnLaunch"
         static let checksUpdatesOnLaunch = "checksUpdatesOnLaunch"
-        static let compactHomeQuickActions = "compactHomeQuickActions"
         static let automaticallyCachesPageContent = "automaticallyCachesPageContent"
         static let automaticallyCachesFrequentlyPlayedSongs = "automaticallyCachesFrequentlyPlayedSongs"
         static let automaticCachePlaybackThreshold = "automaticCachePlaybackThreshold"
@@ -288,11 +277,6 @@ final class AppSettings {
         }
     }
 
-    var compactHomeQuickActions: Bool {
-        didSet {
-            defaults.set(compactHomeQuickActions, forKey: Key.compactHomeQuickActions)
-        }
-    }
 
     var quality: MusicQuality {
         didSet { defaults.set(quality.rawValue, forKey: Key.quality) }
@@ -458,246 +442,8 @@ final class AppSettings {
         }
     }
 
-    var defaultLaunchTab: AppTab {
-        didSet {
-            defaults.set(defaultLaunchTab.rawValue, forKey: Key.defaultLaunchTab)
-        }
-    }
-
-    var restoresLastSelectedTab: Bool {
-        didSet {
-            defaults.set(
-                restoresLastSelectedTab,
-                forKey: Key.restoresLastSelectedTab
-            )
-        }
-    }
-
-    var lastSelectedTab: AppTab {
-        didSet {
-            defaults.set(lastSelectedTab.rawValue, forKey: Key.lastSelectedTab)
-        }
-    }
-
-    var defaultLibraryPage: LibraryPage {
-        didSet {
-            defaults.set(
-                defaultLibraryPage.rawValue,
-                forKey: Key.defaultLibraryPage
-            )
-        }
-    }
-
-    var restoresLastLibraryPage: Bool {
-        didSet {
-            defaults.set(
-                restoresLastLibraryPage,
-                forKey: Key.restoresLastLibraryPage
-            )
-        }
-    }
-
-    var lastLibraryPage: LibraryPage {
-        didSet {
-            defaults.set(lastLibraryPage.rawValue, forKey: Key.lastLibraryPage)
-        }
-    }
-
-    private(set) var separatedLibraryPages: [LibraryPage] {
-        didSet {
-            defaults.set(
-                separatedLibraryPages.map(\.rawValue),
-                forKey: Key.separatedLibraryPages
-            )
-        }
-    }
-
-    private(set) var homeTabOrder: [AppTab] {
-        didSet {
-            defaults.set(
-                homeTabOrder.map(\.rawValue),
-                forKey: Key.homeTabOrder
-            )
-        }
-    }
-
-    private(set) var tabOrder: [AppTab] {
-        didSet {
-            defaults.set(
-                tabOrder.map(\.rawValue),
-                forKey: Key.tabOrder
-            )
-        }
-    }
-
-    var embeddedLibraryPages: [LibraryPage] {
-        LibraryPage.availableCases.filter {
-            isLibraryPageEnabled($0)
-                && !separatedLibraryPages.contains($0)
-        }
-    }
-
-    var homeTabs: [AppTab] {
-        Self.normalizedHomeTabOrder(
-            homeTabOrder,
-            separatedLibraryPages: separatedLibraryPages
-        )
-        .filter(isNavigationTabEnabled)
-    }
-
-    var visibleTabs: [AppTab] {
-        Self.normalizedTabOrder(
-            tabOrder,
-            separatedLibraryPages: separatedLibraryPages,
-            homeTabs: homeTabs
-        )
-        .filter(isNavigationTabEnabled)
-    }
-
-    var launchTab: AppTab {
-        let requestedTab =
-            restoresLastSelectedTab ? lastSelectedTab : defaultLaunchTab
-        return visibleTabs.contains(requestedTab)
-            ? requestedTab
-            : fallbackNavigationTab
-    }
-
-    var initialLibraryPage: LibraryPage {
-        let requestedPage =
-            restoresLastLibraryPage ? lastLibraryPage : defaultLibraryPage
-        return embeddedLibraryPages.contains(requestedPage)
-            ? requestedPage
-            : embeddedLibraryPages.first ?? .songs
-    }
-
-    var fallbackNavigationTab: AppTab {
-        if visibleTabs.contains(.home) {
-            return .home
-        }
-        if visibleTabs.contains(.library) {
-            return .library
-        }
-        return visibleTabs.first ?? .search
-    }
-
-    func placement(for tab: AppTab) -> AppPagePlacement {
-        if tab == .recommended || homeTabs.contains(tab) {
-            return .home
-        }
-        if let libraryPage = tab.libraryPage,
-           !separatedLibraryPages.contains(libraryPage) {
-            return .library
-        }
-        return .tabBar
-    }
-
-    func setPage(
-        _ tab: AppTab,
-        placement: AppPagePlacement
-    ) {
-        guard AppTab.configurablePages.contains(tab),
-              isNavigationTabEnabled(tab),
-              tab.allowedPlacements.contains(placement) else {
-            return
-        }
-
-        let previousTabOrder = visibleTabs
-        var nextHomeTabs = homeTabs
-        var separatedPages = Set(separatedLibraryPages)
-
-        if let libraryPage = tab.libraryPage {
-            switch placement {
-            case .home:
-                separatedPages.insert(libraryPage)
-                Self.appendIfNeeded(tab, to: &nextHomeTabs)
-            case .tabBar:
-                separatedPages.insert(libraryPage)
-                nextHomeTabs.removeAll(where: { $0 == tab })
-            case .library:
-                separatedPages.remove(libraryPage)
-                nextHomeTabs.removeAll(where: { $0 == tab })
-            }
-        } else {
-            switch placement {
-            case .home:
-                Self.appendIfNeeded(tab, to: &nextHomeTabs)
-            case .tabBar:
-                nextHomeTabs.removeAll(where: { $0 == tab })
-            case .library:
-                return
-            }
-        }
-
-        separatedLibraryPages = Self.normalizedLibraryPages(
-            Array(separatedPages)
-        )
-        homeTabOrder = Self.normalizedHomeTabOrder(
-            nextHomeTabs,
-            separatedLibraryPages: separatedLibraryPages
-        )
-        tabOrder = Self.normalizedTabOrder(
-            previousTabOrder,
-            separatedLibraryPages: separatedLibraryPages,
-            homeTabs: homeTabs
-        )
-        normalizeNavigationSelections()
-    }
-
-    func setHomeTabOrder(_ tabs: [AppTab]) {
-        let disabledTabs = homeTabOrder.filter {
-            !isNavigationTabEnabled($0)
-        }
-        homeTabOrder = Self.normalizedHomeTabOrder(
-            tabs + disabledTabs,
-            separatedLibraryPages: separatedLibraryPages
-        )
-    }
-
-    func setVisibleTabOrder(_ tabs: [AppTab]) {
-        let disabledTabs = tabOrder.filter {
-            !isNavigationTabEnabled($0)
-        }
-        tabOrder = Self.normalizedTabOrder(
-            tabs + disabledTabs,
-            separatedLibraryPages: separatedLibraryPages,
-            homeTabs: homeTabs
-        )
-    }
-
     func isContentFeatureEnabled(_ feature: ContentFeature) -> Bool {
-        contentFeatures.isEnabled(feature)
-    }
-
-    func setContentFeature(
-        _ feature: ContentFeature,
-        isEnabled: Bool
-    ) {
-        contentFeatures.setEnabled(isEnabled, for: feature)
-        normalizeNavigationSelections()
-    }
-
-    func isNavigationTabEnabled(_ tab: AppTab) -> Bool {
-        guard let feature = tab.requiredContentFeature else { return true }
-        return isContentFeatureEnabled(feature)
-    }
-
-    func isLibraryPageEnabled(_ page: LibraryPage) -> Bool {
-        guard let feature = page.requiredContentFeature else { return true }
-        return isContentFeatureEnabled(feature)
-    }
-
-    func resetTabLayout() {
-        separatedLibraryPages = [.cloud]
-        homeTabOrder = Self.normalizedHomeTabOrder(
-            [.recommended, .music, .podcasts],
-            separatedLibraryPages: separatedLibraryPages
-        )
-        tabOrder = Self.normalizedTabOrder(
-            [],
-            separatedLibraryPages: separatedLibraryPages,
-            homeTabs: homeTabs
-        )
-        normalizeNavigationSelections()
+        ContentFeature.availableCases.contains(feature)
     }
 
     var musicArea: String {
@@ -1304,7 +1050,6 @@ final class AppSettings {
     let floatingLyrics: FloatingLyricsPreferences
     let lyricsNotifications: LyricsNotificationPreferences
     let songRecognition: SongRecognitionPreferences
-    let contentFeatures: ContentFeaturePreferences
 
     @ObservationIgnored
     private let defaults: UserDefaults
@@ -1322,7 +1067,6 @@ final class AppSettings {
             defaults: defaults
         )
         songRecognition = SongRecognitionPreferences(defaults: defaults)
-        contentFeatures = ContentFeaturePreferences(defaults: defaults)
         hasCompletedOnboarding = defaults.bool(
             forKey: Key.hasCompletedOnboarding
         )
@@ -1396,48 +1140,6 @@ final class AppSettings {
         appearance = AppAppearance(
             rawValue: defaults.string(forKey: Key.appearance) ?? ""
         ) ?? .system
-        defaultLaunchTab = AppTab(
-            rawValue: defaults.string(forKey: Key.defaultLaunchTab) ?? ""
-        ) ?? .home
-        restoresLastSelectedTab = defaults.object(
-            forKey: Key.restoresLastSelectedTab
-        ) as? Bool ?? false
-        lastSelectedTab = AppTab(
-            rawValue: defaults.string(forKey: Key.lastSelectedTab) ?? ""
-        ) ?? .home
-        defaultLibraryPage = LibraryPage(
-            rawValue: defaults.string(forKey: Key.defaultLibraryPage) ?? ""
-        ) ?? .songs
-        restoresLastLibraryPage = defaults.object(
-            forKey: Key.restoresLastLibraryPage
-        ) as? Bool ?? false
-        lastLibraryPage = LibraryPage(
-            rawValue: defaults.string(forKey: Key.lastLibraryPage) ?? ""
-        ) ?? .songs
-        let storedSeparatedPages = (
-            defaults.array(forKey: Key.separatedLibraryPages) as? [String]
-        )?.compactMap(LibraryPage.init(rawValue:))
-        let normalizedSeparatedPages = Self.normalizedLibraryPages(
-            storedSeparatedPages ?? [.cloud]
-        )
-        separatedLibraryPages = normalizedSeparatedPages
-        let storedHomeTabOrder = (
-            defaults.array(forKey: Key.homeTabOrder) as? [String]
-        )?.compactMap(AppTab.init(rawValue:))
-        let normalizedHomeTabOrder = Self.normalizedHomeTabOrder(
-            storedHomeTabOrder
-                ?? [.recommended, .music, .podcasts],
-            separatedLibraryPages: normalizedSeparatedPages
-        )
-        homeTabOrder = normalizedHomeTabOrder
-        let storedTabOrder = (
-            defaults.array(forKey: Key.tabOrder) as? [String]
-        )?.compactMap(AppTab.init(rawValue:)) ?? []
-        tabOrder = Self.normalizedTabOrder(
-            storedTabOrder,
-            separatedLibraryPages: normalizedSeparatedPages,
-            homeTabs: normalizedHomeTabOrder
-        )
         musicArea = defaults.string(forKey: Key.area) ?? "ALL"
         showPlayCount = defaults.object(forKey: Key.showPlayCount) as? Bool ?? true
         playerBackgroundStyle = PlayerBackgroundStyle(
@@ -1817,9 +1519,6 @@ final class AppSettings {
             forKey: Key.recognizesClipboardLinksOnLaunch
         ) as? Bool ?? Self.defaultRecognizesClipboardLinksOnLaunch
         checksUpdatesOnLaunch = defaults.object(forKey: Key.checksUpdatesOnLaunch) as? Bool ?? true
-        compactHomeQuickActions = defaults.object(
-            forKey: Key.compactHomeQuickActions
-        ) as? Bool ?? true
         automaticallyCachesPageContent = defaults.object(
             forKey: Key.automaticallyCachesPageContent
         ) as? Bool ?? true
@@ -1835,7 +1534,6 @@ final class AppSettings {
         automaticCacheQuality = MusicQuality(
             rawValue: defaults.string(forKey: Key.automaticCacheQuality) ?? ""
         ) ?? .high
-        normalizeNavigationSelections()
     }
 
     func setAppLanguage(_ language: AppLanguage) {
@@ -1843,134 +1541,6 @@ final class AppSettings {
         L10n.activate(language)
         defaults.set(language.rawValue, forKey: Key.appLanguage)
         appLanguage = language
-    }
-
-    private func normalizeNavigationSelections() {
-        defaultLaunchTab = normalizedNavigationTab(
-            for: defaultLaunchTab
-        )
-        lastSelectedTab = normalizedNavigationTab(
-            for: lastSelectedTab
-        )
-
-        let embeddedPages = embeddedLibraryPages
-        if let firstEmbeddedPage = embeddedPages.first {
-            if !embeddedPages.contains(defaultLibraryPage) {
-                defaultLibraryPage = firstEmbeddedPage
-            }
-            if !embeddedPages.contains(lastLibraryPage) {
-                lastLibraryPage = firstEmbeddedPage
-            }
-        }
-    }
-
-    private func normalizedNavigationTab(
-        for requestedTab: AppTab
-    ) -> AppTab {
-        if visibleTabs.contains(requestedTab) {
-            return requestedTab
-        }
-        if homeTabs.contains(requestedTab),
-           visibleTabs.contains(.home) {
-            return .home
-        }
-        if requestedTab.libraryPage != nil,
-           visibleTabs.contains(.library) {
-            return .library
-        }
-        return fallbackNavigationTab
-    }
-
-    private static func normalizedLibraryPages(
-        _ pages: [LibraryPage]
-    ) -> [LibraryPage] {
-        let pageSet = Set(pages)
-        return LibraryPage.availableCases.filter(pageSet.contains)
-    }
-
-    private static func normalizedHomeTabOrder(
-        _ tabs: [AppTab],
-        separatedLibraryPages: [LibraryPage]
-    ) -> [AppTab] {
-        let allowedTabs = Set(
-            AppTab.movablePrimaryContentPages
-                + separatedLibraryPages.map(
-                    AppTab.init(libraryPage:)
-                )
-        )
-        var seen: Set<AppTab> = [.recommended]
-        var normalized: [AppTab] = [.recommended]
-
-        for tab in tabs
-        where allowedTabs.contains(tab)
-            && seen.insert(tab).inserted {
-            normalized.append(tab)
-        }
-        return normalized
-    }
-
-    private static func normalizedTabOrder(
-        _ tabs: [AppTab],
-        separatedLibraryPages: [LibraryPage],
-        homeTabs: [AppTab]
-    ) -> [AppTab] {
-        let separatedSet = Set(separatedLibraryPages)
-        let embeddedPages = LibraryPage.availableCases.filter {
-            !separatedSet.contains($0)
-        }
-        let homeTabSet = Set(homeTabs)
-        var defaultVisibleTabs: [AppTab] = [.home]
-
-        for tab in AppTab.movablePrimaryContentPages
-        where !homeTabSet.contains(tab) {
-            if tab != .library || !embeddedPages.isEmpty {
-                defaultVisibleTabs.append(tab)
-            }
-        }
-        defaultVisibleTabs.append(
-            contentsOf: separatedLibraryPages
-                .map(AppTab.init(libraryPage:))
-                .filter { !homeTabSet.contains($0) }
-        )
-        defaultVisibleTabs.append(.search)
-
-        let allowedTabs = Set(defaultVisibleTabs)
-        var seen = Set<AppTab>()
-        var normalized = tabs.filter {
-            allowedTabs.contains($0) && seen.insert($0).inserted
-        }
-
-        for tab in defaultVisibleTabs
-        where !seen.contains(tab) {
-            let defaultIndex = defaultVisibleTabs.firstIndex(of: tab)
-                ?? defaultVisibleTabs.endIndex
-            let followingTab = defaultVisibleTabs
-                .dropFirst(defaultIndex + 1)
-                .first(where: normalized.contains)
-
-            if let followingTab,
-               let insertionIndex = normalized.firstIndex(of: followingTab) {
-                normalized.insert(tab, at: insertionIndex)
-            } else {
-                normalized.append(tab)
-            }
-            seen.insert(tab)
-        }
-
-        normalized.removeAll(where: { $0 == .home })
-        normalized.insert(.home, at: 0)
-        normalized.removeAll(where: { $0 == .search })
-        normalized.append(.search)
-
-        return normalized
-    }
-
-    private static func appendIfNeeded(
-        _ tab: AppTab,
-        to tabs: inout [AppTab]
-    ) {
-        guard !tabs.contains(tab) else { return }
-        tabs.append(tab)
     }
 
     func clearAccount() {

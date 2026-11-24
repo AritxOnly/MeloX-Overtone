@@ -35,7 +35,7 @@ struct SearchView: View {
         .navigationTitle("ui.navigation.search")
         .searchable(
             text: $query,
-            placement: .navigationBarDrawer(displayMode: .always),
+            placement: searchPlacement,
             prompt: "ui.search.prompt"
         )
         .searchSuggestions {
@@ -108,6 +108,13 @@ struct SearchView: View {
                 scope = .songs
             }
         }
+    }
+
+    private var searchPlacement: SearchFieldPlacement {
+        if #available(iOS 27, *) {
+            return .toolbarPrincipal
+        }
+        return .navigationBarDrawer(displayMode: .always)
     }
 
     private func loadSuggestions() async {

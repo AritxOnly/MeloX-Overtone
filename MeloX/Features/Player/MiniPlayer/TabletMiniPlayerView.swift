@@ -84,10 +84,10 @@ struct TabletMiniPlayerView: View {
                     )
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(song.name)
+                    MiniPlayerMarquee(text: song.name)
                         .font(.subheadline.weight(.semibold))
                         .lineLimit(1)
-                    Text(song.artistText)
+                    MiniPlayerMarquee(text: song.artistText)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)

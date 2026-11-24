@@ -51,6 +51,7 @@ struct MusicCollectionDownloadSelectionToolbar: ToolbarContent {
                 }
             }
             .disabled(coordinator.isPreparing)
+            .tint(.primary)
         }
 
         ToolbarItemGroup(placement: .bottomBar) {

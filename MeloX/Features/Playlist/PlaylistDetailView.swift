@@ -149,7 +149,6 @@ struct PlaylistDetailView: View {
             )
         )
         .toolbarBackground(.hidden, for: .navigationBar)
-        .toolbarColorScheme(interfaceColorScheme, for: .navigationBar, .tabBar)
         .toolbar {
             if downloadsEnabled,
                downloadCoordinator.isSelecting {
@@ -165,7 +164,6 @@ struct PlaylistDetailView: View {
                 : .automatic,
             for: .tabBar
         )
-        .environment(\.colorScheme, interfaceColorScheme)
         .onAppear {
             updateTabViewBottomAccessoryVisibility()
         }
@@ -292,12 +290,8 @@ struct PlaylistDetailView: View {
     }
 
     private var resolvedPalette: ArtworkDetailPalette {
-        artworkPalette
+        artworkPalette?.collectionPalette(for: systemColorScheme)
             ?? .fallback(prefersDarkAppearance: systemColorScheme == .dark)
-    }
-
-    private var interfaceColorScheme: ColorScheme {
-        resolvedPalette.colorScheme
     }
 
     private var artworkTransitionAnimation: Animation? {
@@ -349,11 +343,13 @@ struct PlaylistDetailView: View {
         ToolbarItemGroup(placement: .topBarTrailing) {
             if songToLocate != nil {
                 ProgressView()
+                    .tint(.primary)
                     .accessibilityLabel("ui.collection.locating_playing")
             }
             if downloadsEnabled,
                downloadCoordinator.isPreparing {
                 ProgressView()
+                    .tint(.primary)
                     .accessibilityLabel(
                         L10n.format(
                             "ui.downloads.preparing_song_count",
@@ -367,6 +363,7 @@ struct PlaylistDetailView: View {
             } label: {
                 MusicToolbarSymbol(systemName: "square.and.arrow.up")
             }
+            .tint(.primary)
             .accessibilityLabel(L10n.format("ui.common.share_named", collectionTitle))
             .accessibilityIdentifier("collection-toolbar-share")
 
@@ -409,6 +406,7 @@ struct PlaylistDetailView: View {
             } label: {
                 MusicToolbarSymbol(systemName: "ellipsis")
             }
+            .tint(.primary)
             .accessibilityLabel("ui.common.more")
             .accessibilityIdentifier("collection-toolbar-more")
         }

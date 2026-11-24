@@ -47,12 +47,14 @@ struct ListenTogetherMembersView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     invitationShareButton
+                        .tint(.primary)
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("ui.common.done") {
                         dismiss()
                     }
+                    .tint(.primary)
                 }
             }
         }

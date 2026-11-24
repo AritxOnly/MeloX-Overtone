@@ -1,22 +1,35 @@
+import AVKit
+import Combine
 import MediaPlayer
 import SwiftUI
+
+private struct PlaybackSlider: View {
+    @Binding var value: Double
+    var maximum: Double = 1
+    var onEditingChanged: (Bool) -> Void = { _ in }
+
+    var body: some View {
+        Slider(value: $value, in: 0...maximum, onEditingChanged: onEditingChanged)
+            .sliderThumbVisibility(.hidden)
+            .tint(.white.opacity(0.68))
+    }
+}
 
 struct NowPlayingProgressControl: View {
     @Environment(PlayerStore.self) private var player
 
     let song: Song
+    var showsQuality = true
 
     var body: some View {
         VStack(spacing: 2) {
-            Slider(
+            PlaybackSlider(
                 value: Binding(
                     get: { min(player.progress, progressMaximum) },
                     set: { player.seek(to: $0) }
                 ),
-                in: 0...progressMaximum
+                maximum: progressMaximum
             )
-            .sliderThumbVisibility(.hidden)
-            .tint(.white)
             .accessibilityLabel("ui.player.progress")
             .accessibilityValue(
                 L10n.format(
@@ -37,7 +50,7 @@ struct NowPlayingProgressControl: View {
                 Group {
                     if player.isAutoMixTransitioning {
                         NowPlayingAutoMixStatus()
-                    } else {
+                    } else if showsQuality {
                         NowPlayingQualityMenu()
                     }
                 }
@@ -46,7 +59,7 @@ struct NowPlayingProgressControl: View {
                     value: player.isAutoMixTransitioning
                 )
             }
-            .font(.caption2.monospacedDigit())
+            .font(.caption.weight(.medium).monospacedDigit())
             .foregroundStyle(.white.opacity(0.5))
         }
         .frame(height: 52)
@@ -130,7 +143,7 @@ private struct NowPlayingAutoMixStatus: View {
     }
 }
 
-private struct NowPlayingQualityMenu: View {
+struct NowPlayingQualityMenu: View {
     @Environment(PlayerStore.self) private var player
     @Environment(AppSettings.self) private var settings
     @Environment(NeteaseAPI.self) private var api
@@ -221,7 +234,7 @@ struct NowPlayingTransportControls: View {
                 Task { await player.previous() }
             } label: {
                 Image(systemName: "backward.fill")
-                    .font(.system(size: isTablet ? 24 : 34, weight: .medium))
+                    .font(.system(size: isTablet ? 24 : 29, weight: .medium))
                     .frame(width: controlDiameter, height: controlDiameter)
                     .contentShape(.circle)
             }
@@ -283,7 +296,7 @@ struct NowPlayingTransportControls: View {
                 Task { await player.next() }
             } label: {
                 Image(systemName: "forward.fill")
-                    .font(.system(size: isTablet ? 24 : 34, weight: .medium))
+                    .font(.system(size: isTablet ? 24 : 29, weight: .medium))
                     .frame(width: controlDiameter, height: controlDiameter)
                     .contentShape(.circle)
             }
@@ -323,18 +336,18 @@ struct NowPlayingVolumeControl: View {
         if settings.playerVolumeControlMode != .hidden {
             HStack(spacing: 10) {
                 Image(systemName: "speaker.fill")
-                    .font(.caption2)
+                    .font(.subheadline.bold())
 
                 volumeSlider
                     .frame(maxWidth: .infinity)
-                    .frame(height: 32)
+                    .frame(minHeight: 44)
                     .layoutPriority(1)
 
                 Image(systemName: "speaker.wave.3.fill")
-                    .font(.caption)
+                    .font(.subheadline.bold())
             }
             .foregroundStyle(.white.opacity(0.62))
-            .frame(height: 42)
+            .frame(height: 44)
         }
     }
 
@@ -344,14 +357,12 @@ struct NowPlayingVolumeControl: View {
         case .hidden:
             EmptyView()
         case .independent:
-            Slider(
+            PlaybackSlider(
                 value: Binding(
                     get: { player.volume },
                     set: { player.setVolume($0) }
-                ),
-                in: 0...1
+                )
             )
-            .tint(.white)
             .accessibilityLabel("ui.player.volume")
         case .system:
             SystemVolumeSlider()
@@ -360,41 +371,58 @@ struct NowPlayingVolumeControl: View {
     }
 }
 
-private final class AlignedSystemVolumeView: MPVolumeView {
-    override func volumeSliderRect(forBounds bounds: CGRect) -> CGRect {
-        bounds
+// MPVolumeView supplies the system volume control. The visible slider uses
+// the same track and drag interaction as playback progress.
+private struct SystemVolumeSlider: View {
+    @StateObject private var output = SystemVolumeOutput()
+    @State private var isDragging = false
+    @State private var dragValue: Double = 0
+
+    var body: some View {
+        PlaybackSlider(value: Binding(
+            get: { isDragging ? dragValue : output.level },
+            set: { value in
+                dragValue = value
+                output.setVolume(value)
+            }
+        ), onEditingChanged: { editing in
+            if editing { dragValue = output.level }
+            isDragging = editing
+        })
+        .background {
+            VolumeViewHost(volumeView: output.volumeView)
+                .opacity(0.01)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
     }
 }
 
-private struct SystemVolumeSlider: UIViewRepresentable {
-    func makeUIView(context: Context) -> AlignedSystemVolumeView {
-        let volumeView = AlignedSystemVolumeView(
-            frame: CGRect(x: 0, y: 0, width: 200, height: 32)
-        )
-        volumeView.backgroundColor = .clear
-        volumeView.showsVolumeSlider = true
-        volumeView.tintColor = .white
-        return volumeView
+@MainActor
+private final class SystemVolumeOutput: ObservableObject {
+    let volumeView = MPVolumeView(frame: CGRect(x: 0, y: 0, width: 200, height: 44))
+    @Published private(set) var level: Double
+
+    init() {
+        let session = AVAudioSession.sharedInstance()
+        level = Double(session.outputVolume)
+        session.publisher(for: \.outputVolume)
+            .map(Double.init)
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$level)
     }
 
-    func updateUIView(
-        _ volumeView: AlignedSystemVolumeView,
-        context: Context
-    ) {
-        volumeView.showsVolumeSlider = true
-        volumeView.tintColor = .white
+    func setVolume(_ value: Double) {
+        guard let slider = volumeView.subviews.compactMap({ $0 as? UISlider }).first else { return }
+        slider.setValue(Float(value), animated: false)
+        slider.sendActions(for: [.valueChanged, .touchUpInside])
     }
+}
 
-    func sizeThatFits(
-        _ proposal: ProposedViewSize,
-        uiView: AlignedSystemVolumeView,
-        context: Context
-    ) -> CGSize? {
-        CGSize(
-            width: proposal.width ?? 200,
-            height: proposal.height ?? 32
-        )
-    }
+private struct VolumeViewHost: UIViewRepresentable {
+    let volumeView: MPVolumeView
+    func makeUIView(context: Context) -> MPVolumeView { volumeView }
+    func updateUIView(_ view: MPVolumeView, context: Context) {}
 }
 
 struct NowPlayingPageSelector: View {
@@ -403,6 +431,7 @@ struct NowPlayingPageSelector: View {
     @Environment(PlayerStore.self) private var player
 
     @Binding var page: NowPlayingPage
+    var showsRoutePicker = false
 
     var body: some View {
         Group {
@@ -432,7 +461,12 @@ struct NowPlayingPageSelector: View {
 
                     Spacer()
 
-                    FloatingLyricsButton()
+                    if showsRoutePicker {
+                        PlayerAirPlayButton()
+                            .frame(width: 44, height: 44)
+                    } else {
+                        FloatingLyricsButton()
+                    }
 
                     Spacer()
 
@@ -479,7 +513,7 @@ struct NowPlayingPageSelector: View {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: systemImage)
                     .symbolVariant(isSelected ? .fill : .none)
-                    .font(.title3)
+                    .font(.title3.weight(.medium))
                     .frame(width: 44, height: 44)
                     .foregroundStyle(
                         isSelected
@@ -487,8 +521,7 @@ struct NowPlayingPageSelector: View {
                             : .white.opacity(0.72)
                     )
                     .background(
-                        .white.opacity(isSelected ? 0.68 : 0),
-                        in: .circle
+                        Circle().fill(.white.opacity(isSelected ? 0.6 : 0)).frame(width: 38, height: 38)
                     )
 
                 if let badgeSystemImage {
@@ -516,4 +549,37 @@ struct NowPlayingPageSelector: View {
         .accessibilityLabel(accessibilityLabel)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
+}
+
+private struct PlayerAirPlayButton: View {
+    @State private var isActive = usesAirPlay
+
+    private static var usesAirPlay: Bool {
+        AVAudioSession.sharedInstance().currentRoute.outputs.contains { $0.portType == .airPlay }
+    }
+
+    var body: some View {
+        AudioRoutePicker()
+            .overlay {
+                Image(systemName: "airplay.audio")
+                    .font(.title3.weight(.medium))
+                    .foregroundStyle(.white.opacity(isActive ? 1 : 0.72))
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { _ in
+                isActive = Self.usesAirPlay
+            }
+    }
+}
+
+private struct AudioRoutePicker: UIViewRepresentable {
+    func makeUIView(context: Context) -> AVRoutePickerView {
+        let picker = AVRoutePickerView()
+        picker.tintColor = .clear
+        picker.activeTintColor = .clear
+        return picker
+    }
+
+    func updateUIView(_ picker: AVRoutePickerView, context: Context) {}
 }

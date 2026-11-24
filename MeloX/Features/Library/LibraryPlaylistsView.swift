@@ -89,6 +89,7 @@ struct LibraryPlaylistsView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("ui.playlists.create.title", systemImage: "plus") { showsCreation = true }
                     .disabled(!library.isLoggedIn)
+                    .tint(.primary)
             }
         }
         .sheet(isPresented: $showsCreation) {

@@ -16,7 +16,7 @@
 "ui.navigation.cloud" = "云盘";
 "ui.navigation.downloads" = "下载";
 "ui.navigation.explore" = "发现";
-"ui.navigation.home" = "首页";
+"ui.navigation.home" = "主页";
 "ui.navigation.library" = "音乐库";
 "ui.navigation.library.liked_playlists" = "收藏歌单";
 "ui.navigation.library.liked_albums" = "收藏专辑";
@@ -200,7 +200,7 @@
 "ui.error.update.no_release" = "当前仓库还没有发布版本。";
 "ui.error.update.invalid_release" = "发布信息格式不完整。";
 "ui.error.heart_mode.no_playable_song" = "网易云音乐暂时没有返回可播放的心动模式歌曲。";
-"ui.error.home.load_failed" = "无法载入首页推荐。";
+"ui.error.home.load_failed" = "无法载入主页推荐。";
 "ui.error.private_radio.start_failed" = "无法开始私人漫游。";
 "ui.error.song_wiki.load_failed" = "无法载入歌曲百科。";
 "ui.error.decode.string_or_numeric_id" = "预期字符串或数字标识符。";
@@ -351,8 +351,8 @@
 "ui.settings.catalog.tab_layout.keywords" = "首页|TabView|标签栏|排序|推荐|播客|云盘|歌曲|歌单|历史";
 "ui.settings.catalog.download.keyword" = "下载";
 "ui.settings.catalog.general.title" = "通用";
-"ui.settings.catalog.general.subtitle" = "主题、启动页面、剪贴板链接与音乐库记忆";
-"ui.settings.catalog.general.keywords" = "主题|浅色|深色|跟随系统|默认页面|上次页面|首页|发现|音乐库|搜索|剪贴板|歌曲链接|一起听链接|网易云链接";
+"ui.settings.catalog.general.subtitle" = "主题、语言、搜索与剪贴板链接";
+"ui.settings.catalog.general.keywords" = "主题|外观|语言|搜索|剪贴板|缓存";
 "ui.settings.catalog.about.section" = "关于与开发";
 "ui.settings.catalog.about.title" = "关于 MeloX";
 "ui.settings.catalog.about.subtitle" = "版本、更新、社区与开源许可";
@@ -635,7 +635,7 @@
 "ui.settings.tab_layout.reset" = "恢复默认页面布局";
 "ui.settings.tab_layout.reset.confirmation" = "恢复默认页面布局？";
 "ui.settings.tab_layout.reset.action" = "恢复默认布局";
-"ui.settings.tab_layout.reset.message" = "推荐、音乐和播客会回到首页；云盘会放到底部标签栏，其他收藏与本地页面会回到音乐库。";
+"ui.settings.tab_layout.reset.message" = "底栏将依次显示首页、发现、播客、音乐库和搜索。推荐和音乐归入首页，云盘归入音乐库。";
 "ui.settings.tab_layout.fixed_entry" = "固定入口";
 "ui.settings.tab_layout.system_fixed" = "系统固定";
 
@@ -1142,6 +1142,7 @@
 "ui.library.login_message.downloads" = "登录后可读取收藏歌曲、歌单、订阅播客、音乐云盘和播放记录；已下载歌曲无需登录。";
 "ui.library.login_message" = "登录后可读取收藏歌曲、歌单、订阅播客、音乐云盘和播放记录。";
 "ui.library.loading" = "正在读取音乐库";
+"ui.library.recently_added" = "最近添加";
 "ui.library.search.favorite_songs" = "在收藏歌曲中搜索";
 "ui.library.search.favorite_playlists" = "在收藏歌单中搜索";
 "ui.library.search.favorite_albums" = "在收藏专辑中搜索";
@@ -2158,7 +2159,7 @@
 "ui.library.artists.search" = "搜索已关注的歌手";
 "ui.library.artists.empty" = "暂无已关注的歌手";
 "ui.library.error.favorite_artists" = "歌手列表加载失败：%@";
-"ui.settings.general.cache_page_content" = "自动缓存首页与音乐库";
+"ui.settings.general.cache_page_content" = "自动缓存主页与音乐库";
 "ui.settings.general.compact_home_actions" = "紧凑首页快捷入口";
 "ui.settings.general.cache_page_content.footer" = "保存最近加载成功的推荐、音乐库和歌单信息。再次打开时先显示缓存，再联网更新；可在储存空间中清理。";
 
@@ -2168,3 +2169,11 @@
 "ui.library.search.loading" = "正在搜索全部收藏…";
 "ui.library.search.empty.title" = "没有找到收藏歌曲";
 "ui.library.search.empty.description" = "试试其他歌名、歌手或专辑名。";
+
+"ui.library.songs.filter" = "筛选";
+"ui.library.songs.filter.all" = "全部歌曲";
+"ui.library.songs.filter.favorites" = "喜爱的歌曲";
+"ui.library.songs.sort" = "排序";
+"ui.library.songs.sort.artist" = "艺人";
+"ui.library.songs.sort.added" = "添加日期";
+"ui.library.songs.sort.name" = "名称";

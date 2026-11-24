@@ -1,98 +1,67 @@
 import SwiftUI
 
-struct HomeEditorialCard: View {
-    let eyebrow: String
-    let title: String
-    let subtitle: String
-    let systemImage: String
-    let colors: [Color]
-    let isCompact: Bool
+extension MusicShelfLayout {
+    var homeInset: CGFloat { max(horizontalPadding, 20) }
+    var homeCoverSize: CGFloat {
+        containerWidth >= 600 ? artworkSize(compact: 160) : containerWidth * 0.4
+    }
+}
 
-    @ScaledMetric(relativeTo: .body) private var compactCardHeight = 132.0
+struct HomeEditorialCard: View {
+    let action: HomeQuickAction
+    let artworkURL: URL?
+    let detail: String
 
     var body: some View {
-        Group {
-            if isCompact {
-                compactContent
-            } else {
-                standardContent
+        Rectangle()
+            .fill(LinearGradient(colors: action.colors, startPoint: .topLeading, endPoint: .bottomTrailing))
+            .aspectRatio(3.0 / 4, contentMode: .fit)
+            .overlay {
+                if let artworkURL {
+                    ArtworkImage(url: artworkURL, cornerRadius: 0, aspectRatio: 3.0 / 4)
+                } else {
+                    RadialGradient(colors: [.white.opacity(0.32), .clear], center: .trailing,
+                                   startRadius: 0, endRadius: 180)
+                }
             }
-        }
-        .contentShape(.rect)
-        .accessibilityElement(children: .combine)
-    }
-
-    private var compactContent: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Image(systemName: systemImage)
-                .font(.title2.weight(.semibold))
-                .accessibilityHidden(true)
-
-            Spacer(minLength: 8)
-
-            Text(title)
-                .font(.headline)
-                .lineLimit(2)
-
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.85))
-                .lineLimit(2)
-        }
-        .foregroundStyle(.white)
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: compactCardHeight)
-        .background {
-            LinearGradient(
-                colors: colors,
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
-        .clipShape(.rect(cornerRadius: 14))
-    }
-
-    private var standardContent: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(eyebrow.uppercased())
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            Text(title)
-                .font(.title3)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-
-            Text(subtitle)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-
-            ZStack(alignment: .bottomLeading) {
-                LinearGradient(
-                    colors: colors,
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-
-                Image(systemName: systemImage)
-                    .font(.system(size: 72, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.24))
-                    .frame(
-                        maxWidth: .infinity,
-                        maxHeight: .infinity
-                    )
-
-                Text(title)
-                    .font(.title.bold())
-                    .foregroundStyle(.white)
-                    .padding(18)
+            .overlay {
+                LinearGradient(stops: [.init(color: .clear, location: 0.35),
+                                       .init(color: .black.opacity(0.78), location: 1)],
+                               startPoint: .top, endPoint: .bottom)
             }
-            .aspectRatio(1.48, contentMode: .fit)
-            .clipShape(.rect(cornerRadius: 14))
-            .padding(.top, 8)
-        }
+            .overlay(alignment: .topTrailing) {
+                Image(systemName: action.systemImage)
+                    .font(.headline.weight(.semibold))
+                    .padding(14)
+                    .accessibilityHidden(true)
+            }
+            .overlay {
+                if artworkURL == nil {
+                    Text(action.title)
+                        .font(.largeTitle.bold())
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 16)
+                }
+            }
+            .overlay(alignment: .bottomLeading) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(action.eyebrow)
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.8))
+                    if artworkURL != nil {
+                        Text(action.title).font(.title2.bold())
+                    }
+                    Text(detail)
+                        .font(.subheadline)
+                        .lineLimit(3)
+                }
+                .padding(16)
+            }
+            .foregroundStyle(.white)
+            .clipShape(.rect(cornerRadius: 16))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(action.title)
+            .accessibilityValue(detail)
     }
 }
 
@@ -108,8 +77,8 @@ struct HomePlaylistCard: View {
                 ?? playlist.updateFrequency
                 ?? playlist.creator?.nickname,
             artworkURL: playlist.artworkURL,
-            artworkSize: layout.artworkSize(compact: 166)
+            artworkSize: layout.homeCoverSize
         )
-        .frame(width: layout.artworkSize(compact: 166))
+        .frame(width: layout.homeCoverSize)
     }
 }

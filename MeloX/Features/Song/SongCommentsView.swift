@@ -217,6 +217,7 @@ struct SongCommentsSheet: View {
                             Image(systemName: "xmark")
                         }
                         .accessibilityLabel("ui.comments.close")
+                        .tint(.primary)
                     }
                 }
         }

@@ -43,7 +43,6 @@ struct PlaylistDetailContent: View {
                     playlist: playlist,
                     summary: toplistSummary,
                     artworkURL: artworkURL,
-                    palette: palette,
                     isPreparingPlayback: isPreparingPlayback,
                     onPlayAll: onPlayAll
                 )
@@ -200,9 +199,9 @@ struct StandardMusicCollectionDetailHero: View {
 
     private var standardHero: some View {
         VStack(spacing: 0) {
-            ArtworkImage(url: artworkURL, cornerRadius: 12)
+            ArtworkImage(url: artworkURL, cornerRadius: 10)
                 .containerRelativeFrame(.horizontal) { width, _ in
-                    min(width * 0.68, 300)
+                    min(width * 0.695, 300)
                 }
                 .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
 
@@ -216,13 +215,13 @@ struct StandardMusicCollectionDetailHero: View {
             Text(subtitle)
                 .font(.title3)
                 .lineLimit(1)
-                .padding(.top, 8)
+                .padding(.top, 5)
 
             Text(metadataText)
-                .font(.subheadline.weight(.medium))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-                .padding(.top, 7)
+                .padding(.top, 5)
 
             MusicCollectionPrimaryActions(
                 tracks: tracks,
@@ -235,7 +234,7 @@ struct StandardMusicCollectionDetailHero: View {
                 .padding(.top, 17)
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 26)
+        .padding(.top, 20)
         .padding(.bottom, 22)
     }
 }
@@ -244,7 +243,6 @@ private struct ToplistDetailHero: View {
     let playlist: Playlist
     let summary: Playlist?
     let artworkURL: URL?
-    let palette: ArtworkDetailPalette
     let isPreparingPlayback: Bool
     let onPlayAll: (Bool) async -> Void
 
@@ -274,20 +272,7 @@ private struct ToplistDetailHero: View {
 
     private var standardHero: some View {
         VStack(spacing: 0) {
-            ArtworkImage(url: artworkURL, cornerRadius: 0)
-                .containerRelativeFrame(.horizontal)
-                .overlay(alignment: .bottom) {
-                    LinearGradient(
-                        colors: [
-                            .clear,
-                            palette.backgroundColor.opacity(0.34),
-                            palette.backgroundColor,
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 126)
-                }
+            immersiveArtwork
 
             Text(playlist.name)
                 .font(.title2.weight(.bold))
@@ -329,6 +314,33 @@ private struct ToplistDetailHero: View {
         .padding(.bottom, 20)
     }
 
+    private var immersiveArtwork: some View {
+        let width = detailMetrics.viewport.width
+        let topBleed = min(width * 0.03, 12)
+        let centerDrop = min(width * 0.035, 15)
+        let side = width + 2 * (topBleed + centerDrop)
+
+        return ArtworkImage(url: artworkURL, cornerRadius: 0)
+            .frame(width: side, height: side)
+            .frame(width: width)
+            .clipped()
+            .mask {
+                LinearGradient(
+                    stops: [
+                        .init(color: .white, location: 0.50),
+                        .init(color: .white.opacity(0.92), location: 0.60),
+                        .init(color: .white.opacity(0.70), location: 0.70),
+                        .init(color: .white.opacity(0.32), location: 0.82),
+                        .init(color: .white.opacity(0.06), location: 0.94),
+                        .init(color: .clear, location: 1),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            }
+            .padding(.top, -topBleed)
+    }
+
     private var creatorName: String {
         playlist.creator?.nickname
             ?? summary?.creator?.nickname
@@ -360,90 +372,61 @@ struct MusicCollectionPrimaryActions: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.musicCollectionDetailMetrics) private var detailMetrics
 
+    @ScaledMetric(relativeTo: .body) private var buttonHeight: CGFloat = 48
+
     var body: some View {
-        GlassEffectContainer(spacing: detailMetrics.usesAdaptiveHeader ? 10 : 14) {
-            HStack(spacing: detailMetrics.usesAdaptiveHeader ? 10 : 14) {
-                Button {
-                    Task {
-                        if let onPlayAll {
-                            await onPlayAll(true)
-                        } else {
-                            await player.playAll(
-                                tracks.shuffled(),
-                                sourceID: sourceID
-                            )
-                        }
-                    }
-                } label: {
-                    Image(systemName: "shuffle")
-                        .font(.title2.weight(.semibold))
-                        .frame(width: 30, height: 30)
-                }
-                .buttonStyle(.glass)
-                .buttonBorderShape(.circle)
-                .controlSize(detailMetrics.usesAdaptiveHeader ? .regular : .large)
-                .disabled(tracks.isEmpty || isPreparingPlayback)
-                .accessibilityLabel("ui.player.shuffle")
+        HStack(spacing: detailMetrics.usesAdaptiveHeader ? 10 : 14) {
+            Button {
+                play(shuffled: true)
+            } label: {
+                Image(systemName: "shuffle")
+                    .frame(width: buttonHeight, height: buttonHeight)
+                    .background(Color.primary.opacity(0.09), in: .circle)
+            }
+            .disabled(tracks.isEmpty || isPreparingPlayback)
+            .accessibilityLabel("ui.player.shuffle")
 
-                Button {
-                    Task {
-                        if let onPlayAll {
-                            await onPlayAll(false)
-                        } else {
-                            await player.playAll(
-                                tracks,
-                                sourceID: sourceID
-                            )
+            Button {
+                play(shuffled: false)
+            } label: {
+                Group {
+                    if isPreparingPlayback {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                            Text("ui.downloads.preparing")
                         }
+                    } else {
+                        Label("ui.common.play", systemImage: "play.fill")
                     }
-                } label: {
-                    Group {
-                        if isPreparingPlayback {
-                            HStack(spacing: 8) {
-                                ProgressView()
-                                Text("ui.downloads.preparing")
-                            }
-                        } else {
-                            Label("ui.common.play", systemImage: "play.fill")
-                        }
-                    }
-                    .font(detailMetrics.usesAdaptiveHeader ? .body.weight(.semibold) : .title3.weight(.bold))
-                    .frame(minWidth: detailMetrics.usesAdaptiveHeader ? 76 : 116, minHeight: 30)
                 }
-                .buttonStyle(.glassProminent)
-                .buttonBorderShape(.capsule)
-                .controlSize(detailMetrics.usesAdaptiveHeader ? .regular : .large)
-                .tint(primaryActionBackground)
-                .foregroundStyle(primaryActionForeground)
-                .disabled(tracks.isEmpty || isPreparingPlayback)
+                .font(.body.weight(.semibold))
+                .padding(.horizontal, 12)
+                .frame(minWidth: detailMetrics.usesAdaptiveHeader ? 100 : 160, minHeight: buttonHeight)
+                .foregroundStyle(colorScheme == .dark ? Color.black : .white)
+                .background(Color.primary, in: .capsule)
+            }
+            .disabled(tracks.isEmpty || isPreparingPlayback)
 
-                Button(action: onToggleSaved) {
-                    Image(
-                        systemName: isSaved ? "checkmark" : "plus"
-                    )
-                    .font(.title2.weight(.semibold))
-                    .frame(width: 30, height: 30)
-                }
-                .buttonStyle(.glass)
-                .buttonBorderShape(.circle)
-                .controlSize(detailMetrics.usesAdaptiveHeader ? .regular : .large)
-                .accessibilityLabel(
-                    isSaved
-                        ? L10n.string("ui.common.unfavorite")
-                        : L10n.string("ui.common.favorite")
-                )
+            Button(action: onToggleSaved) {
+                Image(systemName: isSaved ? "checkmark" : "plus")
+                    .frame(width: buttonHeight, height: buttonHeight)
+                    .background(Color.primary.opacity(0.09), in: .circle)
+            }
+            .accessibilityLabel(isSaved ? L10n.string("ui.common.unfavorite") : L10n.string("ui.common.favorite"))
+        }
+        .buttonStyle(.plain)
+        .font(.title3.weight(.semibold))
+        .foregroundStyle(.primary)
+    }
+
+    private func play(shuffled: Bool) {
+        Task {
+            if let onPlayAll {
+                await onPlayAll(shuffled)
+            } else {
+                await player.playAll(shuffled ? tracks.shuffled() : tracks, sourceID: sourceID)
             }
         }
-    }
-
-    private var primaryActionBackground: Color {
-        if detailMetrics.usesAdaptiveHeader { return .red }
-        return colorScheme == .dark ? .white : .black
-    }
-
-    private var primaryActionForeground: Color {
-        if detailMetrics.usesAdaptiveHeader { return .white }
-        return colorScheme == .dark ? .black : .white
     }
 }
 
@@ -492,7 +475,7 @@ struct MusicCollectionArtworkBackdrop: View {
                         .resizable()
                         .scaledToFill()
                         .frame(width: proxy.size.width, height: proxy.size.height)
-                        .opacity(0.22)
+                        .opacity(palette.prefersDarkAppearance ? 0.10 : 0.16)
                         .transition(.opacity)
                 }
 

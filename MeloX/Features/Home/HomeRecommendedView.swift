@@ -11,6 +11,8 @@ struct HomeRecommendedView: View {
     @State private var fallbacks: [
         HomeRecommendationSlot: HomeRecommendationFallback
     ] = [:]
+    @State private var dailySongs: [Song] = []
+    @State private var newAlbums: [Album] = []
     @State private var charts: [Playlist] = []
     @State private var loadedPrimaryContext:
         HomeRecommendedPrimaryContext?
@@ -119,9 +121,28 @@ struct HomeRecommendedView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 32) {
                 HomeQuickActionsView(
+                    dailySongs: dailySongs,
+                    hotChart: hotSongsChart,
+                    radar: feed.firstRadarPlaylist,
                     activeAction: activeAction,
                     perform: perform
                 )
+
+                if settings.isContentFeatureEnabled(.listeningHistory), !library.recentSongs.isEmpty {
+                    HomeMediaStrip(title: L10n.string("ui.navigation.recently_played"), destination: .recentlyPlayed) {
+                        ForEach(library.recentSongs.prefix(12)) { song in
+                            Button {
+                                Task { await player.play(song, in: library.recentSongs) }
+                            } label: {
+                                HomeSongCard(song: song)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                if !newAlbums.isEmpty {
+                    HomeAlbumSection(albums: newAlbums)
+                }
 
                 if !hasRecommendationPayload {
                     initialState
@@ -155,7 +176,7 @@ struct HomeRecommendedView: View {
                     }
                 }
             }
-            .padding(.top, 8)
+            .padding(.top, 16)
             .padding(.bottom, 28)
         }
         .refreshable {
@@ -257,6 +278,8 @@ struct HomeRecommendedView: View {
     private func load(refresh: Bool = false) async {
         #if DEBUG && targetEnvironment(simulator)
         if MeloXDesignPreview.isEnabled {
+            dailySongs = MeloXDesignPreview.songs
+            newAlbums = dailySongs.compactMap(\.album)
             hotSongsChart = MeloXDesignPreview.toplist
             return
         }
@@ -273,6 +296,8 @@ struct HomeRecommendedView: View {
             if displayedPrimaryContext != primaryContext {
                 payload = nil
                 charts = []
+                dailySongs = []
+                newAlbums = []
                 fallbacks = [:]
                 hotSongsChart = nil
                 loadedPrimaryContext = nil
@@ -282,6 +307,8 @@ struct HomeRecommendedView: View {
                 ) {
                     payload = snapshot.payload
                     charts = snapshot.charts
+                    dailySongs = snapshot.dailySongs ?? []
+                    newAlbums = snapshot.newAlbums ?? []
                     fallbacks = snapshot.fallbacks
                     hotSongsChart = Self.hotSongsChart(in: charts)
                     phase = .loaded
@@ -301,11 +328,17 @@ struct HomeRecommendedView: View {
                 newPayload = payload
                 newCharts = charts
             } else {
+                async let featured: Void = loadFeaturedContent(for: primaryContext)
                 async let loadedHomePage = api.homePage(
                     refresh: refresh
                 )
                 async let loadedCharts = try? api.toplists()
-                newPayload = try await loadedHomePage
+                do {
+                    newPayload = try await loadedHomePage
+                } catch {
+                    await featured
+                    throw error
+                }
                 try Task.checkCancellation()
                 if newPayload.blocks.isEmpty, let payload, !payload.blocks.isEmpty {
                     throw APIError.invalidResponse
@@ -317,6 +350,7 @@ struct HomeRecommendedView: View {
                 payloadVersion += 1
 
                 newCharts = await loadedCharts ?? charts
+                await featured
                 lastSuccessfulRefresh = Date()
             }
             try Task.checkCancellation()
@@ -339,6 +373,17 @@ struct HomeRecommendedView: View {
                 actionErrorMessage = error.localizedDescription
             }
         }
+    }
+
+    private func loadFeaturedContent(for context: HomeRecommendedPrimaryContext) async {
+        async let albums = try? api.newAlbums(limit: 12)
+        async let songs = library.isLoggedIn ? try? api.dailySongs() : nil
+        let results = await (albums, songs)
+        guard !Task.isCancelled,
+              context.accountToken == settings.cookie.hashValue,
+              context.musicArea == settings.musicArea else { return }
+        if let albums = results.0 { newAlbums = albums }
+        if let songs = results.1 { dailySongs = songs }
     }
 
     private func loadFallbacks() async {
@@ -393,7 +438,8 @@ struct HomeRecommendedView: View {
                 musicArea: settings.musicArea
               ) else { return }
         await api.pageContentCache.store(
-            HomeContentSnapshot(payload: payload, charts: charts, fallbacks: fallbacks),
+            HomeContentSnapshot(payload: payload, charts: charts, fallbacks: fallbacks,
+                                dailySongs: dailySongs, newAlbums: newAlbums),
             for: HomeContentSnapshot.cacheKey(musicArea: settings.musicArea)
         )
     }

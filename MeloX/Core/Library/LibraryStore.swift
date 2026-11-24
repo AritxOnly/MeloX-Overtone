@@ -41,6 +41,7 @@ final class LibraryStore {
     private var refreshingCookie: String?
 
     @ObservationIgnored
+    private(set) var favoriteAddedDates: [Int: Date] = [:]
     private var favoriteSongIDs: [Int] = []
 
     @ObservationIgnored
@@ -268,10 +269,11 @@ final class LibraryStore {
             }
 
             do {
-                let loadedSongIDs = try await api.likedSongIDs(
+                let references = try await api.likedSongReferences(
                     userID: loadedProfile.id,
                     likedPlaylistID: likedPlaylistID
                 )
+                let loadedSongIDs = references.map(\.id)
                 let firstPage = try await api.songDetailsPage(
                     ids: loadedSongIDs,
                     offset: 0,
@@ -280,6 +282,13 @@ final class LibraryStore {
                 guard isCurrentRefresh(cookie) else { return }
                 guard loadedSongIDs.isEmpty || !firstPage.songs.isEmpty else {
                     throw APIError.invalidResponse
+                }
+                favoriteAddedDates = references.reduce(into: [:]) { dates, track in
+                    if let milliseconds = track.addedMilliseconds, milliseconds > 0 {
+                        dates[track.id] = Date(timeIntervalSince1970: milliseconds / 1000)
+                    } else {
+                        dates[track.id] = favoriteAddedDates[track.id]
+                    }
                 }
                 favoriteSongIDs = loadedSongIDs
                 favoriteSongIDSet = Set(loadedSongIDs)
@@ -366,22 +375,6 @@ final class LibraryStore {
         guard favoriteSongPageLoadID == loadID else { return }
         favoriteSongPageLoadTask = nil
         favoriteSongPageLoadID = nil
-    }
-
-    func loadFavoriteSongForLocation(_ songID: Int) async -> Bool {
-        if favoriteSongs.contains(where: { $0.id == songID }) { return true }
-        let requestedIDs = favoriteSongIDs
-        guard let index = requestedIDs.firstIndex(of: songID) else { return false }
-
-        while favoriteSongsNextOffset <= index, hasMoreFavoriteSongs {
-            guard !Task.isCancelled else { return false }
-            let previousOffset = favoriteSongsNextOffset
-            await loadMoreFavoriteSongs()
-            guard !Task.isCancelled,
-                  favoriteSongIDs == requestedIDs,
-                  favoriteSongsNextOffset > previousOffset else { return false }
-        }
-        return favoriteSongs.contains(where: { $0.id == songID })
     }
 
     func loadRemainingFavoriteSongs() async {
@@ -535,6 +528,7 @@ final class LibraryStore {
         }
 
         let wasLiked = contains(song: song)
+        let previousDate = favoriteAddedDates[song.id]
         setLocalSong(song, isLiked: !wasLiked)
 
         Task { @MainActor [weak self] in
@@ -542,7 +536,7 @@ final class LibraryStore {
             do {
                 try await self.api.setSongLiked(id: song.id, isLiked: !wasLiked)
             } catch {
-                self.setLocalSong(song, isLiked: wasLiked)
+                self.setLocalSong(song, isLiked: wasLiked, addedAt: previousDate)
                 self.errorMessage = error.localizedDescription
             }
         }
@@ -708,6 +702,7 @@ final class LibraryStore {
         subscribedPodcasts = []
         recentSongs = []
         likedPlaylistID = nil
+        favoriteAddedDates = [:]
         favoriteSongIDs = []
         favoriteSongIDSet = []
         favoriteSongTotalCount = 0
@@ -723,7 +718,8 @@ final class LibraryStore {
 
     private func setLocalSong(
         _ song: Song,
-        isLiked: Bool
+        isLiked: Bool,
+        addedAt: Date? = Date()
     ) {
         if let index = favoriteSongIDs.firstIndex(of: song.id) {
             favoriteSongIDs.remove(at: index)
@@ -731,6 +727,7 @@ final class LibraryStore {
                 favoriteSongsNextOffset -= 1
             }
         }
+        favoriteAddedDates[song.id] = isLiked ? addedAt : nil
         favoriteSongIDSet.remove(song.id)
         favoriteSongs.removeAll { $0.id == song.id }
 
@@ -775,6 +772,7 @@ final class LibraryStore {
         profile = snapshot.profile
         accountDetail = snapshot.accountDetail
         favoriteSongs = snapshot.favoriteSongs
+        favoriteAddedDates = snapshot.favoriteAddedDates ?? [:]
         favoriteSongIDs = snapshot.favoriteSongIDs
         favoriteSongIDSet = Set(snapshot.favoriteSongIDs)
         favoriteSongTotalCount = snapshot.favoriteSongIDs.count
@@ -813,7 +811,8 @@ final class LibraryStore {
             subscribedPodcastsNextOffset: subscribedPodcastsNextOffset,
             hasMoreSubscribedPodcasts: hasMoreSubscribedPodcasts,
             recentSongs: recentSongs,
-            likedPlaylistID: likedPlaylistID
+            likedPlaylistID: likedPlaylistID,
+            favoriteAddedDates: favoriteAddedDates
         )
         await api.pageContentCache.store(snapshot, for: LibraryContentSnapshot.cacheKey)
     }

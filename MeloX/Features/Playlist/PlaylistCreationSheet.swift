@@ -42,6 +42,7 @@ struct PlaylistCreationSheet: View {
                         }
                     }
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
+                    .tint(.primary)
                 }
             }
         }

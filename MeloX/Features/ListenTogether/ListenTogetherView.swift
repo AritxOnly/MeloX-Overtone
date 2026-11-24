@@ -36,6 +36,7 @@ struct ListenTogetherView: View {
                     ToolbarItem(placement: .primaryAction) {
                         ProgressView()
                             .accessibilityLabel(operation.title)
+                            .tint(.primary)
                     }
                 }
             }

@@ -17,6 +17,7 @@ struct SongCommentRepliesSheet: View {
                             Image(systemName: "xmark")
                         }
                         .accessibilityLabel("ui.comments.close_replies")
+                        .tint(.primary)
                     }
                 }
         }

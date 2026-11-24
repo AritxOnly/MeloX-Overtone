@@ -27,10 +27,6 @@ struct MeloXApp: App {
         if MeloXDesignPreview.isEnabled {
             settings.hasCompletedOnboarding = true
             settings.setAppLanguage(.simplifiedChinese)
-            settings.lastSelectedTab = .home
-            if ProcessInfo.processInfo.environment["MELOX_UI_LIBRARY_HOME"] == "1" {
-                settings.setPage(.libraryAlbums, placement: .home)
-            }
         }
         #endif
         let releaseNotes = AppReleaseNotesStore(
@@ -87,7 +83,7 @@ struct MeloXApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView(initialTab: settings.launchTab)
+            ContentView()
                 .environment(settings)
                 .environment(api)
                 .environment(library)

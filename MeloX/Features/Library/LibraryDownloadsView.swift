@@ -37,30 +37,16 @@ struct LibraryDownloadsView: View {
             }
 
             if !filteredDownloadedSongs.isEmpty {
-                Button {
-                    Task { await player.playAll(filteredDownloadedSongs) }
-                } label: {
-                    Label(
-                        isSearching
-                            ? L10n.string("ui.common.play_search_results")
-                            : L10n.string("ui.common.play_all"),
-                        systemImage: "play.fill"
-                    )
+                SongListPlaybackActions { shuffled in
+                    let songs = filteredDownloadedSongs
+                    Task { await player.playAll(shuffled ? songs.shuffled() : songs) }
                 }
             }
 
             ForEach(filteredDownloads) { download in
-                Button {
-                    Task {
-                        await player.play(
-                            download.song,
-                            in: filteredDownloadedSongs
-                        )
-                    }
-                } label: {
-                    TrackRowView(song: download.song, showsArtwork: true)
+                TrackRowView(song: download.song, showsArtwork: true) {
+                    Task { await player.play(download.song, in: filteredDownloadedSongs) }
                 }
-                .buttonStyle(.plain)
                 .swipeActions {
                     Button(role: .destructive) {
                         downloads.remove(songID: download.id)

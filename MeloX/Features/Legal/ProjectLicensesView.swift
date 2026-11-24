@@ -305,6 +305,7 @@ struct LegalDocumentView: View {
                     Link(destination: sourceURL) {
                         Label("ui.legal.view_source", systemImage: "arrow.up.right")
                     }
+                    .tint(.primary)
                 }
             }
         }

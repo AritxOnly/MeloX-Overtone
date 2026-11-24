@@ -81,7 +81,7 @@ enum FixtureError: Error { case offline }
     func subscribedPodcasts(limit: Int) async throws -> PodcastPage {
         PodcastPage(podcasts: [], hasMore: false, totalCount: 0)
     }
-    func likedSongIDs(userID: Int, likedPlaylistID: Int?) async throws -> [Int] { [11] }
+    func likedSongReferences(userID: Int, likedPlaylistID: Int?) async throws -> [TrackReference] { [TrackReference(id: 11)] }
     func songDetailsPage(ids: [Int], offset: Int, limit: Int) async throws -> SongCollectionPage {
         guard !failFavorites else { throw FixtureError.offline }
         return SongCollectionPage(songs: [Song(id: 11, name: "Loaded song", artists: [])], nextOffset: 1, totalCount: 1)
@@ -116,6 +116,7 @@ enum FixtureError: Error { case offline }
     var refreshingCookie: String?
     var lastSuccessfulRefresh: Date?
     var favoriteSongIDs: [Int] = []
+    var favoriteAddedDates: [Int: Date] = [:]
     var favoriteSongIDSet: Set<Int> = []
     let favoriteSongPageSize = 100
     var favoriteSongPageLoadTask: Task<Void, Never>?

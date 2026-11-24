@@ -85,6 +85,7 @@ struct AccountHomeView: View {
             ShareLink(item: homepageURL) {
                 Image(systemName: "square.and.arrow.up")
             }
+            .tint(.primary)
             .accessibilityLabel("ui.account.share_profile")
 
             Menu {
@@ -96,6 +97,7 @@ struct AccountHomeView: View {
             } label: {
                 Image(systemName: "ellipsis")
             }
+            .tint(.primary)
             .accessibilityLabel("ui.common.more")
         }
         .sharedBackgroundVisibility(.visible)

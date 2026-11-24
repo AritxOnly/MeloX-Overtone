@@ -51,6 +51,7 @@ struct SongRecognitionView: View {
                         systemImage: "arrow.clockwise",
                         action: startRecognition
                     )
+                        .tint(.primary)
                 }
             }
         }

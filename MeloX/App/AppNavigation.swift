@@ -94,6 +94,7 @@ enum MusicRoute: Hashable {
     case podcastCategory(PodcastCategory)
     case podcastProgram(PodcastProgram)
     case dailySongs
+    case recentlyPlayed
     case newAlbums
     case toplists
 
@@ -119,6 +120,7 @@ enum MusicRoute: Hashable {
              .podcastCategory,
              .podcastProgram,
              .dailySongs,
+             .recentlyPlayed,
              .newAlbums,
              .toplists:
             false
@@ -147,6 +149,8 @@ enum MusicRoute: Hashable {
             "podcast-category-\(category.id)"
         case .podcastProgram(let program):
             "podcast-program-\(program.id)"
+        case .recentlyPlayed:
+            "recently-played"
         case .dailySongs:
             "daily-songs"
         case .newAlbums:
@@ -172,6 +176,7 @@ enum MusicRoute: Hashable {
              .podcasts,
              .podcastCategory,
              .dailySongs,
+             .recentlyPlayed,
              .newAlbums,
              .toplists:
             nil
@@ -247,6 +252,7 @@ extension View {
     func musicDestinations(in namespace: Namespace.ID) -> some View {
         navigationDestination(for: MusicRoute.self) { route in
             MusicRouteDestination(route: route)
+                .musicNavigationBarAtTop()
                 .musicNavigationTransition(for: route, in: namespace)
         }
     }
@@ -278,6 +284,9 @@ private struct MusicRouteDestination: View {
             PodcastCategoryView(category: category)
         case .podcastProgram(let program):
             PodcastProgramDetailView(program: program)
+        case .recentlyPlayed:
+            LibraryHistoryView(searchQuery: "")
+                .navigationTitle("ui.navigation.recently_played")
         case .dailySongs:
             DailySongsView()
         case .newAlbums:

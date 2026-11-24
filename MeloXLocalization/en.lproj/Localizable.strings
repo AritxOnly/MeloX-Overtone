@@ -351,8 +351,8 @@
 "ui.settings.catalog.tab_layout.keywords" = "Home|TabView|tab bar|order|For You|podcasts|cloud|songs|playlists|history";
 "ui.settings.catalog.download.keyword" = "downloads";
 "ui.settings.catalog.general.title" = "General";
-"ui.settings.catalog.general.subtitle" = "Theme, launch page, clipboard links, and Library memory";
-"ui.settings.catalog.general.keywords" = "theme|light|dark|system|default page|last page|Home|Explore|Library|Search|clipboard|song link|Listen Together link|NetEase link";
+"ui.settings.catalog.general.subtitle" = "Theme, language, search, and clipboard links";
+"ui.settings.catalog.general.keywords" = "theme|appearance|language|search|clipboard|cache";
 "ui.settings.catalog.about.section" = "About & Development";
 "ui.settings.catalog.about.title" = "About MeloX";
 "ui.settings.catalog.about.subtitle" = "Version, updates, community, and open-source licenses";
@@ -635,7 +635,7 @@
 "ui.settings.tab_layout.reset" = "Restore Default Page Layout";
 "ui.settings.tab_layout.reset.confirmation" = "Restore the default page layout?";
 "ui.settings.tab_layout.reset.action" = "Restore Default Layout";
-"ui.settings.tab_layout.reset.message" = "Recommended, Music, and Podcasts return to Home; Cloud Drive moves to the tab bar; other favorites and local pages return to Library.";
+"ui.settings.tab_layout.reset.message" = "The tab bar will show Home, Explore, Podcasts, Library, and Search in that order. Recommended and Music return to Home, and Cloud Drive returns to Library.";
 "ui.settings.tab_layout.fixed_entry" = "Fixed Entry";
 "ui.settings.tab_layout.system_fixed" = "Fixed by System";
 
@@ -1142,6 +1142,7 @@
 "ui.library.login_message.downloads" = "Sign in to access favorite songs, playlists, subscribed podcasts, Cloud Drive, and listening history. Downloaded songs are available without signing in.";
 "ui.library.login_message" = "Sign in to access favorite songs, playlists, subscribed podcasts, Cloud Drive, and listening history.";
 "ui.library.loading" = "Loading Library";
+"ui.library.recently_added" = "Recently Added";
 "ui.library.search.favorite_songs" = "Search Favorite Songs";
 "ui.library.search.favorite_playlists" = "Search Favorite Playlists";
 "ui.library.search.favorite_albums" = "Search Favorite Albums";
@@ -2168,3 +2169,11 @@
 "ui.library.search.loading" = "Searching all favorites…";
 "ui.library.search.empty.title" = "No favorite songs found";
 "ui.library.search.empty.description" = "Try another song, artist, or album name.";
+
+"ui.library.songs.filter" = "Filter";
+"ui.library.songs.filter.all" = "All Songs";
+"ui.library.songs.filter.favorites" = "Favorites";
+"ui.library.songs.sort" = "Sort By";
+"ui.library.songs.sort.artist" = "Artist";
+"ui.library.songs.sort.added" = "Date Added";
+"ui.library.songs.sort.name" = "Title";

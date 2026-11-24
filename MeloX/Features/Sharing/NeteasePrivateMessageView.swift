@@ -62,6 +62,7 @@ struct NeteasePrivateMessageView: View {
                     }
                 }
                 .disabled(selectedContactIDs.isEmpty || isSending)
+                .tint(.primary)
             }
         }
         .interactiveDismissDisabled(isSending)

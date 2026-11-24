@@ -9,27 +9,19 @@ struct LibraryHistoryView: View {
     var body: some View {
         List {
             if !displayedSongs.isEmpty {
-                Button {
-                    Task { await player.playAll(displayedSongs) }
-                } label: {
-                    Label(
-                        isSearching
-                            ? L10n.string("ui.common.play_search_results")
-                            : L10n.string("ui.common.play_all"),
-                        systemImage: "play.fill"
-                    )
+                SongListPlaybackActions { shuffled in
+                    let songs = displayedSongs
+                    Task { await player.playAll(shuffled ? songs.shuffled() : songs) }
                 }
             }
 
             ForEach(displayedSongs) { song in
-                Button {
+                TrackRowView(song: song, showsArtwork: true) {
                     Task { await player.play(song, in: displayedSongs) }
-                } label: {
-                    TrackRowView(song: song, showsArtwork: true)
                 }
-                .buttonStyle(.plain)
             }
         }
+        .navigationBarTitleDisplayMode(.large)
         .listStyle(.plain)
         .refreshable {
             await library.refresh(force: true)

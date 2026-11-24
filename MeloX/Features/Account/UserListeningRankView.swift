@@ -44,6 +44,7 @@ struct UserListeningRankView: View {
                 }
                 .disabled(currentPhase == .loading)
                 .accessibilityLabel("ui.account.listening_rank.refresh")
+                .tint(.primary)
             }
         }
         .alert(

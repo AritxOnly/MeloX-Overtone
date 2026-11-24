@@ -365,6 +365,12 @@ struct UserSummary: Codable, Hashable {
 
 struct TrackReference: Codable, Hashable {
     let id: Int
+    var addedMilliseconds: Double? = nil
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case addedMilliseconds = "t"
+    }
 }
 
 struct Playlist: Codable, Hashable, Identifiable {

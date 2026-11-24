@@ -1,13 +1,14 @@
 import Foundation
 
 enum SettingsRoute: Hashable {
+    case recognition
+    case privateMessages
     case accountHome
     case playback
     case playerAppearance
     case lyrics
     case systemPlayback
     case general
-    case tabLayout
     case contentFeatures
     case content
     case storage
@@ -98,11 +99,10 @@ enum SettingsCatalog {
             items: [
                 SettingsCatalogItem(
                     route: .contentFeatures,
-                    title: L10n.string("ui.settings.catalog.features.title"),
-                    subtitle: L10n.string("ui.settings.catalog.features.subtitle"),
+                    title: L10n.string("ui.settings.background_mix.title"),
+                    subtitle: L10n.string("ui.settings.background_mix.always.subtitle"),
                     systemImage: "switch.2",
-                    keywords: L10n.keywords("ui.settings.catalog.features.keywords")
-                        + L10n.keywords("ui.settings.background_mix.keywords")
+                    keywords: L10n.keywords("ui.settings.background_mix.keywords")
                 ),
                 SettingsCatalogItem(
                     route: .content,
@@ -129,16 +129,6 @@ enum SettingsCatalog {
         SettingsCatalogSection(
             title: L10n.string("ui.settings.catalog.interface.section"),
             items: [
-                SettingsCatalogItem(
-                    route: .tabLayout,
-                    title: L10n.string("ui.settings.catalog.tab_layout.title"),
-                    subtitle: L10n.string("ui.settings.catalog.tab_layout.subtitle"),
-                    systemImage: "rectangle.3.group",
-                    keywords: L10n.keywords("ui.settings.catalog.tab_layout.keywords")
-                        + (AppFeatureAvailability.downloads
-                            ? L10n.keywords("ui.settings.catalog.download.keyword")
-                            : [])
-                ),
                 SettingsCatalogItem(
                     route: .general,
                     title: L10n.string("ui.settings.catalog.general.title"),

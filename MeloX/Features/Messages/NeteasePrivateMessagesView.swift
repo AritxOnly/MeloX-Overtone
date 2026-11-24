@@ -34,6 +34,7 @@ struct NeteasePrivateMessagesView: View {
                     Image(systemName: "square.and.pencil")
                 }
                 .accessibilityLabel("ui.messages.start_private_message")
+                .tint(.primary)
             }
         }
         .refreshable {

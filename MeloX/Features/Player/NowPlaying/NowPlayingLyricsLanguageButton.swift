@@ -5,6 +5,7 @@ struct NowPlayingLyricsLanguageButton: View {
 
     let hasTranslations: Bool
     let hasRomanizations: Bool
+    var usesMenuLabel = false
 
     var body: some View {
         @Bindable var settings = settings
@@ -57,19 +58,23 @@ struct NowPlayingLyricsLanguageButton: View {
             }
 
         } label: {
-            Image(systemName: "translate")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 44, height: 44)
-                .background(
-                    .white.opacity(
-                        hasEnabledAnnotation
-                            ? 0.18
-                            : 0.1
-                    ),
-                    in: .circle
-                )
-                .contentShape(.circle)
+            if usesMenuLabel {
+                Label("ui.settings.lyrics.content.section.translation_pronunciation", systemImage: "translate")
+            } else {
+                Image(systemName: "translate")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        .white.opacity(
+                            hasEnabledAnnotation
+                                ? 0.18
+                                : 0.1
+                        ),
+                        in: .circle
+                    )
+                    .contentShape(.circle)
+            }
         }
         .buttonStyle(.plain)
         .accessibilityLabel("ui.settings.lyrics.content.section.translation_pronunciation")

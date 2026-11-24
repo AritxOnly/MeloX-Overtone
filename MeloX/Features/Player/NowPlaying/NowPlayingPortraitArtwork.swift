@@ -17,7 +17,7 @@ struct NowPlayingPortraitArtwork: View {
     var body: some View {
         ArtworkImage(
             url: song.album?.artworkURL,
-            cornerRadius: 12
+            cornerRadius: isArtworkPage ? 10 : 8
         )
         .scaleEffect(bounceScale)
         .shadow(

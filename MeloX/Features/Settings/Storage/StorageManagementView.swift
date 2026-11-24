@@ -35,6 +35,7 @@ struct StorageManagementView: View {
                 }
                 .disabled(model.isRefreshing || model.isBusy)
                 .accessibilityLabel("ui.settings.storage.refresh_accessibility")
+                .tint(.primary)
             }
         }
         .task {
