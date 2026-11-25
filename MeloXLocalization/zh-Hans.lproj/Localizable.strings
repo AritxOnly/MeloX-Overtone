@@ -11,7 +11,7 @@
 "ui.common.custom" = "自定义";
 "ui.common.history" = "历史";
 "ui.common.off" = "关闭";
-"ui.common.playlists" = "歌单";
+"ui.common.playlists" = "播放列表";
 "ui.common.recommended" = "推荐";
 "ui.common.seconds" = "%ld 秒";
 "ui.common.songs" = "歌曲";
@@ -21,7 +21,7 @@
 "ui.navigation.explore" = "发现";
 "ui.navigation.home" = "主页";
 "ui.navigation.library" = "音乐库";
-"ui.navigation.library.liked_playlists" = "收藏歌单";
+"ui.navigation.library.liked_playlists" = "播放列表";
 "ui.navigation.library.liked_albums" = "收藏专辑";
 "ui.explore.featured.title" = "为你精选";
 "ui.navigation.library.liked_songs" = "收藏歌曲";
@@ -35,7 +35,7 @@
 "ui.settings.appearance.option.dark" = "深色";
 "ui.settings.appearance.option.light" = "浅色";
 "ui.settings.appearance.option.system" = "跟随系统";
-"ui.settings.navigation.page.liked_playlists" = "歌单（收藏）";
+"ui.settings.navigation.page.liked_playlists" = "播放列表";
 "ui.settings.navigation.page.liked_albums" = "专辑（收藏）";
 "ui.settings.navigation.page.liked_songs" = "歌曲（收藏）";
 "ui.settings.navigation.page.subscribed_podcasts" = "播客（收藏）";
@@ -151,7 +151,7 @@
 "ui.common.metadata_separator" = " · ";
 "ui.common.ok" = "好";
 "ui.common.open_system_settings" = "打开系统设置";
-"ui.common.playlist" = "歌单";
+"ui.common.playlist" = "播放列表";
 "ui.common.podcast" = "播客";
 "ui.common.restore" = "还原";
 "ui.common.restore_defaults" = "恢复默认";
@@ -170,7 +170,7 @@
 "ui.metadata.netease_user" = "网易云用户";
 "ui.metadata.unknown_album" = "未知专辑";
 "ui.metadata.unknown_artist" = "未知艺术家";
-"ui.metadata.unknown_playlist" = "未知歌单";
+"ui.metadata.unknown_playlist" = "未知播放列表";
 "ui.metadata.unknown_podcast" = "未知播客";
 "ui.metadata.unknown_program" = "未知节目";
 "ui.metadata.unknown_song" = "未知歌曲";
@@ -179,8 +179,8 @@
 "ui.messages.resource_summary" = "[%@] %@";
 
 "ui.search.kind.albums" = "专辑";
-"ui.search.kind.artists" = "歌手";
-"ui.search.kind.playlists" = "歌单";
+"ui.search.kind.artists" = "艺人";
+"ui.search.kind.playlists" = "播放列表";
 "ui.search.kind.podcasts" = "播客";
 "ui.search.kind.songs" = "歌曲";
 "ui.music_area.all" = "全部地区";
@@ -284,7 +284,7 @@
 "ui.lyrics.accessibility.translation" = "翻译：%@";
 "ui.lyrics.notification.next" = "下一句：%@";
 "ui.lyrics.notification.preview.song" = "示例歌曲";
-"ui.lyrics.notification.preview.artist" = "示例歌手";
+"ui.lyrics.notification.preview.artist" = "示例艺人";
 "ui.lyrics.notification.preview.current" = "这是一条通知歌词预览";
 "ui.lyrics.notification.preview.translation" = "This is a lyrics notification preview";
 "ui.lyrics.notification.preview.next" = "下一句歌词会显示在这里";
@@ -341,7 +341,7 @@
 "ui.settings.catalog.features.subtitle" = "启用或停用播客、下载、云盘与最近播放";
 "ui.settings.catalog.features.keywords" = "开关|隐藏|播客|广播|下载|云盘|最近播放|播放记录";
 "ui.settings.catalog.content.title" = "发现内容";
-"ui.settings.catalog.content.subtitle" = "新碟地区、歌单信息与听歌识曲";
+"ui.settings.catalog.content.subtitle" = "新碟地区、播放列表信息与听歌识曲";
 "ui.settings.catalog.content.keywords" = "华语|欧美|韩国|日本|播放量|听歌识曲|麦克风|识别时长|持续识别";
 "ui.settings.catalog.storage.title" = "存储管理";
 "ui.settings.catalog.storage.subtitle.downloads" = "空间统计、下载管理与缓存清理";
@@ -351,7 +351,7 @@
 "ui.settings.catalog.interface.section" = "界面与应用";
 "ui.settings.catalog.tab_layout.title" = "页面与标签栏";
 "ui.settings.catalog.tab_layout.subtitle" = "调整首页、标签栏与音乐库中的页面";
-"ui.settings.catalog.tab_layout.keywords" = "首页|TabView|标签栏|排序|推荐|播客|云盘|歌曲|歌单|历史";
+"ui.settings.catalog.tab_layout.keywords" = "首页|TabView|标签栏|排序|推荐|播客|云盘|歌曲|播放列表|历史";
 "ui.settings.catalog.download.keyword" = "下载";
 "ui.settings.catalog.general.title" = "通用";
 "ui.settings.catalog.general.subtitle" = "主题、语言、搜索与剪贴板链接";
@@ -615,7 +615,7 @@
 "ui.settings.content.title" = "发现与识曲";
 "ui.settings.content.section.discovery" = "发现内容";
 "ui.settings.content.album_region" = "新碟地区";
-"ui.settings.content.show_play_count" = "显示歌单播放量";
+"ui.settings.content.show_play_count" = "显示播放列表播放量";
 "ui.settings.content.recognition_duration" = "识别时长";
 "ui.settings.content.section.recognition" = "听歌识曲";
 "ui.settings.content.recognition.footer.continuous" = "持续识别会不断录音并追加识别结果，直到手动停止。原始录音不会上传，只发送设备端生成的音频指纹。";
@@ -653,7 +653,7 @@
 "ui.accessibility.author_and_content" = "%1$@：%2$@";
 "ui.accessibility.track_title_and_subtitle" = "%1$@，%2$@";
 "ui.accessibility.podcast_title_and_duration" = "%1$@，%2$@";
-"ui.accessibility.song_and_artist" = "%1$@，歌手：%2$@";
+"ui.accessibility.song_and_artist" = "%1$@，艺人：%2$@";
 "ui.accessibility.lyric_eyebrow_and_text" = "%1$@，%2$@";
 "ui.comments.reply_content" = "@%1$@：%2$@";
 "ui.settings.storage.error.file_detail" = "%1$@：%2$@";
@@ -871,7 +871,7 @@
 "ui.settings.storage.delete_all_downloads" = "删除所有下载";
 "ui.settings.storage.delete_all_downloads.subtitle" = "同时取消正在进行的下载任务";
 "ui.settings.storage.section.destructive" = "危险操作";
-"ui.settings.storage.destructive.footer" = "删除的歌曲文件无法恢复，但不会影响网易云音乐中的收藏和歌单。";
+"ui.settings.storage.destructive.footer" = "删除的歌曲文件无法恢复，但不会影响网易云音乐中的收藏和播放列表。";
 "ui.settings.storage.operation.cleared_approximately" = "已清理约 %@";
 "ui.settings.storage.operation.cleared_network_cache" = "已清理 %@ 网络与图片缓存";
 "ui.settings.storage.operation.cleared_temporary_files" = "已清理 %@ 临时文件";
@@ -957,7 +957,7 @@
 "ui.onboarding.welcome.subtitle" = "用原生方式发现、播放和收藏网易云音乐。";
 "ui.legal.unofficial_disclaimer" = "弦外是非官方第三方客户端，与网易云音乐及其关联公司不存在隶属、合作或授权关系。";
 "ui.legal.projects_licenses.title" = "项目与许可";
-"ui.onboarding.account.logged_in_message" = "你的收藏歌曲、歌单和播放历史会显示在音乐库中。";
+"ui.onboarding.account.logged_in_message" = "你的收藏歌曲、播放列表和播放历史会显示在音乐库中。";
 "ui.onboarding.start" = "开始使用弦外";
 "ui.account.login_netease" = "登录网易云音乐";
 "ui.service.netease_cloud_music" = "网易云音乐";
@@ -965,7 +965,7 @@
 "ui.account.logged_in" = "已登录";
 "ui.onboarding.account.connect" = "连接网易云音乐";
 "ui.onboarding.account.connect_message" = "登录后可以同步个人音乐库并使用账号相关功能。登录并不是开始使用弦外的必要条件。";
-"ui.onboarding.benefit.sync_library" = "同步收藏歌曲、歌单和播放历史";
+"ui.onboarding.benefit.sync_library" = "同步收藏歌曲、播放列表和播放历史";
 "ui.onboarding.benefit.personalized_content" = "访问每日推荐等账号专属内容";
 "ui.onboarding.benefit.local_cookie" = "登录 Cookie 仅保存在本机";
 "ui.settings.about.shareholders" = "股东";
@@ -983,8 +983,8 @@
 "ui.release_notes.section.tuning" = "体验优化后的调教";
 "ui.release_notes.reset.warning" = "这会恢复作者当前推荐的播放器参数，并覆盖、丢失你原先的自定义设置。";
 "ui.release_notes.download_terms" = "下载";
-"ui.release_notes.reset.scope.downloads" = "重置范围包含播放器、歌词、均衡器、全屏天际歌词、悬浮歌词与文字 PV；账号、下载、歌单和播放记录不会受到影响。";
-"ui.release_notes.reset.scope" = "重置范围包含播放器、歌词、均衡器、全屏天际歌词、悬浮歌词与文字 PV；账号、歌单和播放记录不会受到影响。";
+"ui.release_notes.reset.scope.downloads" = "重置范围包含播放器、歌词、均衡器、全屏天际歌词、悬浮歌词与文字 PV；账号、下载、播放列表和播放记录不会受到影响。";
+"ui.release_notes.reset.scope" = "重置范围包含播放器、歌词、均衡器、全屏天际歌词、悬浮歌词与文字 PV；账号、播放列表和播放记录不会受到影响。";
 "ui.release_notes.empty.invalid_build" = "此构建未包含有效的更新日志。";
 "ui.release_notes.empty.no_public_changes" = "本次没有需要公开展示的更新内容。";
 "ui.release_notes.start" = "开始体验";
@@ -1021,12 +1021,12 @@
 "ui.common.retry" = "重试";
 "ui.common.favorite" = "收藏";
 "ui.common.unfavorite" = "取消收藏";
-"ui.common.playlist_count" = "%ld 个歌单";
+"ui.common.playlist_count" = "%ld 个播放列表";
 "ui.common.toplist_count" = "%ld 个榜单";
 "ui.navigation.discover" = "发现";
-"ui.category.recommended_playlists" = "推荐歌单";
+"ui.category.recommended_playlists" = "推荐播放列表";
 "ui.category.toplists" = "排行榜";
-"ui.category.featured_playlists" = "精品歌单";
+"ui.category.featured_playlists" = "精品播放列表";
 "ui.category.featured_short" = "精品";
 "ui.category.all" = "全部";
 "ui.category.chinese" = "华语";
@@ -1049,14 +1049,14 @@
 "ui.category.relax" = "放松";
 "ui.category.night" = "夜晚";
 "ui.explore.loading" = "正在发现好音乐";
-"ui.playlists.empty" = "暂无歌单";
+"ui.playlists.empty" = "暂无播放列表";
 "ui.explore.badge.today" = "今日推荐";
 "ui.explore.badge.popular_toplists" = "热门榜单";
 "ui.explore.badge.editors_choice" = "编辑精选";
 "ui.explore.more_recommendations" = "更多推荐";
 "ui.explore.more_featured" = "更多精品";
-"ui.explore.popular_playlists" = "热门歌单";
-"ui.explore.category_playlists" = "%@歌单";
+"ui.explore.popular_playlists" = "热门播放列表";
+"ui.explore.category_playlists" = "%@播放列表";
 "ui.search.browse_categories" = "浏览类别";
 "ui.search.popular_recommendations" = "热门推荐";
 "ui.search.loading_recommendations" = "正在载入推荐";
@@ -1077,7 +1077,7 @@
 "ui.toplists.official" = "官方榜";
 "ui.toplists.global" = "全球榜";
 "ui.toplists.view_songs_hint" = "查看榜单歌曲";
-"ui.playlists.loading_category" = "正在载入%@歌单";
+"ui.playlists.loading_category" = "正在载入%@播放列表";
 
 "ui.common.play_all" = "播放全部";
 "ui.common.play_named" = "播放%@";
@@ -1087,24 +1087,24 @@
 "ui.home.no_personalized_recommendations" = "暂无个性化推荐";
 "ui.home.pull_to_refresh" = "下拉刷新后再试一次。";
 "ui.home.login_for_personalized_content" = "登录网易云音乐后可查看完整的个性化内容。";
-"ui.home.error.no_private_radar" = "当前推荐中没有可用的私人雷达歌单。";
+"ui.home.error.no_private_radar" = "当前推荐中没有可用的私人雷达播放列表。";
 "ui.home.error.login_required" = "请先登录网易云音乐。";
 "ui.home.error.liked_songs_required" = "收藏一些喜欢的歌曲后即可使用心动模式。";
 "ui.home.error.current_song_required" = "请先播放一首歌曲，再查找相似歌曲。";
 "ui.home.error.no_playable_recommendations" = "网易云音乐暂时没有返回可播放的推荐歌曲。";
-"ui.home.section.recommended_playlists" = "推荐歌单";
+"ui.home.section.recommended_playlists" = "推荐播放列表";
 "ui.home.section.recently_trending" = "近期云村热播";
 "ui.home.section.tailored" = "根据你的喜好为你推荐";
 "ui.home.section.charts" = "排行榜";
-"ui.home.section.your_playlists" = "你的歌单";
-"ui.home.section.your_radar" = "你的雷达歌单";
+"ui.home.section.your_playlists" = "你的播放列表";
+"ui.home.section.your_radar" = "你的雷达播放列表";
 "ui.home.section.regional_hits" = "你所在地区最近的热门歌曲";
 "ui.home.section.liked_song_roaming" = "从你喜欢的歌开始漫游";
 "ui.home.section.liked_song_recommendations" = "根据你喜爱的歌曲推荐";
 "ui.home.section.podcast_recommendations" = "根据你听过的热门节目推荐";
 "ui.home.section.tailored_for_song" = "根据“%@”为你推荐";
-"ui.home.section.user_playlists" = "%@的歌单";
-"ui.home.section.user_radar" = "%@的雷达歌单";
+"ui.home.section.user_playlists" = "%@的播放列表";
+"ui.home.section.user_radar" = "%@的雷达播放列表";
 "ui.home.section.region_recent_hits" = "%@最近的热门歌曲";
 "ui.home.action.daily_songs" = "每日推荐";
 "ui.home.action.hot_songs" = "热歌榜";
@@ -1121,7 +1121,7 @@
 "ui.home.action.daily_songs.subtitle" = "为你定制的歌曲";
 "ui.home.action.hot_songs.subtitle" = "大家都在听";
 "ui.home.action.heart_mode.subtitle" = "喜欢与惊喜交替播放";
-"ui.home.action.private_radar.subtitle" = "发现符合你口味的歌单";
+"ui.home.action.private_radar.subtitle" = "发现符合你口味的播放列表";
 "ui.home.action.private_roaming.subtitle" = "漫游到新的好音乐";
 "ui.home.action.similar_songs.subtitle" = "播放更多相似歌曲";
 "ui.home.action.open_hint" = "打开%@";
@@ -1144,12 +1144,12 @@
 "ui.library.pages_separated.message" = "可在“页面与标签栏”设置中调整页面归属。";
 "ui.library.error.title" = "音乐库操作失败";
 "ui.account.login_required" = "需要登录";
-"ui.library.login_message.downloads" = "登录后可读取收藏歌曲、歌单、订阅播客、音乐云盘和播放记录；已下载歌曲无需登录。";
-"ui.library.login_message" = "登录后可读取收藏歌曲、歌单、订阅播客、音乐云盘和播放记录。";
+"ui.library.login_message.downloads" = "登录后可读取收藏歌曲、播放列表、订阅播客、音乐云盘和播放记录；已下载歌曲无需登录。";
+"ui.library.login_message" = "登录后可读取收藏歌曲、播放列表、订阅播客、音乐云盘和播放记录。";
 "ui.library.loading" = "正在读取音乐库";
-"ui.library.recently_added" = "最近添加";
+"ui.library.recently_listening" = "最近在听";
 "ui.library.search.favorite_songs" = "在收藏歌曲中搜索";
-"ui.library.search.favorite_playlists" = "在收藏歌单中搜索";
+"ui.library.search.favorite_playlists" = "搜索播放列表";
 "ui.library.search.favorite_albums" = "在收藏专辑中搜索";
 "ui.library.search.subscribed_podcasts" = "在订阅播客中搜索";
 "ui.library.search.downloads" = "在下载歌曲中搜索";
@@ -1166,9 +1166,9 @@
 "ui.library.section.mine" = "我的";
 "ui.library.my_listening_rank" = "我的听歌排行";
 "ui.library.my_listening_rank.hint" = "查看最近一周或所有时间的听歌排行";
-"ui.library.no_favorite_playlists" = "还没有收藏歌单";
+"ui.library.no_favorite_playlists" = "还没有收藏播放列表";
 "ui.library.no_favorite_albums" = "还没有收藏专辑";
-"ui.library.no_favorite_playlists.message" = "打开歌单详情后，轻点收藏按钮。";
+"ui.library.no_favorite_playlists.message" = "打开播放列表详情后，轻点收藏按钮。";
 "ui.library.no_favorite_albums.message" = "打开专辑详情后，轻点收藏按钮。";
 "ui.downloads.management" = "下载管理";
 "ui.downloads.active" = "正在下载";
@@ -1183,14 +1183,14 @@
 "ui.library.searching_all_subscribed_podcasts" = "正在搜索全部订阅播客";
 "ui.library.no_history" = "还没有播放记录";
 "ui.library.no_history.message" = "网易云音乐中的最近播放会显示在这里。";
-"ui.library.error.playlists" = "歌单：%@";
+"ui.library.error.playlists" = "播放列表：%@";
 "ui.library.error.favorite_albums" = "收藏专辑：%@";
 "ui.library.error.subscribed_podcasts" = "订阅播客：%@";
 "ui.library.error.favorite_songs" = "收藏歌曲：%@";
 "ui.library.error.history" = "播放历史：%@";
 "ui.library.error.partial" = "部分音乐库内容暂时无法读取。\n%@";
 "ui.library.error.account_refresh" = "账号刷新失败：%@";
-"ui.library.error.owned_playlist_only" = "只能向自己创建的歌单添加歌曲。";
+"ui.library.error.owned_playlist_only" = "只能向自己创建的播放列表添加歌曲。";
 "ui.albums.new.loading" = "正在载入新碟";
 "ui.albums.new.title" = "新碟上架";
 
@@ -1210,7 +1210,7 @@
 "ui.common.select_multiple" = "多选";
 "ui.common.select_all" = "全选";
 "ui.common.deselect_all" = "取消全选";
-"ui.common.artist" = "歌手";
+"ui.common.artist" = "艺人";
 "ui.common.albums" = "专辑";
 "ui.common.year" = "%ld年";
 "ui.common.play_count" = "%ld 次播放";
@@ -1226,19 +1226,19 @@
 "ui.downloads.download_all_count" = "下载全部（%ld 首）";
 "ui.downloads.download_selected_count" = "下载 %ld 首";
 "ui.downloads.select_quality" = "选择下载音质";
-"ui.playlists.add_to" = "添加到歌单";
+"ui.playlists.add_to" = "添加到播放列表";
 "ui.playlists.add_failed" = "添加失败";
-"ui.playlists.login_to_add" = "登录网易云音乐后，才能把歌曲添加到自己的歌单。";
-"ui.playlists.loading" = "正在读取歌单";
-"ui.playlists.none_available" = "没有可选歌单";
-"ui.playlists.create_first" = "新建一个歌单，然后添加歌曲。";
+"ui.playlists.login_to_add" = "登录网易云音乐后，才能把歌曲添加到自己的播放列表。";
+"ui.playlists.loading" = "正在读取播放列表";
+"ui.playlists.none_available" = "没有可选播放列表";
+"ui.playlists.create_first" = "新建一个播放列表，然后添加歌曲。";
 "ui.playlists.add_to_accessibility" = "添加到%@，%ld 首歌曲";
-"ui.playlists.search_prompt" = "在歌单中搜索";
-"ui.playlists.load_complete_failed" = "无法读取完整歌单。";
-"ui.playlists.favorite" = "收藏歌单";
+"ui.playlists.search_prompt" = "在播放列表中搜索";
+"ui.playlists.load_complete_failed" = "无法读取完整播放列表。";
+"ui.playlists.favorite" = "收藏播放列表";
 "ui.playlists.metadata" = "%ld 首歌曲 · %@ 次播放";
-"ui.playlists.collapse_description" = "收起歌单简介";
-"ui.playlists.expand_description" = "展开歌单简介";
+"ui.playlists.collapse_description" = "收起播放列表简介";
+"ui.playlists.expand_description" = "展开播放列表简介";
 "ui.toplists.search_prompt" = "在排行榜中搜索";
 "ui.music_collection.load_songs_failed" = "无法读取%@歌曲。";
 "ui.songs.empty" = "暂无歌曲";
@@ -1288,15 +1288,15 @@
 "ui.song.wiki.section.basic_information" = "基础信息";
 "ui.song.wiki.section.featured_reviews" = "精选乐评";
 "ui.song.wiki.section.similar_songs" = "相似歌曲";
-"ui.song.wiki.section.related_playlists" = "相关歌单";
+"ui.song.wiki.section.related_playlists" = "相关播放列表";
 "ui.song.wiki.contribute" = "参与百科共建";
 "ui.album.loading" = "正在载入专辑";
 "ui.album.search_prompt" = "在专辑中搜索";
 "ui.album.operation_failed" = "专辑操作失败";
 "ui.album.load_songs_failed" = "无法读取专辑歌曲。";
 "ui.album.share" = "分享专辑";
-"ui.artist.view" = "查看歌手";
-"ui.artist.loading" = "正在载入歌手";
+"ui.artist.view" = "查看艺人";
+"ui.artist.loading" = "正在载入艺人";
 "ui.artist.play_popular_songs" = "播放热门歌曲";
 "ui.artist.popular_songs" = "热门歌曲";
 
@@ -1757,7 +1757,7 @@
 "ui.desktop.settings.appearance" = "外观";
 "ui.desktop.settings.content" = "内容";
 "ui.desktop.settings.account" = "账户";
-"ui.desktop.settings.account.synced" = "收藏、歌单、云盘和记录已启用";
+"ui.desktop.settings.account.synced" = "收藏、播放列表、云盘和记录已启用";
 "ui.desktop.settings.account.sign_in_message" = "登录后同步完整资料库";
 "ui.desktop.settings.account.details" = "账户详情";
 "ui.desktop.settings.launch" = "启动";
@@ -1853,7 +1853,7 @@
 "ui.desktop.onboarding.feature.downloads_cloud" = "下载与云盘";
 "ui.desktop.onboarding.recognition.default_duration" = "默认时长";
 "ui.desktop.onboarding.recognition.privacy" = "听歌识曲只会发送在这台 Mac 上生成的音频指纹。";
-"ui.desktop.onboarding.account.message" = "登录后即可同步喜欢的音乐、歌单、播客、云盘、播放历史、私信和一起听。登录不是使用弦外的必要条件。";
+"ui.desktop.onboarding.account.message" = "登录后即可同步喜欢的音乐、播放列表、播客、云盘、播放历史、私信和一起听。登录不是使用弦外的必要条件。";
 "ui.desktop.onboarding.benefit.direct_api" = "直接连接网易云音乐原始接口";
 "ui.desktop.onboarding.benefit.independent_interfaces" = "手机端与桌面端界面和设置相互独立";
 "ui.desktop.about.version_build" = "版本 %@ (%@)";
@@ -1889,7 +1889,7 @@
 "ui.desktop.recognition.open_microphone_settings" = "打开麦克风设置";
 "ui.desktop.recognition.ready.continuous" = "弦外会持续聆听并不断展示新结果，直到你手动停止；原始录音不会上传。";
 "ui.desktop.recognition.ready.limited" = "弦外最长聆听 %@，只会向网易云音乐发送设备端生成的音频指纹。";
-"ui.desktop.account.login_message" = "登录后可同步喜欢的音乐、歌单、播客、云盘、播放记录、私信与一起听。登录 Cookie 只保存在这台 Mac。";
+"ui.desktop.account.login_message" = "登录后可同步喜欢的音乐、播放列表、播客、云盘、播放记录、私信与一起听。登录 Cookie 只保存在这台 Mac。";
 "ui.desktop.account.settings" = "账户设置";
 "ui.desktop.login.direct_connection" = "网页会直接连接 music.163.com";
 "ui.common.clear" = "清除";
@@ -2065,25 +2065,25 @@
 "ui.watch.appearance.information" = "信息";
 "ui.watch.appearance.saturation" = "饱和度";
 "ui.watch.appearance.saturation_accessibility" = "背景饱和度";
-"ui.watch.appearance.show_artist" = "显示歌手";
+"ui.watch.appearance.show_artist" = "显示艺人";
 
 "ui.watch.daily.load_failed" = "无法载入每日推荐";
 "ui.watch.daily.login_required" = "请先同步 iPhone 登录，或在 Apple Watch 上使用二维码登录。";
 "ui.watch.daily.title" = "每日推荐";
 
-"ui.watch.search.empty.description" = "输入歌曲、歌手或专辑名称。";
+"ui.watch.search.empty.description" = "输入歌曲、艺人或专辑名称。";
 "ui.watch.search.empty.title" = "搜索网易云音乐";
 "ui.watch.search.failed" = "搜索失败";
-"ui.watch.search.prompt" = "歌曲、歌手或专辑";
+"ui.watch.search.prompt" = "歌曲、艺人或专辑";
 "ui.watch.search.searching" = "正在搜索";
 
-"ui.watch.playlists.load_failed" = "无法载入歌单";
-"ui.watch.playlists.loading" = "正在载入歌单";
+"ui.watch.playlists.load_failed" = "无法载入播放列表";
+"ui.watch.playlists.loading" = "正在载入播放列表";
 "ui.watch.playlists.login_required" = "请先登录网易云音乐。";
-"ui.watch.playlists.mine" = "我的歌单";
+"ui.watch.playlists.mine" = "我的播放列表";
 "ui.watch.playlists.songs_loading" = "正在载入歌曲";
 
-"ui.watch.queue.empty.description" = "从搜索、每日推荐或歌单中选择歌曲。";
+"ui.watch.queue.empty.description" = "从搜索、每日推荐或播放列表中选择歌曲。";
 "ui.watch.queue.empty.title" = "播放队列为空";
 "ui.watch.queue.mode.sequential" = "顺序播放";
 "ui.watch.queue.mode.shuffle" = "随机播放";
@@ -2145,34 +2145,34 @@
 "ui.release_notes.entry.artwork_overflow" = "修复了歌曲封面超出容器大小的问题。";
 "ui.error.api.server_code" = "音乐服务返回了错误（%ld）。";
 
-"ui.playlists.create.title" = "新建歌单";
-"ui.playlists.create.name" = "歌单名称";
-"ui.playlists.create.private" = "私密歌单";
+"ui.playlists.create.title" = "新建播放列表";
+"ui.playlists.create.name" = "播放列表名称";
+"ui.playlists.create.private" = "私密播放列表";
 "ui.playlists.create.action" = "创建";
 
-"ui.playlists.delete.title" = "删除歌单？";
-"ui.playlists.delete.action" = "删除歌单";
+"ui.playlists.delete.title" = "删除播放列表？";
+"ui.playlists.delete.action" = "删除播放列表";
 "ui.playlists.delete.message" = "将从网易云音乐账号中永久删除“%@”及其中的歌曲列表。";
 
-"ui.playlists.remove_song" = "从歌单移除";
-"ui.playlists.remove_song.message" = "从此歌单中移除“%@”？";
+"ui.playlists.remove_song" = "从播放列表移除";
+"ui.playlists.remove_song.message" = "从此播放列表中移除“%@”？";
 
 "ui.settings.general.search_suggestions" = "搜索联想";
 
-"ui.library.artists.title" = "已关注歌手";
-"ui.library.artists.search" = "搜索已关注的歌手";
-"ui.library.artists.empty" = "暂无已关注的歌手";
-"ui.library.error.favorite_artists" = "歌手列表加载失败：%@";
+"ui.library.artists.title" = "艺人";
+"ui.library.artists.search" = "搜索艺人";
+"ui.library.artists.empty" = "没有艺人";
+"ui.library.error.favorite_artists" = "艺人列表加载失败：%@";
 "ui.settings.general.cache_page_content" = "自动缓存主页与音乐库";
 "ui.settings.general.compact_home_actions" = "紧凑首页快捷入口";
-"ui.settings.general.cache_page_content.footer" = "保存最近加载成功的推荐、音乐库和歌单信息。再次打开时先显示缓存，再联网更新；可在储存空间中清理。";
+"ui.settings.general.cache_page_content.footer" = "保存最近加载成功的推荐、音乐库和播放列表信息。再次打开时先显示缓存，再联网更新；可在储存空间中清理。";
 
-"ui.library.search.prompt" = "搜索收藏歌曲、歌手或专辑";
+"ui.library.search.prompt" = "搜索收藏歌曲、艺人或专辑";
 "ui.library.search.clear" = "清除搜索";
 "ui.library.search.results" = "%@ 首匹配歌曲";
 "ui.library.search.loading" = "正在搜索全部收藏…";
 "ui.library.search.empty.title" = "没有找到收藏歌曲";
-"ui.library.search.empty.description" = "试试其他歌名、歌手或专辑名。";
+"ui.library.search.empty.description" = "试试其他歌名、艺人或专辑名。";
 
 "ui.library.songs.filter" = "筛选";
 "ui.library.songs.filter.all" = "全部歌曲";
@@ -2191,3 +2191,18 @@
 "ui.library.albums.search" = "搜索专辑";
 "ui.library.albums.empty" = "没有专辑";
 "ui.library.sort.ascending" = "A–Z";
+"ui.library.playlists.all" = "所有播放列表";
+"ui.library.artists.all" = "所有艺人";
+"ui.library.playlists.favorite_songs" = "喜爱歌曲";
+"ui.library.playlists.sort.last_played" = "上次播放日期";
+"ui.library.playlists.sort.updated" = "更新日期";
+"ui.library.playlists.sort.type" = "播放列表类型";
+"ui.library.playlists.empty" = "没有播放列表";
+"ui.library.playlists.owned" = "我创建的";
+"ui.library.playlists.saved" = "我收藏的";
+"ui.library.layout" = "显示方式";
+"ui.settings.appearance.accent" = "强调色";
+"ui.settings.appearance.classic" = "经典";
+"ui.settings.appearance.app_icon" = "App 图标";
+"ui.settings.appearance.icon_error" = "无法更改 App 图标";
+"ui.player.remove_from_queue" = "从队列中移除";

@@ -651,7 +651,8 @@ struct PlaylistDetailView: View {
                 )
             }
             try Task.checkCancellation()
-            guard playlist?.id == currentPlaylist.id else { return }
+            guard playlist?.id == currentPlaylist.id, !songs.isEmpty else { return }
+            library.recordCollectionPlayback(.playlist(currentPlaylist))
             await player.playAll(
                 shuffled ? songs.shuffled() : songs,
                 sourceID: currentPlaylist.id

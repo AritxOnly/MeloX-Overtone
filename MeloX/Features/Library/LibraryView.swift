@@ -2,7 +2,7 @@ import SwiftUI
 
 struct LibraryView: View {
     @Environment(LibraryStore.self) private var library
-    @Environment(PlayerStore.self) private var player
+    @Environment(AppSettings.self) private var settings
 
     var body: some View {
         ScrollView {
@@ -29,23 +29,23 @@ struct LibraryView: View {
                     }
                 }
 
-                if !library.favoriteSongs.isEmpty || !library.favoriteAlbums.isEmpty {
+                if settings.isContentFeatureEnabled(.listeningHistory), !library.recentCollections.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("ui.library.recently_added")
+                        Text("ui.library.recently_listening")
                             .font(.title2.bold())
                             .accessibilityAddTraits(.isHeader)
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 14)], alignment: .leading, spacing: 16) {
-                            ForEach(library.favoriteSongs.prefix(12)) { song in
-                                Button {
-                                    Task { await player.play(song, in: library.favoriteSongs) }
-                                } label: {
-                                    coverCard(song.name, artist: song.artistText, url: song.album?.artworkURL)
-                                }
-                            }
-                            if library.favoriteSongs.isEmpty {
-                                ForEach(library.favoriteAlbums.prefix(12)) { album in
+                            ForEach(library.recentCollections.prefix(12)) { entry in
+                                switch entry.collection {
+                                case .album(let album):
                                     NavigationLink(value: MusicRoute.album(album)) {
                                         coverCard(album.name, artist: album.artistText, url: album.artworkURL)
+                                    }
+                                case .playlist(let playlist):
+                                    NavigationLink(value: MusicRoute.playlist(playlist)) {
+                                        coverCard(playlist.id == library.likedPlaylistID ? L10n.string("ui.library.playlists.favorite_songs") : playlist.name,
+                                                  artist: playlist.creator?.nickname ?? L10n.string("ui.common.playlist"),
+                                                  url: playlist.artworkURL)
                                     }
                                 }
                             }
@@ -89,8 +89,12 @@ private struct LibraryCategoryView: View {
         Group {
             if section == .downloads {
                 LibraryDownloadsView(searchQuery: searchQuery)
+            } else if [.songs, .albums, .artists].contains(section), library.hasMoreFavoriteSongs, library.phase == .loading {
+                ProgressView("ui.library.loading")
             } else if hasLocalMusic {
-                if section == .albums {
+                if section == .artists {
+                    LibraryArtistsView(searchQuery: searchQuery)
+                } else if section == .albums {
                     LibraryAlbumsView(searchQuery: searchQuery)
                 } else {
                     LibrarySongsView(searchQuery: searchQuery)
@@ -106,12 +110,10 @@ private struct LibraryCategoryView: View {
         .navigationTitle(section.title)
         .navigationBarTitleDisplayMode(section == .albums ? .inline : .large)
         .librarySearchable(text: $searchQuery, prompt: searchPrompt,
-                           isEnabled: section == .downloads || library.isLoggedIn || hasLocalMusic,
-                           hidesSearchInitially: section == .songs || section == .albums)
+                           isEnabled: section == .downloads || library.isLoggedIn || hasLocalMusic)
         .sheet(isPresented: $showsLogin) {
             NavigationStack { NeteaseLoginView() }
         }
-        .task(id: library.isLoggedIn) { await library.refresh() }
         .alert("ui.library.error.title", isPresented: Binding(
             get: { library.errorMessage != nil },
             set: { if !$0 { library.clearError() } }
@@ -123,7 +125,7 @@ private struct LibraryCategoryView: View {
     }
 
     private var hasLocalMusic: Bool {
-        (section == .songs || section == .albums) && AppFeatureAvailability.downloads && !downloads.downloads.isEmpty
+        [LibraryPage.songs, .albums, .artists].contains(section) && AppFeatureAvailability.downloads && !downloads.downloads.isEmpty
     }
 
     private var loginUnavailableView: some View {
@@ -168,8 +170,6 @@ private struct LibraryCategoryView: View {
                 LibraryDownloadsView(searchQuery: searchQuery)
             case .cloud:
                 CloudMusicView(searchQuery: searchQuery)
-            case .history:
-                LibraryHistoryView(searchQuery: searchQuery)
             }
         }
     }
@@ -192,8 +192,6 @@ private struct LibraryCategoryView: View {
                 : L10n.string("ui.library.search.songs")
         case .cloud:
             L10n.string("ui.library.search.cloud")
-        case .history:
-            L10n.string("ui.library.search.history")
         }
     }
 }
@@ -203,13 +201,12 @@ private extension View {
     func librarySearchable(
         text: Binding<String>,
         prompt: String,
-        isEnabled: Bool,
-        hidesSearchInitially: Bool
+        isEnabled: Bool
     ) -> some View {
         if isEnabled {
             searchable(
                 text: text,
-                placement: .navigationBarDrawer(displayMode: hidesSearchInitially ? .automatic : .always),
+                placement: .navigationBarDrawer(displayMode: .automatic),
                 prompt: Text(prompt)
             )
         } else {

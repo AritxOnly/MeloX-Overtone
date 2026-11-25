@@ -196,6 +196,7 @@ struct NowPlayingQualityMenu: View {
 }
 
 struct NowPlayingTransportControls: View {
+    @Environment(AppSettings.self) private var appearanceSettings
     enum Presentation {
         case standard
         case tablet
@@ -215,7 +216,7 @@ struct NowPlayingTransportControls: View {
                 Button(action: player.toggleShuffle) {
                     Image(systemName: "shuffle")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(player.isShuffled ? .red : .white.opacity(0.58))
+                        .foregroundStyle(player.isShuffled ? appearanceSettings.accent.color : .white.opacity(0.58))
                         .frame(width: 44, height: 44)
                         .contentShape(.circle)
                 }
@@ -314,7 +315,7 @@ struct NowPlayingTransportControls: View {
                 Button(action: player.cycleRepeatMode) {
                     Image(systemName: player.repeatMode.systemImage)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(player.repeatMode == .off ? .white.opacity(0.58) : .red)
+                        .foregroundStyle(player.repeatMode == .off ? .white.opacity(0.58) : appearanceSettings.accent.color)
                         .frame(width: 44, height: 44)
                         .contentShape(.circle)
                 }

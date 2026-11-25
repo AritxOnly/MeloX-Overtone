@@ -170,7 +170,7 @@ struct TabletMiniPlayerView: View {
     private func progressLine(song: Song) -> some View {
         GeometryReader { proxy in
             Capsule()
-                .fill(.red.opacity(0.7))
+                .fill(Color.accentColor.opacity(0.7))
                 .frame(width: proxy.size.width * min(max(player.progress / duration(for: song), 0), 1))
         }
         .frame(height: 2)

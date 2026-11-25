@@ -6,6 +6,7 @@ struct ArtworkImage: View {
     let url: URL?
     var cornerRadius: CGFloat = 10
     var aspectRatio: CGFloat = 1
+    var placeholderSymbol = "music.note"
 
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
 
@@ -53,7 +54,7 @@ struct ArtworkImage: View {
                 .resizable()
                 .scaledToFill()
                 .transition(.opacity)
-        } else if hasError {
+        } else if hasError || url == nil {
             placeholder
         } else {
             ZStack {
@@ -66,7 +67,7 @@ struct ArtworkImage: View {
     private var placeholder: some View {
         ZStack {
             Color.secondary.opacity(0.12)
-            Image(systemName: "music.note")
+            Image(systemName: placeholderSymbol)
                 .font(.title2)
                 .foregroundStyle(.secondary)
         }

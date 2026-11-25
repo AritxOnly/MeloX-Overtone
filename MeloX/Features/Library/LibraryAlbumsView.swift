@@ -13,8 +13,6 @@ struct LibraryAlbumsView: View {
     @AppStorage("library.albums.grid") private var grid = true
     @AppStorage("library.albums.sort") private var sort: LibraryAlbumSort = .artist
     @State private var filter: LibrarySongFilter = .all
-    @State private var index = LibraryAlbumIndex()
-    @State private var indexedRequest: LibraryAlbumIndex.Request?
     @State private var playbackTask: Task<Void, Never>?
     @State private var playbackError: String?
 
@@ -26,10 +24,11 @@ struct LibraryAlbumsView: View {
 
     var body: some View {
         let request = request
+        let cached = library.albumIndex.value(for: request)
+        let index = cached ?? LibraryAlbumIndex()
         List {
             if !index.groups.isEmpty {
                 SongListPlaybackActions(isPreparing: playbackTask != nil, play: playAlbums)
-                    .listRowInsets(.init(top: 0, leading: 20, bottom: 8, trailing: 20))
             }
             ForEach(index.groups) { group in
                 Section {
@@ -60,16 +59,13 @@ struct LibraryAlbumsView: View {
             }
         }
         .listStyle(.plain)
+        .listSectionSpacing(4)
         .listSectionIndexVisibility(sort == .added ? .hidden : .visible)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 LibraryFilterMenu(selection: $filter, allTitle: "ui.library.albums.all", allSymbol: "square.stack")
                 Menu {
-                    Picker("ui.common.albums", selection: $grid) {
-                        Label("ui.library.layout.grid", systemImage: "square.grid.2x2").tag(true)
-                        Label("ui.library.layout.list", systemImage: "list.bullet").tag(false)
-                    }
-                    .pickerStyle(.inline)
+                    LibraryLayoutPicker(grid: $grid)
                     Divider()
                     sortOption(.name, "ui.library.songs.sort.name")
                     sortOption(.added, "ui.library.songs.sort.added")
@@ -82,17 +78,14 @@ struct LibraryAlbumsView: View {
             }
         }
         .task(id: request) {
-            guard let result = try? await LibraryAlbumIndex.build(request), !Task.isCancelled else { return }
-            index = result
-            indexedRequest = request
-        }
-        .task(id: filter == .all && library.hasMoreFavoriteSongs) {
-            if filter == .all && library.hasMoreFavoriteSongs { await library.loadRemainingFavoriteSongs() }
+            await library.albumIndex.load(request, isBrowsing: filter == .all && request.query.isEmpty) {
+                try await LibraryAlbumIndex.build(request)
+            }
         }
         .refreshable { await library.refresh(force: true) }
         .overlay {
             if index.groups.isEmpty {
-                if indexedRequest != request || library.phase == .loading {
+                if cached == nil || library.phase == .loading {
                     ProgressView("ui.library.loading")
                 } else if !request.query.isEmpty {
                     ContentUnavailableView.search(text: request.query)
@@ -145,6 +138,7 @@ struct LibraryAlbumsView: View {
 
     private func playAlbums(shuffled: Bool) {
         guard playbackTask == nil else { return }
+        guard let index = library.albumIndex.value(for: request) else { return }
         let displayed = index.groups.flatMap(\.entries)
         let selection = request
         playbackTask = Task {

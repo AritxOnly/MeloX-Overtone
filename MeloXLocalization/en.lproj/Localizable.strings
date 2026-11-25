@@ -21,7 +21,7 @@
 "ui.navigation.explore" = "Explore";
 "ui.navigation.home" = "Home";
 "ui.navigation.library" = "Library";
-"ui.navigation.library.liked_playlists" = "Favorite Playlists";
+"ui.navigation.library.liked_playlists" = "Playlists";
 "ui.navigation.library.liked_albums" = "Favorite Albums";
 "ui.explore.featured.title" = "Top Picks for You";
 "ui.navigation.library.liked_songs" = "Liked Songs";
@@ -35,7 +35,7 @@
 "ui.settings.appearance.option.dark" = "Dark";
 "ui.settings.appearance.option.light" = "Light";
 "ui.settings.appearance.option.system" = "System";
-"ui.settings.navigation.page.liked_playlists" = "Playlists (Favorites)";
+"ui.settings.navigation.page.liked_playlists" = "Playlists";
 "ui.settings.navigation.page.liked_albums" = "Albums (Favorites)";
 "ui.settings.navigation.page.liked_songs" = "Songs (Liked)";
 "ui.settings.navigation.page.subscribed_podcasts" = "Podcasts (Subscribed)";
@@ -1147,9 +1147,9 @@
 "ui.library.login_message.downloads" = "Sign in to access favorite songs, playlists, subscribed podcasts, Cloud Drive, and listening history. Downloaded songs are available without signing in.";
 "ui.library.login_message" = "Sign in to access favorite songs, playlists, subscribed podcasts, Cloud Drive, and listening history.";
 "ui.library.loading" = "Loading Library";
-"ui.library.recently_added" = "Recently Added";
+"ui.library.recently_listening" = "Recently Played";
 "ui.library.search.favorite_songs" = "Search Favorite Songs";
-"ui.library.search.favorite_playlists" = "Search Favorite Playlists";
+"ui.library.search.favorite_playlists" = "Search Playlists";
 "ui.library.search.favorite_albums" = "Search Favorite Albums";
 "ui.library.search.subscribed_podcasts" = "Search Subscribed Podcasts";
 "ui.library.search.downloads" = "Search Downloaded Songs";
@@ -2159,9 +2159,9 @@
 
 "ui.settings.general.search_suggestions" = "Search Suggestions";
 
-"ui.library.artists.title" = "Followed Artists";
-"ui.library.artists.search" = "Search followed artists";
-"ui.library.artists.empty" = "No Followed Artists";
+"ui.library.artists.title" = "Artists";
+"ui.library.artists.search" = "Search Artists";
+"ui.library.artists.empty" = "No Artists";
 "ui.library.error.favorite_artists" = "Could not load followed artists: %@";
 "ui.settings.general.cache_page_content" = "Cache Home and Library";
 "ui.settings.general.compact_home_actions" = "Compact Home Shortcuts";
@@ -2191,3 +2191,18 @@
 "ui.library.albums.search" = "Search Albums";
 "ui.library.albums.empty" = "No Albums";
 "ui.library.sort.ascending" = "A–Z";
+"ui.library.playlists.all" = "All Playlists";
+"ui.library.artists.all" = "All Artists";
+"ui.library.playlists.favorite_songs" = "Favorite Songs";
+"ui.library.playlists.sort.last_played" = "Last Played";
+"ui.library.playlists.sort.updated" = "Date Updated";
+"ui.library.playlists.sort.type" = "Playlist Type";
+"ui.library.playlists.empty" = "No Playlists";
+"ui.library.playlists.owned" = "Created by Me";
+"ui.library.playlists.saved" = "Saved Playlists";
+"ui.library.layout" = "View As";
+"ui.settings.appearance.accent" = "Accent Color";
+"ui.settings.appearance.classic" = "Classic";
+"ui.settings.appearance.app_icon" = "App Icon";
+"ui.settings.appearance.icon_error" = "Couldn’t Change App Icon";
+"ui.player.remove_from_queue" = "Remove from Queue";

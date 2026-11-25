@@ -196,22 +196,7 @@ struct SongRecognitionView: View {
             )
         }
         .buttonStyle(.plain)
-        .swipeActions(edge: .trailing) {
-            Button {
-                library.toggle(song: result.song)
-            } label: {
-                Label(
-                    library.contains(song: result.song)
-                        ? L10n.string("ui.common.unfavorite")
-                        : L10n.string("ui.common.favorite"),
-                    systemImage:
-                        library.contains(song: result.song)
-                            ? "heart.slash"
-                            : "heart"
-                )
-            }
-            .tint(.pink)
-        }
+        .songSwipeActions(result.song)
         .accessibilityHint("ui.recognition.play_from_match_hint")
     }
 

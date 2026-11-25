@@ -52,6 +52,7 @@ struct HomeRecommendationSectionView: View {
                                 .frame(minHeight: 58)
                         }
                         .buttonStyle(.plain)
+                        .songSwipeActions(song, inline: true, reservesArtworkForScrolling: true)
                         if song.id != songs[min(start + 2, songs.count - 1)].id {
                             Divider().padding(.leading, 56)
                         }
@@ -60,6 +61,7 @@ struct HomeRecommendationSectionView: View {
                 .frame(width: min(layout.containerWidth * 0.83, 390))
             }
         }
+        .songSwipeGroup()
     }
 
     private func podcastSection(

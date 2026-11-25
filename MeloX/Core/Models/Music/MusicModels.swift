@@ -385,7 +385,7 @@ struct TrackReference: Codable, Hashable {
 struct Playlist: Codable, Hashable, Identifiable {
     let id: Int
     let name: String
-    let coverURLString: String?
+    var coverURLString: String?
     let playlistDescription: String?
     var trackCount: Int
     let playCount: Int
@@ -395,6 +395,10 @@ struct Playlist: Codable, Hashable, Identifiable {
     let creator: UserSummary?
     var tracks: [Song]
     var trackIDs: [TrackReference]
+    var createTime: Double?
+    var subscribedTime: Double?
+    var updateTime: Double?
+    var trackUpdateTime: Double?
     let subscribed: Bool
 
     var artworkURL: URL? {
@@ -417,6 +421,7 @@ struct Playlist: Codable, Hashable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id, name, coverImgUrl, picUrl, description, trackCount, playCount
         case updateFrequency, copywriter, creator, tracks, trackIds, subscribed
+        case createTime, subscribedTime, updateTime, trackUpdateTime
         case toplistType = "ToplistType"
     }
 
@@ -466,6 +471,10 @@ struct Playlist: Codable, Hashable, Identifiable {
         creator = try container.decodeIfPresent(UserSummary.self, forKey: .creator)
         tracks = try container.decodeIfPresent([Song].self, forKey: .tracks) ?? []
         trackIDs = try container.decodeIfPresent([TrackReference].self, forKey: .trackIds) ?? []
+        createTime = try container.decodeIfPresent(Double.self, forKey: .createTime)
+        subscribedTime = try container.decodeIfPresent(Double.self, forKey: .subscribedTime)
+        updateTime = try container.decodeIfPresent(Double.self, forKey: .updateTime)
+        trackUpdateTime = try container.decodeIfPresent(Double.self, forKey: .trackUpdateTime)
         subscribed = try container.decodeIfPresent(Bool.self, forKey: .subscribed) ?? false
     }
 
@@ -483,6 +492,10 @@ struct Playlist: Codable, Hashable, Identifiable {
         try container.encodeIfPresent(creator, forKey: .creator)
         try container.encode(tracks, forKey: .tracks)
         try container.encode(trackIDs, forKey: .trackIds)
+        try container.encodeIfPresent(createTime, forKey: .createTime)
+        try container.encodeIfPresent(subscribedTime, forKey: .subscribedTime)
+        try container.encodeIfPresent(updateTime, forKey: .updateTime)
+        try container.encodeIfPresent(trackUpdateTime, forKey: .trackUpdateTime)
         try container.encode(subscribed, forKey: .subscribed)
     }
 }

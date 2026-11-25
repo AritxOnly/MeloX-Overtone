@@ -19,6 +19,7 @@ struct LibraryHistoryView: View {
                 TrackRowView(song: song, showsArtwork: true) {
                     Task { await player.play(song, in: displayedSongs) }
                 }
+                .songSwipeActions(song)
             }
         }
         .navigationBarTitleDisplayMode(.large)

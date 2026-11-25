@@ -4,6 +4,7 @@ struct PlaylistTrackList: View {
     let tracks: [Song]
     let sourceID: Int
     let showsArtwork: Bool
+    var onPlayTrack: (() -> Void)?
     var onRemoveSong: ((Song) -> Void)?
     var downloadSelection: MusicCollectionDownloadCoordinator?
     var highlightedSongID: Int?
@@ -24,6 +25,7 @@ struct PlaylistTrackList: View {
                         index: index,
                         showsArtwork: showsArtwork,
                         downloadSelection: downloadSelection,
+                        onPlayTrack: onPlayTrack,
                         onRemoveSong: onRemoveSong,
                         isHighlighted: highlightedSongID == song.id
                     )
@@ -41,6 +43,7 @@ struct PlaylistTrackList: View {
                     }
                 }
             }
+            .songSwipeGroup()
         }
     }
 
@@ -56,6 +59,7 @@ private struct PlaylistTrackRow: View {
     let index: Int
     let showsArtwork: Bool
     let downloadSelection: MusicCollectionDownloadCoordinator?
+    let onPlayTrack: (() -> Void)?
     let onRemoveSong: ((Song) -> Void)?
     let isHighlighted: Bool
 
@@ -252,6 +256,9 @@ private struct PlaylistTrackRow: View {
         )
         .musicMatchedTransitionSource(for: .song(song))
         .accessibilityElement(children: .contain)
+        .songSwipeActions(song, removal: onRemoveSong.map { remove in
+            .action("ui.playlists.remove_song") { remove(song) }
+        } ?? .library, inline: true, enabled: !isSelectingDownloads)
         .sheet(item: $presentedSheet) { sheet in
             switch sheet {
             case .comments(let selectedSong):
@@ -267,22 +274,14 @@ private struct PlaylistTrackRow: View {
     @ViewBuilder
     private var leadingContent: some View {
         if showsArtwork {
-            ArtworkImage(url: song.album?.artworkURL, cornerRadius: 6)
+            SongRowArtwork(songID: song.id, url: song.album?.artworkURL)
                 .frame(width: 48, height: 48)
         } else if isCurrentSong && !isSelectingDownloads {
-            ZStack {
-                Circle()
-                    .stroke(Color.primary.opacity(0.60), lineWidth: 1.5)
-
-                if player.isLoading {
-                    ProgressView()
-                        .controlSize(.mini)
-                } else {
-                    Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.caption.weight(.bold))
-                }
+            if player.isLoading && !player.isPlaying {
+                ProgressView().controlSize(.mini).frame(width: 24)
+            } else {
+                SongRowWaveform().frame(width: 24)
             }
-            .frame(width: 24, height: 24)
         } else {
             Text(
                 (index + 1).formatted(
@@ -338,6 +337,7 @@ private struct PlaylistTrackRow: View {
     }
 
     private func playOrPause() {
+        if !isCurrentSong || !player.isPlaying { onPlayTrack?() }
         if isCurrentSong {
             player.togglePlayback()
         } else {

@@ -186,7 +186,8 @@ struct ListenTogetherView: View {
         Section("ui.player.now_playing") {
             if let song = player.currentSong {
                 HStack(spacing: 12) {
-                    songArtwork(song)
+                    SongRowArtwork(songID: song.id, url: song.album?.artworkURL, cornerRadius: 8)
+                        .frame(width: 52, height: 52)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(song.name)
@@ -200,6 +201,7 @@ struct ListenTogetherView: View {
                 }
                 .padding(.vertical, 3)
                 .accessibilityElement(children: .combine)
+                .songSwipeActions(song)
             } else {
                 Label(
                     "ui.listen_together.waiting_for_playback",
@@ -255,23 +257,4 @@ struct ListenTogetherView: View {
             }
         }
     }
-
-    private func songArtwork(_ song: Song) -> some View {
-        AsyncImage(url: song.album?.artworkURL) { phase in
-            switch phase {
-            case .success(let image):
-                image
-                    .resizable()
-                    .scaledToFill()
-            default:
-                Image(systemName: "music.note")
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(width: 52, height: 52)
-        .background(.quaternary, in: .rect(cornerRadius: 8))
-        .clipShape(.rect(cornerRadius: 8))
-        .accessibilityHidden(true)
-    }
-
 }

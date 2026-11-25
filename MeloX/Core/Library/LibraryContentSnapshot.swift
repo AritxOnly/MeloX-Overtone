@@ -18,4 +18,7 @@ struct LibraryContentSnapshot: Codable {
     let recentSongs: [Song]
     let likedPlaylistID: Int?
     var favoriteAddedDates: [Int: Date]?
+    var likedPlaylist: Playlist?
+    var recentCollections: [RecentMusicCollection]?
+    var playlistPlayDates: [Int: Date]?
 }

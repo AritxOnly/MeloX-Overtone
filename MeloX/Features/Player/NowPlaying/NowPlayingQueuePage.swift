@@ -83,6 +83,7 @@ struct NowPlayingQueuePage: View {
                 }
             }
             .listStyle(.plain)
+            .songSwipeGroup()
             .listSectionSpacing(0)
             .scrollContentBackground(.hidden)
             .scrollIndicators(.visible)
@@ -341,10 +342,8 @@ private struct NowPlayingQueueRow: View {
     var body: some View {
         Button(action: play) {
             HStack(spacing: 12) {
-                ArtworkImage(
-                    url: entry.song.album?.artworkURL,
-                    cornerRadius: 6
-                )
+                SongRowArtwork(songID: entry.song.id, url: entry.song.album?.artworkURL,
+                               representsCurrentEntry: entry.queueIndex == player.currentIndex)
                 .frame(width: 48, height: 48)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -373,6 +372,11 @@ private struct NowPlayingQueueRow: View {
         )
         .listRowSeparator(.hidden)
         .listRowBackground(Color.clear)
+        .songSwipeActions(entry.song, removal: .action("ui.player.remove_from_queue") {
+            player.removeQueuedSong(at: entry.queueIndex, matching: entry.song.id)
+        }, inline: true, next: {
+            Task { await player.promoteQueuedSong(at: entry.queueIndex, matching: entry.song) }
+        })
     }
 
     private func play() {

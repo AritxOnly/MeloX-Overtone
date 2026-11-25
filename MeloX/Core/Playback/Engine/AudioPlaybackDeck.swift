@@ -26,7 +26,8 @@ final class AudioPlaybackDeck: NSObject, @preconcurrency AudioPlayerDelegate {
     private let equalizer: AudioEqualizerProcessor
 
     #if os(iOS)
-    private let spectrum = SharedPlaybackAudioSpectrum()
+    private var spectrum = SharedPlaybackAudioSpectrum()
+    var rowMeterLevels: SIMD8<Float>? { spectrum.currentRowLevels() }
     var spectrumSnapshot: PlaybackAudioSpectrumSnapshot { spectrum.snapshot() }
     #endif
 
@@ -87,6 +88,7 @@ final class AudioPlaybackDeck: NSObject, @preconcurrency AudioPlayerDelegate {
         player.delegate = self
         equalizer.attach(to: player)
         #if os(iOS)
+        spectrum = SharedPlaybackAudioSpectrum()
         let analyzer = PlaybackAudioSpectrumAnalyzer(sharedSpectrum: spectrum)
         player.frameFiltering.add(entry: "melox.spectrum") { buffer, _ in
             analyzer.process(buffer: buffer)

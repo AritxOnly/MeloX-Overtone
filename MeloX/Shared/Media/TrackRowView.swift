@@ -9,6 +9,7 @@ struct TrackRowView: View {
     let song: Song
     var index: Int?
     var showsArtwork = false
+    var representsCurrentEntry = true
     var secondaryMetadata: String?
     var subtitleOverride: String?
     var playAction: (() -> Void)?
@@ -51,17 +52,21 @@ struct TrackRowView: View {
     private var trackLabel: some View {
         HStack(spacing: 12) {
             if showsArtwork {
-                ArtworkImage(url: song.album?.artworkURL, cornerRadius: 6)
+                SongRowArtwork(songID: song.id, url: song.album?.artworkURL, representsCurrentEntry: representsCurrentEntry)
                     .frame(width: playAction == nil ? 44 : 48, height: playAction == nil ? 44 : 48)
             } else if let index {
-                Text(
-                    (index + 1).formatted(
-                        .number.locale(L10n.locale)
+                if representsCurrentEntry && player.currentSong?.id == song.id {
+                    SongRowWaveform().frame(width: 26)
+                } else {
+                    Text(
+                        (index + 1).formatted(
+                            .number.locale(L10n.locale)
+                        )
                     )
-                )
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                    .frame(width: 26, alignment: .trailing)
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .frame(width: 26, alignment: .trailing)
+                }
             }
 
             VStack(alignment: .leading, spacing: 3) {

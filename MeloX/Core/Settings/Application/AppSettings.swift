@@ -147,6 +147,7 @@ final class AppSettings {
             "lyricsLiveActivityScrollPause"
         static let appLanguage = AppLanguage.storageKey
         static let searchSuggestionsEnabled = "searchSuggestionsEnabled"
+        static let accent = "appAccent"
         static let appearance = "appAppearance"
         static let area = "musicArea"
         static let showPlayCount = "showPlayCount"
@@ -432,6 +433,10 @@ final class AppSettings {
     }
 
     private(set) var appLanguage: AppLanguage
+
+    var accent: AppAccent {
+        didSet { defaults.set(accent.rawValue, forKey: Key.accent) }
+    }
 
     var appearance: AppAppearance {
         didSet {
@@ -1137,6 +1142,7 @@ final class AppSettings {
         lyricsLiveActivityScrollPause = defaults.object(
             forKey: Key.lyricsLiveActivityScrollPause
         ) as? Double ?? Self.defaultLyricsLiveActivityScrollPause
+        accent = defaults.string(forKey: Key.accent).flatMap(AppAccent.init(rawValue:)) ?? .classic
         appearance = AppAppearance(
             rawValue: defaults.string(forKey: Key.appearance) ?? ""
         ) ?? .system

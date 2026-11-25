@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct AlbumDetailContent: View {
+    @Environment(LibraryStore.self) private var library
+    @Environment(PlayerStore.self) private var player
+
     let album: Album
     let songs: [Song]
     let palette: ArtworkDetailPalette
@@ -30,7 +33,11 @@ struct AlbumDetailContent: View {
                 tracks: songs,
                 sourceID: album.id,
                 isSaved: isSubscribed,
-                onToggleSaved: onToggleSubscription
+                onToggleSaved: onToggleSubscription,
+                onPlayAll: { shuffled in
+                    library.recordCollectionPlayback(.album(album))
+                    await player.playAll(shuffled ? songs.shuffled() : songs, sourceID: album.id)
+                }
             )
 
         } tracks: {
@@ -43,6 +50,7 @@ struct AlbumDetailContent: View {
                 failureMessage: failureMessage,
                 downloadSelection: downloadCoordinator,
                 onRetry: onRetry,
+                onPlayTrack: { library.recordCollectionPlayback(.album(album)) },
                 highlightedSongID: highlightedSongID
             )
         }

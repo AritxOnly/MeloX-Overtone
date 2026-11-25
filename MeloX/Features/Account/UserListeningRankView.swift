@@ -120,6 +120,7 @@ struct UserListeningRankView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .songSwipeActions(record.song)
                 }
             }
             .listStyle(.plain)

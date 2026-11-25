@@ -43,6 +43,7 @@ struct MeloXApp: App {
         )
         let player = PlayerStore(
             api: api,
+            library: library,
             settings: settings,
             downloads: downloads,
             lyricsNotificationController: lyricsNotifications,
@@ -98,7 +99,8 @@ struct MeloXApp: App {
                 .environment(releaseNotes)
                 .environment(\.effectiveLyricsRefreshRate, effectiveLyricsRefreshRate)
                 .environment(\.locale, settings.appLanguage.locale)
-                .tint(.red)
+                .accentColor(settings.accent.color)
+                .tint(settings.accent.color)
                 .preferredColorScheme(
                     settings.appearance.preferredColorScheme
                 )

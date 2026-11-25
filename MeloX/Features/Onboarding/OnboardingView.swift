@@ -102,6 +102,5 @@ private struct OnboardingPreview: View {
         OnboardingView(startsAtAccount: startsAtAccount)
             .environment(settings)
             .environment(library)
-            .tint(.red)
     }
 }

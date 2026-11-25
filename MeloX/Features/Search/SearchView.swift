@@ -169,19 +169,7 @@ struct SearchView: View {
                         TrackRowView(song: song, showsArtwork: true)
                     }
                     .buttonStyle(.plain)
-                    .swipeActions(edge: .trailing) {
-                        Button {
-                            library.toggle(song: song)
-                        } label: {
-                            Label(
-                                library.contains(song: song)
-                                    ? L10n.string("ui.common.unfavorite")
-                                    : L10n.string("ui.common.favorite"),
-                                systemImage: library.contains(song: song) ? "heart.slash" : "heart"
-                            )
-                        }
-                        .tint(.pink)
-                    }
+                    .songSwipeActions(song)
                 }
             case .albums:
                 ForEach(albums) { album in
@@ -256,6 +244,7 @@ struct SearchView: View {
                         .musicMatchedTransitionSource(
                             for: MusicRoute.song(linkedSong)
                         )
+                        .songSwipeActions(linkedSong)
                     }
                 }
             }

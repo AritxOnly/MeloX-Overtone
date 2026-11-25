@@ -192,6 +192,16 @@ struct PlaybackQueue {
         )
     }
 
+    mutating func remove(at index: Int) {
+        guard songs.indices.contains(index), index != currentIndex else { return }
+        songs.remove(at: index)
+        if index < currentIndex { currentIndex -= 1 }
+        if isShuffled {
+            shuffledOrder = shuffledOrder.filter { $0 != index }.map { $0 > index ? $0 - 1 : $0 }
+            alignShufflePosition()
+        }
+    }
+
     mutating func moveUpcomingSongs(
         fromOffsets source: IndexSet,
         toOffset destination: Int,

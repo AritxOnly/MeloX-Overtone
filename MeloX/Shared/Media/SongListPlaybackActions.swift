@@ -12,7 +12,7 @@ struct SongListPlaybackActions: View {
         .buttonStyle(.plain)
         .foregroundStyle(.primary)
         .disabled(isPreparing)
-        .padding(.vertical, 10)
+        .listRowInsets(EdgeInsets(top: 2, leading: 20, bottom: 2, trailing: 20))
         .listRowSeparator(.hidden)
     }
 

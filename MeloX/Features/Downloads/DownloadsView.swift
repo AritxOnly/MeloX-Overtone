@@ -65,57 +65,25 @@ struct DownloadsView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         }
-                        .swipeActions {
-                            Button(role: .destructive) {
-                                downloads.cancel(songID: download.id)
-                            } label: {
-                                Label("ui.common.cancel", systemImage: "xmark")
-                            }
-                        }
+                        .songSwipeActions(download.song, removal: .download)
                     }
                 }
             }
 
             if !downloads.downloads.isEmpty {
                 Section {
-                    Button {
-                        Task { await player.playAll(downloads.downloadedSongs) }
-                    } label: {
-                        Label("ui.common.play_all", systemImage: "play.fill")
+                    SongListPlaybackActions { shuffled in
+                        let songs = downloads.downloadedSongs
+                        Task { await player.playAll(shuffled ? songs.shuffled() : songs) }
                     }
 
                     ForEach(downloads.downloads) { download in
-                        Button {
-                            Task {
-                                await player.play(
-                                    download.song,
-                                    in: downloads.downloadedSongs
-                                )
-                            }
-                        } label: {
-                            VStack(alignment: .leading, spacing: 6) {
-                                TrackRowView(song: download.song, showsArtwork: true)
-                                HStack {
-                                    Text(download.quality.title)
-                                    Spacer()
-                                    Text(
-                                        download.byteCount.formatted(
-                                            .byteCount(style: .file).locale(L10n.locale)
-                                        )
-                                    )
-                                }
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            }
+                        TrackRowView(song: download.song, showsArtwork: true,
+                                     secondaryMetadata: "\(download.quality.title) · \(L10n.byteCount(download.byteCount))") {
+                            Task { await player.play(download.song, in: downloads.downloadedSongs) }
                         }
-                        .buttonStyle(.plain)
-                        .swipeActions {
-                            Button(role: .destructive) {
-                                downloads.remove(songID: download.id)
-                            } label: {
-                                Label("ui.downloads.delete", systemImage: "trash")
-                            }
-                        }
+                        .listRowInsets(.init(top: 4, leading: 20, bottom: 4, trailing: 16))
+                        .songSwipeActions(download.song, removal: .download)
                     }
                 } header: {
                     Text("ui.downloads.downloaded")
@@ -136,13 +104,17 @@ struct DownloadsView: View {
                 }
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.plain)
+        .listSectionSpacing(.compact)
         .navigationTitle("ui.downloads.title")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("ui.downloads.delete_all", role: .destructive) {
-                    showsClearConfirmation = true
-                }
+                Menu {
+                    Button("ui.downloads.delete_all", systemImage: "trash", role: .destructive) {
+                        showsClearConfirmation = true
+                    }
+                } label: { Label("ui.common.more", systemImage: "ellipsis") }
+                .tint(.primary)
                 .disabled(downloads.downloads.isEmpty && activeDownloads.isEmpty)
             }
         }

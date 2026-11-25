@@ -5,37 +5,36 @@ struct SubscribedPodcastsView: View {
 
     @Environment(LibraryStore.self) private var library
 
+    @Environment(\.openMusicRoute) private var openMusicRoute
+    @AppStorage("library.podcasts.grid") private var grid = false
     @State private var searchReloadToken = 0
     @State private var searchPreparationID: UUID?
 
     var body: some View {
+        let podcasts = displayedPodcasts
         List {
-            if !displayedPodcasts.isEmpty {
-                Text(
-                    isSearching
-                        ? L10n.format("ui.common.search_result_count", displayedPodcasts.count)
-                        : L10n.format("ui.library.subscribed_podcast_count", library.subscribedPodcastTotalCount)
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .listRowSeparator(.hidden)
-            }
-
-            ForEach(displayedPodcasts) { podcast in
-                NavigationLink(
-                    value: MusicRoute.podcast(podcast)
-                ) {
-                    PodcastListRow(podcast: podcast)
-                }
-                .swipeActions(edge: .trailing) {
-                    Button(role: .destructive) {
-                        library.toggle(podcast: podcast)
-                    } label: {
-                        Label(
-                            L10n.string("ui.common.unsubscribe"),
-                            systemImage: "mic.slash"
-                        )
+            if grid {
+                ForEach(0..<((podcasts.count + 1) / 2), id: \.self) { row in
+                    HStack(alignment: .top, spacing: 12) {
+                        gridCard(podcasts[2 * row])
+                        if 2 * row + 1 < podcasts.count { gridCard(podcasts[2 * row + 1]) }
+                        else { Color.clear.frame(maxWidth: .infinity) }
                     }
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(.init(top: 4, leading: 20, bottom: 16, trailing: 20))
+                }
+            } else {
+                ForEach(podcasts) { podcast in
+                    NavigationLink(value: MusicRoute.podcast(podcast)) {
+                        HStack(spacing: 12) {
+                            artwork(podcast).frame(width: 64, height: 64)
+                            details(podcast)
+                        }
+                    }
+                    .musicMatchedTransitionSource(for: .podcast(podcast))
+                    .listRowInsets(.init(top: 8, leading: 20, bottom: 8, trailing: 16))
+                    .alignmentGuide(.listRowSeparatorLeading) { _ in 76 }
+                    .swipeActions { unsubscribe(podcast) }
                 }
             }
 
@@ -54,6 +53,25 @@ struct SubscribedPodcastsView: View {
                     await library.loadMoreSubscribedPodcasts()
                 }
                 .listRowSeparator(.hidden)
+            }
+
+            if !podcasts.isEmpty {
+                Text(isSearching
+                     ? L10n.format("ui.common.search_result_count", podcasts.count)
+                     : L10n.format("ui.library.subscribed_podcast_count", library.subscribedPodcastTotalCount))
+                    .font(.footnote).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .listRowSeparator(.hidden)
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    LibraryLayoutPicker(grid: $grid)
+                } label: {
+                    Label("ui.common.more", systemImage: "ellipsis")
+                }
+                .tint(.primary)
             }
         }
         .listStyle(.plain)
@@ -89,6 +107,39 @@ struct SubscribedPodcastsView: View {
             )
         ) {
             await prepareSearchResults(debounced: true)
+        }
+    }
+
+    private func gridCard(_ podcast: Podcast) -> some View {
+        Button { openMusicRoute(.podcast(podcast)) } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                artwork(podcast)
+                details(podcast)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .musicMatchedTransitionSource(for: .podcast(podcast))
+        .contextMenu { unsubscribe(podcast) }
+    }
+
+    private func artwork(_ podcast: Podcast) -> some View {
+        ArtworkImage(url: podcast.artworkURL, cornerRadius: 6, placeholderSymbol: "mic")
+    }
+
+    private func details(_ podcast: Podcast) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(podcast.name).font(grid ? .subheadline : .body)
+            Text(podcast.host?.nickname ?? podcast.subtitle ?? L10n.format("ui.podcasts.episode_count_short", podcast.programCount))
+                .font(.subheadline).foregroundStyle(.secondary)
+        }
+        .lineLimit(1)
+    }
+
+    private func unsubscribe(_ podcast: Podcast) -> some View {
+        Button("ui.common.unsubscribe", systemImage: "mic.slash", role: .destructive) {
+            library.toggle(podcast: podcast)
         }
     }
 

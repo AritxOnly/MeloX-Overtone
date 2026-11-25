@@ -295,3 +295,16 @@ struct PodcastProgramsResponse: Decodable {
         )
     }
 }
+
+struct RecentCollectionHistoryResponse<Resource: Decodable>: Decodable {
+    struct Payload: Decodable {
+        struct Item: Decodable {
+            let data: Resource?
+            let playTime: Double?
+        }
+        let list: [Item]
+    }
+    let code: Int
+    let message: String?
+    let data: Payload?
+}

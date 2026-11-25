@@ -96,7 +96,7 @@ struct ArtistDetailView: View {
         }
         .navigationDestination(isPresented: $showsAllSongs) {
             List(songs) { song in
-                songRow(song)
+                songRow(song).songSwipeActions(song)
             }
             .listStyle(.plain)
             .navigationTitle("ui.artist.song_chart")
@@ -219,7 +219,7 @@ struct ArtistDetailView: View {
             .buttonStyle(.plain)
             VStack(spacing: 0) {
                 ForEach(songs.prefix(5)) { song in
-                    songRow(song)
+                    songRow(song).songSwipeActions(song, inline: true)
                     if song.id != songs.prefix(5).last?.id {
                         Divider().padding(.leading, 60)
                     }
@@ -227,6 +227,7 @@ struct ArtistDetailView: View {
             }
         }
         .padding(.horizontal, 20)
+        .songSwipeGroup()
     }
 
     private func songRow(_ song: Song) -> some View {

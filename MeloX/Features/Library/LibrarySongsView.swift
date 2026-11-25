@@ -11,12 +11,8 @@ struct LibrarySongsView: View {
 
     @AppStorage("library.songs.sort") private var sort: LibrarySongSort = .artist
     @State private var filter: LibrarySongFilter = .all
-    @State private var index = LibrarySongIndex()
-    @State private var indexedRequest: LibrarySongIndex.Request?
     @State private var isStartingHeartMode = false
     @State private var heartModeErrorMessage: String?
-    @State private var isPreparingPlayback = false
-    @State private var playbackErrorMessage: String?
 
     private var request: LibrarySongIndex.Request {
         LibrarySongIndex.Request(favorites: library.favoriteSongs, favoriteDates: library.favoriteAddedDates,
@@ -27,10 +23,13 @@ struct LibrarySongsView: View {
 
     var body: some View {
         let request = request
+        let cached = library.songIndex.value(for: request)
+        let index = cached ?? LibrarySongIndex()
         List {
             if !index.songs.isEmpty {
-                SongListPlaybackActions(isPreparing: isPreparingPlayback) { shuffled in
-                    playDisplayedSongs(shuffled: shuffled)
+                SongListPlaybackActions { shuffled in
+                    let songs = index.songs
+                    Task { await player.playAll(shuffled ? songs.shuffled() : songs) }
                 }
             }
             ForEach(index.sections) { section in
@@ -49,13 +48,7 @@ struct LibrarySongsView: View {
                             }
                         }
                         .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 16))
-                        .swipeActions {
-                            if library.contains(song: song) {
-                                Button("ui.common.unfavorite", systemImage: "heart.slash", role: .destructive) {
-                                    library.toggle(song: song)
-                                }
-                            }
-                        }
+                        .songSwipeActions(song, removal: filter == .downloaded ? .download : .library)
                     }
                 } header: {
                     if !section.title.isEmpty {
@@ -66,18 +59,9 @@ struct LibrarySongsView: View {
                 }
                 .sectionIndexLabel(section.title.isEmpty ? nil : section.title)
             }
-
-            if library.hasMoreFavoriteSongs, filter != .downloaded {
-                if let message = library.favoriteSongsLoadMoreError {
-                    ConnectionUnavailableView(message: message) {
-                        Task { await library.loadRemainingFavoriteSongs() }
-                    }
-                } else {
-                    ProgressView().frame(maxWidth: .infinity)
-                }
-            }
         }
         .listStyle(.plain)
+        .listSectionSpacing(4)
         .listSectionIndexVisibility(sort == .added ? .hidden : .visible)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
@@ -99,24 +83,17 @@ struct LibrarySongsView: View {
                 .tint(.primary)
             }
         }
-        .refreshable {
-            await library.refresh(force: true)
-            await library.loadRemainingFavoriteSongs()
-        }
-        .task(id: library.hasMoreFavoriteSongs && filter != .downloaded) {
-            if library.hasMoreFavoriteSongs && filter != .downloaded {
-                await library.loadRemainingFavoriteSongs()
+        .refreshable { await library.refresh(force: true) }
+        .task(id: request) {
+            await library.songIndex.load(request, isBrowsing: filter == .all && request.query.isEmpty) {
+                try await LibrarySongIndex.build(request)
             }
         }
-        .task(id: request) {
-            guard let result = try? await LibrarySongIndex.build(request), !Task.isCancelled else { return }
-            index = result
-            indexedRequest = request
-        }
         .overlay {
-            if index.songs.isEmpty, indexedRequest == request,
-               !library.hasMoreFavoriteSongs || filter == .downloaded {
-                if !request.query.isEmpty {
+            if index.songs.isEmpty {
+                if cached == nil || library.phase == .loading {
+                    ProgressView("ui.library.loading")
+                } else if !request.query.isEmpty {
                     ContentUnavailableView.search(text: request.query)
                 } else {
                     ContentUnavailableView("ui.songs.empty", systemImage: "music.note.list")
@@ -140,23 +117,6 @@ struct LibrarySongsView: View {
         } message: {
             Text(heartModeErrorMessage ?? L10n.string("ui.error.try_again_later"))
         }
-        .alert(
-            "ui.library.play_all_failed",
-            isPresented: Binding(
-                get: { playbackErrorMessage != nil },
-                set: { isPresented in
-                    if !isPresented {
-                        playbackErrorMessage = nil
-                    }
-                }
-            )
-        ) {
-            Button("ui.common.ok", role: .cancel) {
-                playbackErrorMessage = nil
-            }
-        } message: {
-            Text(playbackErrorMessage ?? L10n.string("ui.library.complete_song_list_failed"))
-        }
     }
 
     private func startHeartMode() {
@@ -179,27 +139,6 @@ struct LibrarySongsView: View {
                 return
             } catch {
                 heartModeErrorMessage = error.localizedDescription
-            }
-        }
-    }
-
-    private func playDisplayedSongs(shuffled: Bool) {
-        guard !isPreparingPlayback else { return }
-        isPreparingPlayback = true
-        var selection = request
-        Task { @MainActor in
-            defer { isPreparingPlayback = false }
-            do {
-                if selection.filter != .downloaded && library.hasMoreFavoriteSongs {
-                    selection.favorites = try await library.favoriteSongsForPlayback()
-                }
-                let songs = try await LibrarySongIndex.build(selection).songs
-                try Task.checkCancellation()
-                await player.playAll(shuffled ? songs.shuffled() : songs)
-            } catch is CancellationError {
-                return
-            } catch {
-                playbackErrorMessage = error.localizedDescription
             }
         }
     }

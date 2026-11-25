@@ -40,3 +40,9 @@ enum AppAppearance: String, CaseIterable, Identifiable {
         }
     }
 }
+
+enum AppAccent: String, CaseIterable {
+    case classic, blue
+
+    var color: Color { self == .classic ? .red : .blue }
+}

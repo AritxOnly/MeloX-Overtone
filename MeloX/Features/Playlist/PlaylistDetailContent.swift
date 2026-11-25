@@ -81,6 +81,7 @@ struct PlaylistDetailContent: View {
                 downloadSelection: downloadCoordinator,
                 onRetry: onRetry,
                 onLoadMore: onLoadMore,
+                onPlayTrack: { library.recordCollectionPlayback(.playlist(playlist)) },
                 onRemoveSong: onRemoveSong,
                 highlightedSongID: highlightedSongID
             )
@@ -118,6 +119,7 @@ struct MusicCollectionTrackContent: View {
     var downloadSelection: MusicCollectionDownloadCoordinator? = nil
     let onRetry: () -> Void
     var onLoadMore: () async -> Void = {}
+    var onPlayTrack: (() -> Void)?
     var onRemoveSong: ((Song) -> Void)?
     var highlightedSongID: Int?
 
@@ -140,6 +142,7 @@ struct MusicCollectionTrackContent: View {
                         tracks: tracks,
                         sourceID: sourceID,
                         showsArtwork: showsArtwork,
+                        onPlayTrack: onPlayTrack,
                         onRemoveSong: onRemoveSong,
                         downloadSelection: downloadSelection,
                         highlightedSongID: highlightedSongID

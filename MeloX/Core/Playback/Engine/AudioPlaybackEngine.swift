@@ -67,6 +67,7 @@ final class AudioPlaybackEngine {
     var expectsPlaybackToContinue: Bool { wantsPlayback }
     var hasPreparedAutoMix: Bool { autoMixController.hasPreparedTransition }
     #if os(iOS)
+    var rowMeterLevels: SIMD8<Float>? { activeDeck.rowMeterLevels }
     var audioSpectrumSnapshot: PlaybackAudioSpectrumSnapshot { activeDeck.spectrumSnapshot }
     #endif
 

@@ -24,6 +24,31 @@ nonisolated final class SharedPlaybackAudioSpectrum: Sendable {
     private let lowAndMid = Atomic<UInt64>(0)
     private let highAndOverall = Atomic<UInt64>(0)
 
+    // Five 8-bit levels fit in a single atomic word. The audio callback never
+    // waits for a visible row, and reading the meter does not update any views.
+    private let rowLevels = Atomic<UInt64>(0)
+    private let rowUpdateTime = Atomic<UInt64>(0)
+
+    func publishRowLevels(_ levels: SIMD8<Float>) {
+        var packed: UInt64 = 0
+        for band in 0..<5 {
+            packed |= UInt64((min(1, max(0, levels[band])) * 255).rounded()) << (band * 8)
+        }
+        rowLevels.store(packed, ordering: .relaxed)
+        rowUpdateTime.store(DispatchTime.now().uptimeNanoseconds, ordering: .releasing)
+    }
+
+    func currentRowLevels() -> SIMD8<Float>? {
+        let timestamp = rowUpdateTime.load(ordering: .acquiring)
+        guard timestamp != 0, DispatchTime.now().uptimeNanoseconds - timestamp < 500_000_000 else { return nil }
+        let packed = rowLevels.load(ordering: .relaxed)
+        var levels = SIMD8<Float>.zero
+        for band in 0..<5 {
+            levels[band] = Float((packed >> (band * 8)) & 0xff) / 255
+        }
+        return levels
+    }
+
     func publish(_ snapshot: PlaybackAudioSpectrumSnapshot) {
         revision.wrappingAdd(
             1,
@@ -78,8 +103,7 @@ nonisolated final class SharedPlaybackAudioSpectrum: Sendable {
     }
 }
 
-/// A real-time-safe, three-band envelope follower matching the ranges and
-/// temporal response used by Music's Backdrop renderer.
+/// The backdrop and the compact five-band meter share one pass over the decoded PCM.
 nonisolated final class PlaybackAudioSpectrumAnalyzer {
     private static let delayCount = 10
     private static let historyCount = 4
@@ -88,10 +112,15 @@ nonisolated final class PlaybackAudioSpectrumAnalyzer {
     private let sharedSpectrum: SharedPlaybackAudioSpectrum
     private var sampleRate = 0.0
     private var channelCount = 0
-    private var lowCoefficient: Float = 0
-    private var midCoefficient: Float = 0
-    private var lowFilterState: [Float] = []
-    private var midFilterState: [Float] = []
+    private var coefficients = SIMD4<Float>.zero
+    private var filterStates: [SIMD4<Float>] = []
+    private var rowLevels = SIMD8<Float>.zero
+
+    private struct BandEnergy {
+        var backdrop = SIMD3<Double>.zero
+        var lowerFour = SIMD4<Double>.zero
+    }
+
     private var delayedBands = Array(
         repeating: SIMD3<Float>(repeating: 0),
         count: delayCount
@@ -112,30 +141,19 @@ nonisolated final class PlaybackAudioSpectrumAnalyzer {
     func prepare(sampleRate: Double, channelCount: Int) {
         self.sampleRate = sampleRate
         self.channelCount = max(channelCount, 1)
-        lowCoefficient = Self.lowPassCoefficient(
-            cutoff: 300,
-            sampleRate: sampleRate
+        coefficients = SIMD4(
+            Self.lowPassCoefficient(cutoff: 100, sampleRate: sampleRate),
+            Self.lowPassCoefficient(cutoff: 300, sampleRate: sampleRate),
+            Self.lowPassCoefficient(cutoff: 1_100, sampleRate: sampleRate),
+            Self.lowPassCoefficient(cutoff: 3_500, sampleRate: sampleRate)
         )
-        midCoefficient = Self.lowPassCoefficient(
-            cutoff: 3_500,
-            sampleRate: sampleRate
-        )
-        lowFilterState = Array(
-            repeating: 0,
-            count: self.channelCount
-        )
-        midFilterState = Array(
-            repeating: 0,
-            count: self.channelCount
-        )
+        filterStates = Array(repeating: .zero, count: self.channelCount)
         reset()
     }
 
     func reset() {
-        for index in lowFilterState.indices {
-            lowFilterState[index] = 0
-            midFilterState[index] = 0
-        }
+        for index in filterStates.indices { filterStates[index] = .zero }
+        rowLevels = .zero
         for index in delayedBands.indices {
             delayedBands[index] = .zero
         }
@@ -162,12 +180,12 @@ nonisolated final class PlaybackAudioSpectrumAnalyzer {
     ) {
         guard sampleRate > 0,
               frameCount > 0,
-              !lowFilterState.isEmpty else {
+              !filterStates.isEmpty else {
             return
         }
 
         let buffers = UnsafeMutableAudioBufferListPointer(bufferList)
-        var energy = SIMD3<Double>(repeating: 0)
+        var energy = BandEnergy()
         var analyzedSampleCount = 0
         var channelBase = 0
 
@@ -207,14 +225,16 @@ nonisolated final class PlaybackAudioSpectrumAnalyzer {
 
         guard analyzedSampleCount > 0 else { return }
         let divisor = Double(analyzedSampleCount)
+        let duration = Double(frameCount) / sampleRate
+        updateRowLevels(energy: energy, samples: divisor, duration: duration)
         let rawBands = SIMD3<Float>(
-            Self.normalizedPower(sqrt(energy.x / divisor)),
-            Self.normalizedPower(sqrt(energy.y / divisor)),
-            Self.normalizedPower(sqrt(energy.z / divisor))
+            Self.normalizedPower(sqrt(energy.backdrop.x / divisor)),
+            Self.normalizedPower(sqrt(energy.backdrop.y / divisor)),
+            Self.normalizedPower(sqrt(energy.backdrop.z / divisor))
         )
         updateEnvelope(
             with: Self.smootherstep(rawBands),
-            duration: Double(frameCount) / sampleRate
+            duration: duration
         )
     }
 
@@ -222,7 +242,7 @@ nonisolated final class PlaybackAudioSpectrumAnalyzer {
         samples: UnsafeMutablePointer<Float>,
         sampleCount: Int,
         channel: Int,
-        energy: inout SIMD3<Double>,
+        energy: inout BandEnergy,
         analyzedSampleCount: inout Int
     ) {
         guard channel < channelCount else { return }
@@ -241,7 +261,7 @@ nonisolated final class PlaybackAudioSpectrumAnalyzer {
         sampleCount: Int,
         channelsInBuffer: Int,
         channelBase: Int,
-        energy: inout SIMD3<Double>,
+        energy: inout BandEnergy,
         analyzedSampleCount: inout Int
     ) {
         let frameCount = sampleCount / channelsInBuffer
@@ -264,21 +284,34 @@ nonisolated final class PlaybackAudioSpectrumAnalyzer {
     private func accumulate(
         sample: Float,
         channel: Int,
-        energy: inout SIMD3<Double>
+        energy: inout BandEnergy
     ) {
         let finiteSample = sample.isFinite ? sample : 0
-        var low = lowFilterState[channel]
-        var lowAndMid = midFilterState[channel]
-        low += lowCoefficient * (finiteSample - low)
-        lowAndMid += midCoefficient * (finiteSample - lowAndMid)
-        lowFilterState[channel] = low
-        midFilterState[channel] = lowAndMid
+        var state = filterStates[channel]
+        state += coefficients * (SIMD4(repeating: finiteSample) - state)
+        filterStates[channel] = state
 
-        let mid = lowAndMid - low
-        let high = finiteSample - lowAndMid
-        energy.x += Double(low * low)
-        energy.y += Double(mid * mid)
-        energy.z += Double(high * high)
+        let mid = state.w - state.y
+        let high = finiteSample - state.w
+        energy.backdrop += SIMD3(Double(state.y * state.y), Double(mid * mid), Double(high * high))
+
+        // Adjacent low-pass differences split the same samples into five bands.
+        // The fifth band already has its energy in backdrop.z.
+        let bands = SIMD4(state.x, state.y - state.x, state.z - state.y, state.w - state.z)
+        energy.lowerFour += SIMD4<Double>(bands * bands)
+    }
+
+    private func updateRowLevels(energy: BandEnergy, samples: Double, duration: TimeInterval) {
+        let attack = Float(-expm1(-duration / 0.025))
+        let release = Float(-expm1(-duration / 0.13))
+        for band in 0..<5 {
+            let sum = band == 4 ? energy.backdrop.z : energy.lowerFour[band]
+            let rms = sqrt(sum / samples)
+            let level = Self.normalizedPower(rms)
+            let target = level * level
+            rowLevels[band] += (target - rowLevels[band]) * (target > rowLevels[band] ? attack : release)
+        }
+        sharedSpectrum.publishRowLevels(rowLevels)
     }
 
     private func updateEnvelope(

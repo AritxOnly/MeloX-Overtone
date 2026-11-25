@@ -680,7 +680,7 @@ final class NeteaseAPI {
     func likedSongReferences(
         userID: Int,
         likedPlaylistID: Int? = nil
-    ) async throws -> [TrackReference] {
+    ) async throws -> (references: [TrackReference], cover: String?) {
         if let likedPlaylistID {
             do {
                 // Only request playlist metadata and ordered track IDs here.
@@ -691,7 +691,7 @@ final class NeteaseAPI {
                 )
                 if !likedPlaylist.trackIDs.isEmpty
                     || likedPlaylist.trackCount == 0 {
-                    return likedPlaylist.trackIDs
+                    return (likedPlaylist.trackIDs, likedPlaylist.coverURLString)
                 }
             } catch is CancellationError {
                 throw CancellationError()
@@ -708,7 +708,7 @@ final class NeteaseAPI {
             authenticated: true
         )
         try validate(responseCode: response.code)
-        return response.ids.map { TrackReference(id: $0) }
+        return (response.ids.map { TrackReference(id: $0) }, nil)
     }
 
     func userPlaylists(userID: Int, limit: Int = 2_000) async throws -> [Playlist] {
@@ -730,6 +730,44 @@ final class NeteaseAPI {
         )
         try validate(responseCode: response.code)
         return response.playlist
+    }
+
+    private func recentCollectionHistory<Resource: Decodable>(
+        _ path: String, limit: Int, as type: Resource.Type
+    ) async throws -> [(Resource, Double)] {
+        let response: RecentCollectionHistoryResponse<Resource>
+        do {
+            response = try await client.weapi(path, data: ["limit": limit])
+        } catch APIError.emptyResponse {
+            response = try await client.eapi(path, data: ["limit": limit], authenticated: true)
+        }
+        try validate(responseCode: response.code, message: response.message)
+        return (response.data?.list ?? []).compactMap { item in
+            guard let resource = item.data, let time = item.playTime, time > 0 else { return nil }
+            return (resource, time)
+        }
+    }
+
+    func recentPlaylistPlayTimes() async throws -> [Int: Double] {
+        struct Identifier: Decodable { let id: Int }
+        let records = try await recentCollectionHistory("/api/play-record/playlist/list", limit: 1000, as: Identifier.self)
+        return Dictionary(records.map { ($0.0.id, $0.1) }, uniquingKeysWith: max)
+    }
+
+    func recentAlbums() async throws -> [RecentMusicCollection] {
+        let records = try await recentCollectionHistory("/api/play-record/album/list", limit: 24, as: Album.self)
+        return records.compactMap { album, time in
+            guard album.id > 0 else { return nil }
+            return RecentMusicCollection(.album(album), at: Date(timeIntervalSince1970: time / 1000))
+        }
+    }
+
+    func recentPlaylists() async throws -> [RecentMusicCollection] {
+        let records = try await recentCollectionHistory("/api/play-record/playlist/list", limit: 24, as: Playlist.self)
+        return records.compactMap { playlist, time in
+            guard playlist.id > 0 else { return nil }
+            return RecentMusicCollection(.playlist(playlist), at: Date(timeIntervalSince1970: time / 1000))
+        }
     }
 
     func recentSongs(limit: Int = 100) async throws -> [Song] {

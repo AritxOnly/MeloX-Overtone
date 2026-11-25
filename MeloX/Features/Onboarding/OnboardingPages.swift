@@ -142,7 +142,7 @@ struct OnboardingAccountView: View {
         } else {
             Image(systemName: "person.crop.circle")
                 .font(.system(size: 72, weight: .regular))
-                .foregroundStyle(.red)
+                .foregroundStyle(.tint)
                 .accessibilityHidden(true)
 
             VStack(spacing: 10) {

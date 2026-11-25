@@ -64,6 +64,8 @@ final class PlayerStore {
     private(set) var effectivePlaybackQuality: MusicQuality?
     private(set) var sleepTimer: PlaybackSleepTimer
 
+    var rowMeterLevels: SIMD8<Float>? { engine.rowMeterLevels }
+
     var currentAudioSpectrum: PlaybackAudioSpectrumSnapshot {
         engine.audioSpectrumSnapshot
     }
@@ -252,6 +254,7 @@ final class PlayerStore {
 
     init(
         api: NeteaseAPI,
+        library: LibraryStore,
         settings: AppSettings,
         downloads: DownloadStore,
         lyricsNotificationController:
@@ -280,7 +283,7 @@ final class PlayerStore {
             engine: engine,
             analyzer: beatAnalyzer
         )
-        nowPlayingSession = NowPlayingSession()
+        nowPlayingSession = NowPlayingSession(library: library)
         lyricsLiveActivityController = LyricsLiveActivityController()
         self.lyricsNotificationController =
             lyricsNotificationController
@@ -736,6 +739,24 @@ final class PlayerStore {
         onListenTogetherQueueEdit?()
         persistSnapshot()
         prepareAutoMixIfNeeded()
+    }
+
+    func removeQueuedSong(at index: Int, matching songID: Int) {
+        guard queue.indices.contains(index), queue[index].id == songID, index != currentIndex else { return }
+        cancelAutoMixPreparation()
+        playbackQueue.remove(at: index)
+        onListenTogetherQueueEdit?()
+        persistSnapshot()
+        prepareAutoMixIfNeeded()
+    }
+
+    func promoteQueuedSong(at index: Int, matching song: Song) async {
+        guard queue.indices.contains(index), queue[index].id == song.id else { return }
+        if let position = upcomingQueueIndices.firstIndex(of: index) {
+            moveUpcomingQueueItems(fromOffsets: IndexSet(integer: position), toOffset: 0)
+        } else {
+            await playNext(song)
+        }
     }
 
     func moveUpcomingQueueItems(

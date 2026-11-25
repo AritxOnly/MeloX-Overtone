@@ -1,5 +1,6 @@
 import AVFoundation
 import MediaPlayer
+import Observation
 import UIKit
 
 @MainActor
@@ -14,6 +15,9 @@ final class NowPlayingSession {
     private var nowPlayingInfo: [String: Any] = [:]
     private var artworkTask: Task<Void, Never>?
     private var representedSongID: Int?
+    private let library: LibraryStore
+    private var favoriteObservation: Task<Void, Never>?
+    private var favoriteTarget: Any?
 
     private var nowPlayingCenter: MPNowPlayingInfoCenter {
         .default()
@@ -23,12 +27,17 @@ final class NowPlayingSession {
         .shared()
     }
 
-    init() {
+    init(library: LibraryStore) {
+        self.library = library
         installRemoteCommands()
     }
 
     deinit {
         artworkTask?.cancel()
+        favoriteObservation?.cancel()
+        if let favoriteTarget {
+            MPRemoteCommandCenter.shared().likeCommand.removeTarget(favoriteTarget)
+        }
         for (command, target) in commandTargets {
             command.removeTarget(target)
         }
@@ -42,6 +51,7 @@ final class NowPlayingSession {
         lyricsDisplaySettings: NowPlayingLyricsDisplaySettings
     ) {
         representedSongID = song.id
+        configureFavoriteCommand(for: song)
         artworkTask?.cancel()
         let metadata = NowPlayingLyricsFormatter.metadata(
             songTitle: song.name,
@@ -123,6 +133,7 @@ final class NowPlayingSession {
 
     func clear() {
         representedSongID = nil
+        configureFavoriteCommand(for: nil)
         artworkTask?.cancel()
         artworkTask = nil
         nowPlayingInfo = [:]
@@ -131,6 +142,10 @@ final class NowPlayingSession {
     }
 
     private func installRemoteCommands() {
+        let favorite = commandCenter.likeCommand
+        favorite.isEnabled = false
+        favorite.localizedTitle = L10n.string("ui.common.favorite")
+        favorite.localizedShortTitle = favorite.localizedTitle
         commandCenter.playCommand.isEnabled = true
         commandCenter.pauseCommand.isEnabled = false
         commandCenter.togglePlayPauseCommand.isEnabled = false
@@ -169,6 +184,44 @@ final class NowPlayingSession {
             let position = event.positionTime
             Task { @MainActor in self?.onSeek?(position) }
             return .success
+        }
+    }
+
+    private func configureFavoriteCommand(for song: Song?) {
+        let command = commandCenter.likeCommand
+        favoriteObservation?.cancel()
+        if let favoriteTarget {
+            command.removeTarget(favoriteTarget)
+            self.favoriteTarget = nil
+        }
+        guard let song, song.id > 0, !song.isPodcastProgram else {
+            command.isEnabled = false
+            command.isActive = false
+            return
+        }
+
+        command.isActive = library.isLoggedIn && library.contains(song: song)
+        command.isEnabled = library.isLoggedIn
+        favoriteTarget = command.addTarget { @Sendable [weak self] event in
+            guard let self else { return .noActionableNowPlayingItem }
+            guard let feedback = event as? MPFeedbackCommandEvent else { return .commandFailed }
+            let shouldFavorite = !feedback.isNegative
+            Task { @MainActor in
+                guard self.representedSongID == song.id, self.library.isLoggedIn,
+                      self.library.contains(song: song) != shouldFavorite else { return }
+                self.library.toggle(song: song)
+            }
+            return .success
+        }
+        favoriteObservation = Task { @MainActor [library] in
+            let states = Observations {
+                library.isLoggedIn ? library.contains(song: song) : nil
+            }
+            for await state in states {
+                guard !Task.isCancelled else { return }
+                command.isActive = state == true
+                command.isEnabled = state != nil
+            }
         }
     }
 

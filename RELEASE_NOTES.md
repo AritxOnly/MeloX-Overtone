@@ -4,15 +4,15 @@
 
 ### 简体中文
 
-- 基于 MeloX 1.4.1 发布弦外的首个衍生版本。App 中文名为「弦外」，英文名为 Overtone，「关于」页提供本项目和上游仓库入口。
-- 更新音乐库的专辑浏览、筛选与排序，调整艺人、歌单和播放页面的布局。
-- 提供包含 Apple Watch App 和歌词组件的未签名 IPA，安装前请自行签名。
+- 音乐库新增「最近在听」，优化播放列表、艺人、云盘和下载页，并缓存歌曲、专辑与艺人列表的排序结果。
+- 歌曲行支持滑动排入下一首、下载及移除。播放时封面显示五条实时波形，暂停时保留暗色封面和收平的波形。
+- 在「设置 → 通用」可分别切换强调色和 App 图标。歌词翻译可直接开关，系统播放控件也可收藏歌曲。
 
 ### English
 
-- First Overtone release based on MeloX 1.4.1. The app is named 弦外 in Chinese and Overtone in English. About links to both the fork and the upstream project.
-- Updated album browsing, filtering and sorting in the library, and refined the artist, playlist and Now Playing layouts.
-- The unsigned IPA includes the Apple Watch app and lyrics extension. Sign it before installing.
+- Open recently played albums and playlists from the library. Updated playlists, artists, cloud music and downloads, with cached sorting for songs, albums and artists.
+- Swipe song rows to play next, download or remove. Five live audio bands appear over the current artwork and settle flat when paused.
+- Choose the accent color and app icon separately in General settings. Toggle lyric translation directly and favorite songs from the system playback controls.
 
 ## macOS
 

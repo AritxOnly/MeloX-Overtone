@@ -3,7 +3,6 @@ import SwiftUI
 struct DailySongsView: View {
     @Environment(NeteaseAPI.self) private var api
     @Environment(PlayerStore.self) private var player
-    @Environment(LibraryStore.self) private var library
 
     @State private var songs: [Song] = []
     @State private var phase: LoadingPhase = .loading
@@ -31,19 +30,7 @@ struct DailySongsView: View {
                         TrackRowView(song: song, showsArtwork: true) {
                             Task { await player.play(song, in: songs) }
                         }
-                        .swipeActions(edge: .trailing) {
-                            Button {
-                                library.toggle(song: song)
-                            } label: {
-                                Label(
-                                    library.contains(song: song)
-                                        ? L10n.string("ui.common.unfavorite")
-                                        : L10n.string("ui.common.favorite"),
-                                    systemImage: library.contains(song: song) ? "heart.slash" : "heart"
-                                )
-                            }
-                            .tint(.pink)
-                        }
+                        .songSwipeActions(song)
                     }
                 }
                 .listStyle(.plain)

@@ -4,6 +4,10 @@ import Observation
 @MainActor
 @Observable
 final class LibraryStore {
+    private(set) var songIndex = LibraryIndexCache<LibrarySongIndex.Request, LibrarySongIndex>()
+    let downloadIndex = LibraryIndexCache<LibrarySongIndex.Request, LibrarySongIndex>()
+    private(set) var albumIndex = LibraryIndexCache<LibraryAlbumIndex.Request, LibraryAlbumIndex>()
+    private(set) var artistIndex = LibraryIndexCache<ArtistIndexRequest, [ArtistSection]>()
     private(set) var profile: AccountProfile?
     private(set) var accountDetail: AccountDetail?
     private(set) var favoriteSongs: [Song] = []
@@ -12,11 +16,12 @@ final class LibraryStore {
     private(set) var favoriteArtists: [Artist] = []
     private(set) var subscribedPodcasts: [Podcast] = []
     private(set) var recentSongs: [Song] = []
-    private(set) var likedPlaylistID: Int?
+    private(set) var recentCollections: [RecentMusicCollection] = []
+    private(set) var playlistPlayDates: [Int: Date] = [:]
+    private(set) var likedPlaylist: Playlist?
+    var likedPlaylistID: Int? { likedPlaylist?.id }
     private(set) var favoriteSongTotalCount = 0
     private(set) var favoriteSongsNextOffset = 0
-    private(set) var isLoadingMoreFavoriteSongs = false
-    private(set) var favoriteSongsLoadMoreError: String?
     private(set) var subscribedPodcastTotalCount = 0
     private(set) var subscribedPodcastsNextOffset = 0
     private(set) var hasMoreSubscribedPodcasts = false
@@ -44,17 +49,7 @@ final class LibraryStore {
     private(set) var favoriteAddedDates: [Int: Date] = [:]
     private var favoriteSongIDs: [Int] = []
 
-    @ObservationIgnored
     private var favoriteSongIDSet: Set<Int> = []
-
-    @ObservationIgnored
-    private let favoriteSongPageSize = 100
-
-    @ObservationIgnored
-    private var favoriteSongPageLoadTask: Task<Void, Never>?
-
-    @ObservationIgnored
-    private var favoriteSongPageLoadID: UUID?
 
     @ObservationIgnored
     private let subscribedPodcastPageSize = 50
@@ -96,7 +91,7 @@ final class LibraryStore {
     }
 
     func contains(playlist: Playlist) -> Bool {
-        favoritePlaylists.contains { $0.id == playlist.id }
+        playlist.id == likedPlaylistID || favoritePlaylists.contains { $0.id == playlist.id }
     }
 
     func contains(artist: Artist) -> Bool {
@@ -134,6 +129,24 @@ final class LibraryStore {
         subscribedPodcasts.contains { $0.id == podcast.id }
     }
 
+    func recordCollectionPlayback(_ collection: ListenedCollection) {
+        guard isLoggedIn, settings.isContentFeatureEnabled(.listeningHistory) else { return }
+        let now = Date()
+        if case .playlist(let playlist) = collection {
+            playlistPlayDates[playlist.id] = now
+        }
+        mergeRecentCollections([RecentMusicCollection(collection, at: now)])
+        persistContentInBackground()
+    }
+
+    private func mergeRecentCollections(_ records: [RecentMusicCollection]) {
+        var seen: Set<String> = []
+        recentCollections = Array((recentCollections + records)
+            .sorted { $0.playedAt > $1.playedAt }
+            .filter { seen.insert($0.id).inserted }
+            .prefix(24))
+    }
+
     func recordRecentlyPlayed(_ song: Song) {
         guard settings.isContentFeatureEnabled(.listeningHistory) else {
             return
@@ -147,7 +160,7 @@ final class LibraryStore {
     }
 
     func canUnsubscribe(_ playlist: Playlist) -> Bool {
-        playlist.creator?.userID != profile?.id
+        playlist.id != likedPlaylistID && playlist.creator?.userID != profile?.id
     }
 
     func refresh(force: Bool = false) async {
@@ -174,13 +187,13 @@ final class LibraryStore {
             if let snapshot: LibraryContentSnapshot = await api.pageContentCache.value(
                 for: LibraryContentSnapshot.cacheKey
             ) {
+                guard isCurrentRefresh(cookie) else { return }
                 restoreContent(snapshot)
             }
             guard isCurrentRefresh(cookie) else { return }
         }
         phase = .loading
         errorMessage = nil
-        favoriteSongsLoadMoreError = nil
         subscribedPodcastsLoadMoreError = nil
 
         do {
@@ -209,9 +222,7 @@ final class LibraryStore {
             do {
                 loadedPlaylists = try await api.userPlaylists(userID: loadedProfile.id)
                 guard isCurrentRefresh(cookie) else { return }
-                // 网易云把“我喜欢的音乐”作为返回列表的第一项；参考项目
-                // 同样在歌单页隐藏这一项，歌曲页单独展示其中的歌曲。
-                likedPlaylistID = loadedPlaylists.first?.id
+                likedPlaylist = loadedPlaylists.first
                 favoritePlaylists = Array(loadedPlaylists.dropFirst())
             } catch is CancellationError {
                 return
@@ -219,10 +230,14 @@ final class LibraryStore {
                 partialFailures.append(L10n.format("ui.library.error.playlists", error.localizedDescription))
             }
 
+            var refreshedAlbums: [Album]?
+            var refreshedArtists: [Artist]?
+            let priorAlbums = favoriteAlbums
+            let priorArtists = favoriteArtists
             do {
                 let albums = try await api.subscribedAlbums()
                 guard isCurrentRefresh(cookie) else { return }
-                favoriteAlbums = albums
+                refreshedAlbums = albums
             } catch is CancellationError {
                 return
             } catch {
@@ -234,7 +249,7 @@ final class LibraryStore {
             do {
                 let artists = try await api.subscribedArtists()
                 guard isCurrentRefresh(cookie) else { return }
-                favoriteArtists = artists
+                refreshedArtists = artists
             } catch is CancellationError {
                 return
             } catch {
@@ -269,40 +284,47 @@ final class LibraryStore {
             }
 
             do {
-                let references = try await api.likedSongReferences(
+                let priorIDs = favoriteSongIDs
+                let (references, cover) = try await api.likedSongReferences(
                     userID: loadedProfile.id,
                     likedPlaylistID: likedPlaylistID
                 )
+                guard isCurrentRefresh(cookie) else { return }
+                if let cover, !cover.isEmpty { likedPlaylist?.coverURLString = cover }
                 let loadedSongIDs = references.map(\.id)
-                let firstPage = try await api.songDetailsPage(
-                    ids: loadedSongIDs,
-                    offset: 0,
-                    limit: favoriteSongPageSize
+                // Resolve missing metadata before publishing any new ordering.
+                let songs = try await api.songDetailsCollection(
+                    ids: loadedSongIDs, prefetched: force ? [] : favoriteSongs
                 )
                 guard isCurrentRefresh(cookie) else { return }
-                guard loadedSongIDs.isEmpty || !firstPage.songs.isEmpty else {
-                    throw APIError.invalidResponse
-                }
-                favoriteAddedDates = references.reduce(into: [:]) { dates, track in
-                    if let milliseconds = track.addedMilliseconds, milliseconds > 0 {
-                        dates[track.id] = Date(timeIntervalSince1970: milliseconds / 1000)
-                    } else {
-                        dates[track.id] = favoriteAddedDates[track.id]
+                guard loadedSongIDs.isEmpty || !songs.isEmpty else { throw APIError.invalidResponse }
+                if priorIDs == favoriteSongIDs {
+                    favoriteAddedDates = references.reduce(into: [:]) { dates, track in
+                        if let milliseconds = track.addedMilliseconds, milliseconds > 0 {
+                            dates[track.id] = Date(timeIntervalSince1970: milliseconds / 1000)
+                        } else {
+                            dates[track.id] = favoriteAddedDates[track.id]
+                        }
                     }
+                    favoriteSongIDs = loadedSongIDs
+                    favoriteSongIDSet = Set(loadedSongIDs)
+                    favoriteSongTotalCount = loadedSongIDs.count
+                    favoriteSongs = songs
+                    favoriteSongsNextOffset = loadedSongIDs.count
                 }
-                favoriteSongIDs = loadedSongIDs
-                favoriteSongIDSet = Set(loadedSongIDs)
-                favoriteSongTotalCount = loadedSongIDs.count
-                favoriteSongs = firstPage.songs
-                favoriteSongsNextOffset = firstPage.nextOffset
-                favoriteSongsLoadMoreError = nil
             } catch is CancellationError {
                 return
             } catch {
                 partialFailures.append(L10n.format("ui.library.error.favorite_songs", error.localizedDescription))
             }
 
+            guard isCurrentRefresh(cookie) else { return }
+            if let refreshedAlbums, favoriteAlbums == priorAlbums { favoriteAlbums = refreshedAlbums }
+            if let refreshedArtists, favoriteArtists == priorArtists { favoriteArtists = refreshedArtists }
+
             if settings.isContentFeatureEnabled(.listeningHistory) {
+                async let albums = try? api.recentAlbums()
+                async let playlists = try? api.recentPlaylists()
                 do {
                     let songs = try await api.recentSongs()
                     guard isCurrentRefresh(cookie) else { return }
@@ -314,6 +336,9 @@ final class LibraryStore {
                         L10n.format("ui.library.error.history", error.localizedDescription)
                     )
                 }
+                let records = await (albums ?? []) + (playlists ?? [])
+                guard isCurrentRefresh(cookie) else { return }
+                mergeRecentCollections(records)
             }
 
             guard isCurrentRefresh(cookie) else { return }
@@ -347,98 +372,6 @@ final class LibraryStore {
     private func isCurrentRefresh(_ cookie: String) -> Bool {
         !Task.isCancelled && refreshingCookie == cookie
             && settings.cookie.trimmingCharacters(in: .whitespacesAndNewlines) == cookie
-    }
-
-    func loadMoreFavoriteSongs() async {
-        if let favoriteSongPageLoadTask {
-            await favoriteSongPageLoadTask.value
-            return
-        }
-
-        guard hasMoreFavoriteSongs else { return }
-
-        let requestedOffset = favoriteSongsNextOffset
-        let requestedIDs = favoriteSongIDs
-        let loadID = UUID()
-        let loadTask = Task { @MainActor [weak self] in
-            guard let self else { return }
-            await self.loadFavoriteSongsPage(
-                ids: requestedIDs,
-                offset: requestedOffset
-            )
-        }
-        favoriteSongPageLoadID = loadID
-        favoriteSongPageLoadTask = loadTask
-
-        await loadTask.value
-
-        guard favoriteSongPageLoadID == loadID else { return }
-        favoriteSongPageLoadTask = nil
-        favoriteSongPageLoadID = nil
-    }
-
-    func loadRemainingFavoriteSongs() async {
-        while hasMoreFavoriteSongs {
-            guard !Task.isCancelled else { return }
-            let previousOffset = favoriteSongsNextOffset
-            await loadMoreFavoriteSongs()
-            guard favoriteSongsNextOffset > previousOffset else { return }
-        }
-    }
-
-    func favoriteSongsForPlayback() async throws -> [Song] {
-        if let favoriteSongPageLoadTask {
-            await favoriteSongPageLoadTask.value
-        }
-
-        let requestedIDs = favoriteSongIDs
-        let songs = try await api.songDetailsCollection(
-            ids: requestedIDs,
-            prefetched: favoriteSongs
-        )
-        try Task.checkCancellation()
-
-        if favoriteSongIDs == requestedIDs {
-            favoriteSongs = songs
-            favoriteSongsNextOffset = requestedIDs.count
-            favoriteSongsLoadMoreError = nil
-        }
-        return songs
-    }
-
-    private func loadFavoriteSongsPage(
-        ids requestedIDs: [Int],
-        offset requestedOffset: Int
-    ) async {
-        isLoadingMoreFavoriteSongs = true
-        favoriteSongsLoadMoreError = nil
-        defer { isLoadingMoreFavoriteSongs = false }
-
-        do {
-            let page = try await api.songDetailsPage(
-                ids: requestedIDs,
-                offset: requestedOffset,
-                limit: favoriteSongPageSize
-            )
-            try Task.checkCancellation()
-            guard favoriteSongIDs == requestedIDs,
-                  favoriteSongsNextOffset == requestedOffset else {
-                return
-            }
-
-            var loadedIDs = Set(favoriteSongs.map(\.id))
-            favoriteSongs.append(
-                contentsOf: page.songs.filter {
-                    loadedIDs.insert($0.id).inserted
-                }
-            )
-            favoriteSongsNextOffset = page.nextOffset
-            await persistContent()
-        } catch is CancellationError {
-            return
-        } catch {
-            favoriteSongsLoadMoreError = error.localizedDescription
-        }
     }
 
     func loadMoreSubscribedPodcasts() async {
@@ -686,10 +619,10 @@ final class LibraryStore {
     }
 
     private func clearRemoteContent() {
+        songIndex = LibraryIndexCache()
+        albumIndex = LibraryIndexCache()
+        artistIndex = LibraryIndexCache()
         lastSuccessfulRefresh = nil
-        favoriteSongPageLoadTask?.cancel()
-        favoriteSongPageLoadTask = nil
-        favoriteSongPageLoadID = nil
         subscribedPodcastPageLoadTask?.cancel()
         subscribedPodcastPageLoadTask = nil
         subscribedPodcastPageLoadID = nil
@@ -701,14 +634,14 @@ final class LibraryStore {
         favoriteArtists = []
         subscribedPodcasts = []
         recentSongs = []
-        likedPlaylistID = nil
+        recentCollections = []
+        playlistPlayDates = [:]
+        likedPlaylist = nil
         favoriteAddedDates = [:]
         favoriteSongIDs = []
         favoriteSongIDSet = []
         favoriteSongTotalCount = 0
         favoriteSongsNextOffset = 0
-        isLoadingMoreFavoriteSongs = false
-        favoriteSongsLoadMoreError = nil
         subscribedPodcastTotalCount = 0
         subscribedPodcastsNextOffset = 0
         hasMoreSubscribedPodcasts = false
@@ -785,7 +718,17 @@ final class LibraryStore {
         subscribedPodcastsNextOffset = snapshot.subscribedPodcastsNextOffset
         hasMoreSubscribedPodcasts = snapshot.hasMoreSubscribedPodcasts
         recentSongs = snapshot.recentSongs
-        likedPlaylistID = snapshot.likedPlaylistID
+        playlistPlayDates = snapshot.playlistPlayDates ?? [:]
+        recentCollections = snapshot.recentCollections ?? []
+        likedPlaylist = snapshot.likedPlaylist ?? snapshot.likedPlaylistID.map {
+            Playlist(id: $0, name: L10n.string("ui.library.playlists.favorite_songs"), trackCount: snapshot.favoriteSongIDs.count)
+        }
+        if snapshot.recentCollections == nil {
+            let knownPlaylists = favoritePlaylists + [likedPlaylist].compactMap { $0 }
+            mergeRecentCollections(knownPlaylists.compactMap { playlist in
+                playlistPlayDates[playlist.id].map { RecentMusicCollection(.playlist(playlist), at: $0) }
+            })
+        }
     }
 
     private func persistContentInBackground() {
@@ -812,7 +755,10 @@ final class LibraryStore {
             hasMoreSubscribedPodcasts: hasMoreSubscribedPodcasts,
             recentSongs: recentSongs,
             likedPlaylistID: likedPlaylistID,
-            favoriteAddedDates: favoriteAddedDates
+            favoriteAddedDates: favoriteAddedDates,
+            likedPlaylist: likedPlaylist,
+            recentCollections: recentCollections,
+            playlistPlayDates: playlistPlayDates
         )
         await api.pageContentCache.store(snapshot, for: LibraryContentSnapshot.cacheKey)
     }

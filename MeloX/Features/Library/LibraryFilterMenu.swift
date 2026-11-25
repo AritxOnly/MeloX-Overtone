@@ -25,3 +25,25 @@ struct LibraryFilterMenu: View {
         }
     }
 }
+
+struct LibraryFavoriteStar: View {
+    var body: some View {
+        Image(systemName: "star.fill")
+            .font(.system(size: 9))
+            .foregroundStyle(.yellow)
+            .offset(x: -14)
+            .accessibilityHidden(true)
+    }
+}
+
+struct LibraryLayoutPicker: View {
+    @Binding var grid: Bool
+
+    var body: some View {
+        Picker("ui.library.layout", selection: $grid) {
+            Label("ui.library.layout.grid", systemImage: "square.grid.2x2").tag(true)
+            Label("ui.library.layout.list", systemImage: "list.bullet").tag(false)
+        }
+        .pickerStyle(.inline)
+    }
+}

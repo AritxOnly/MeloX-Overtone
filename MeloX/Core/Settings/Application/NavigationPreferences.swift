@@ -38,7 +38,6 @@ enum LibraryPage: String, CaseIterable, Identifiable {
     case downloads
     case podcasts
     case cloud
-    case history
 
     var id: String { rawValue }
 
@@ -57,7 +56,6 @@ enum LibraryPage: String, CaseIterable, Identifiable {
         case .podcasts: L10n.string("ui.navigation.podcasts")
         case .downloads: L10n.string("ui.navigation.downloads")
         case .cloud: L10n.string("ui.navigation.cloud")
-        case .history: L10n.string("ui.common.history")
         }
     }
 
@@ -70,7 +68,6 @@ enum LibraryPage: String, CaseIterable, Identifiable {
         case .podcasts: "mic"
         case .downloads: "arrow.down.circle"
         case .cloud: "icloud"
-        case .history: "clock"
         }
     }
 }

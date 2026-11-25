@@ -8,9 +8,38 @@ struct NowPlayingLyricsLanguageButton: View {
     var usesMenuLabel = false
 
     var body: some View {
+        if usesMenuLabel {
+            annotationMenu
+        } else {
+            Button {
+                if hasTranslations {
+                    settings.lyricsTranslationEnabled.toggle()
+                } else {
+                    settings.lyricsRomanizationEnabled.toggle()
+                }
+            } label: {
+                Image(systemName: "translate")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 40, height: 40)
+                    .background(.white.opacity(isQuickToggleOn ? 0.24 : 0.1), in: .circle)
+                    .frame(width: 44, height: 44)
+                    .contentShape(.circle)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(hasTranslations ? Text("ui.lyrics.show_translation") : Text("ui.settings.lyrics.content.show_romanization"))
+            .accessibilityValue(isQuickToggleOn ? Text("ui.common.on") : Text("ui.common.off"))
+        }
+    }
+
+    private var isQuickToggleOn: Bool {
+        hasTranslations ? settings.lyricsTranslationEnabled : settings.lyricsRomanizationEnabled
+    }
+
+    private var annotationMenu: some View {
         @Bindable var settings = settings
 
-        Menu {
+        return Menu {
             if hasRomanizations {
                 Toggle(
                     "ui.settings.lyrics.content.show_romanization",
@@ -58,24 +87,7 @@ struct NowPlayingLyricsLanguageButton: View {
             }
 
         } label: {
-            if usesMenuLabel {
-                Label("ui.settings.lyrics.content.section.translation_pronunciation", systemImage: "translate")
-            } else {
-                Image(systemName: "translate")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 32, height: 32)
-                    .background(
-                        .white.opacity(
-                            hasEnabledAnnotation
-                                ? 0.18
-                                : 0.1
-                        ),
-                        in: .circle
-                    )
-                    .frame(width: 44, height: 44)
-                    .contentShape(.circle)
-            }
+            Label("ui.settings.lyrics.content.section.translation_pronunciation", systemImage: "translate")
         }
         .buttonStyle(.plain)
         .accessibilityLabel("ui.settings.lyrics.content.section.translation_pronunciation")
@@ -91,11 +103,6 @@ struct NowPlayingLyricsLanguageButton: View {
     private var supportsEditableAnnotationRange: Bool {
         settings.lyricsStyle == .appleMusic
             && !usesAppleMusic26Presentation
-    }
-
-    private var hasEnabledAnnotation: Bool {
-        (hasRomanizations && settings.lyricsRomanizationEnabled)
-            || (hasTranslations && settings.lyricsTranslationEnabled)
     }
 
     private var accessibilityValue: String {
