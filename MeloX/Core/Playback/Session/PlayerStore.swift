@@ -298,7 +298,7 @@ final class PlayerStore {
             engine: engine,
             analyzer: beatAnalyzer
         )
-        nowPlayingSession = NowPlayingSession(library: library, api: api)
+        nowPlayingSession = NowPlayingSession(library: library, api: api, settings: settings)
         lyricsLiveActivityController = LyricsLiveActivityController()
         self.lyricsNotificationController =
             lyricsNotificationController

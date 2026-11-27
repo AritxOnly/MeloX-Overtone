@@ -18,6 +18,10 @@ final class NowPlayingSession {
     private var representedSongID: Int?
     let motion = MotionArtworkSelection()
     private let api: NeteaseAPI
+    private let settings: AppSettings
+    private var motionPreferenceObservation: Task<Void, Never>?
+    private var eligibleMotionSongID: Int?
+    private var requestedMotionSongID: Int?
     private var motionTask: Task<Void, Never>?
     private let library: LibraryStore
     private var favoriteObservation: Task<Void, Never>?
@@ -31,13 +35,21 @@ final class NowPlayingSession {
         .shared()
     }
 
-    init(library: LibraryStore, api: NeteaseAPI) {
+    init(library: LibraryStore, api: NeteaseAPI, settings: AppSettings) {
+        self.settings = settings
         self.api = api
         self.library = library
         installRemoteCommands()
+        motionPreferenceObservation = Task { [weak self, settings] in
+            for await _ in Observations({ settings.motionArtworkEnabled }) {
+                guard !Task.isCancelled else { return }
+                self?.synchronizeMotionArtwork()
+            }
+        }
     }
 
     deinit {
+        motionPreferenceObservation?.cancel()
         motionTask?.cancel()
         artworkTask?.cancel()
         favoriteObservation?.cancel()
@@ -60,10 +72,7 @@ final class NowPlayingSession {
         let animatedInfo = sameSong ? nowPlayingInfo.filter {
             MPNowPlayingInfoCenter.supportedAnimatedArtworkKeys.contains($0.key)
         } : [:]
-        if !sameSong {
-            motionTask?.cancel()
-            motion.source = nil
-        }
+        eligibleMotionSongID = song.id > 0 && !song.isPodcastProgram ? song.id : nil
         representedSongID = song.id
         configureFavoriteCommand(for: song)
         artworkTask?.cancel()
@@ -101,9 +110,7 @@ final class NowPlayingSession {
             nowPlayingInfo[MPNowPlayingInfoCollectionIdentifier] = "netease:album:\(albumID)"
         }
         nowPlayingInfo.merge(animatedInfo) { _, new in new }
-        if !sameSong, !song.isPodcastProgram, song.id > 0 {
-            loadMotionArtwork(songID: song.id)
-        }
+        synchronizeMotionArtwork()
         nowPlayingCenter.nowPlayingInfo = nowPlayingInfo
         loadArtwork(from: song.album?.artworkURL, songID: song.id)
     }
@@ -152,8 +159,8 @@ final class NowPlayingSession {
     }
 
     func clear() {
-        motionTask?.cancel()
-        motion.source = nil
+        eligibleMotionSongID = nil
+        synchronizeMotionArtwork()
         representedSongID = nil
         configureFavoriteCommand(for: nil)
         artworkTask?.cancel()
@@ -261,10 +268,20 @@ final class NowPlayingSession {
         commandTargets.append((command, target))
     }
 
-    private func loadMotionArtwork(songID: Int) {
+    private func synchronizeMotionArtwork() {
+        let next = settings.motionArtworkEnabled ? eligibleMotionSongID : nil
+        guard next != requestedMotionSongID else { return }
+        requestedMotionSongID = next
+        motionTask?.cancel()
+        motion.source?.cancel()
+        motion.source = nil
+        nowPlayingInfo.removeValue(forKey: MPNowPlayingInfoProperty1x1AnimatedArtwork)
+        nowPlayingInfo.removeValue(forKey: MPNowPlayingInfoProperty3x4AnimatedArtwork)
+        nowPlayingCenter.nowPlayingInfo = nowPlayingInfo
+        guard let songID = next else { return }
         motionTask = Task { [weak self, api] in
             guard let url = try? await api.motionArtworkURL(songID: songID),
-                  !Task.isCancelled, let self, representedSongID == songID else { return }
+                  !Task.isCancelled, let self, settings.motionArtworkEnabled, representedSongID == songID else { return }
             let source = MotionArtworkSource(songID: songID, url: url)
             motion.source = source
             for key in MPNowPlayingInfoCenter.supportedAnimatedArtworkKeys {

@@ -168,6 +168,7 @@ final class AppSettings {
             "resumesPlaybackInMixWhenInterrupted"
         static let playerBackgroundBlur = "playerBackgroundBlur"
         static let playerBackgroundSaturation = "playerBackgroundSaturation"
+        static let motionArtworkEnabled = "motionArtworkEnabled"
         static let shrinksPausedArtwork = "shrinksPausedArtwork"
         static let lyricsStyle = "lyricsStyle"
         static let appleMusicLyricsInterfaceAutoHideDelay =
@@ -537,6 +538,10 @@ final class AppSettings {
 
     var playerBackgroundSaturation: Double {
         didSet { defaults.set(playerBackgroundSaturation, forKey: Key.playerBackgroundSaturation) }
+    }
+
+    var motionArtworkEnabled: Bool {
+        didSet { defaults.set(motionArtworkEnabled, forKey: Key.motionArtworkEnabled) }
     }
 
     var shrinksPausedArtwork: Bool {
@@ -1207,6 +1212,7 @@ final class AppSettings {
         playerBackgroundSaturation = defaults.object(
             forKey: Key.playerBackgroundSaturation
         ) as? Double ?? Self.defaultPlayerBackgroundSaturation
+        motionArtworkEnabled = defaults.object(forKey: Key.motionArtworkEnabled) as? Bool ?? true
         shrinksPausedArtwork = defaults.object(forKey: Key.shrinksPausedArtwork) as? Bool ?? true
         let storedLyricsStyle = defaults.string(forKey: Key.lyricsStyle) ?? ""
         switch storedLyricsStyle {
@@ -1644,6 +1650,7 @@ final class AppSettings {
         playerBackgroundBlur = 90
         playerBackgroundSaturation =
             Self.defaultPlayerBackgroundSaturation
+        motionArtworkEnabled = true
         shrinksPausedArtwork = true
         lyricsStyle = .appleMusic
         lyricsInterlude.reset()

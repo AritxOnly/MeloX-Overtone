@@ -435,6 +435,7 @@
 "ui.settings.player_appearance.beat_vignette" = "重拍暗角";
 "ui.settings.player_appearance.audio_response" = "随音乐响应";
 "ui.settings.player_appearance.blur" = "背景模糊";
+"ui.settings.player_appearance.motion_artwork" = "播放器与锁屏动态封面";
 "ui.settings.player_appearance.shrink_paused_artwork" = "暂停时缩小封面";
 "ui.settings.player_appearance.background.section" = "背景与封面";
 "ui.settings.player_appearance.screen_awake" = "屏幕常亮";

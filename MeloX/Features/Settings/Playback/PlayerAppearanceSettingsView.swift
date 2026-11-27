@@ -65,6 +65,11 @@ struct PlayerAppearanceSettingsView: View {
                 }
 
                 Toggle(
+                    "ui.settings.player_appearance.motion_artwork",
+                    isOn: $settings.motionArtworkEnabled
+                )
+
+                Toggle(
                     "ui.settings.player_appearance.shrink_paused_artwork",
                     isOn: $settings.shrinksPausedArtwork
                 )

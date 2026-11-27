@@ -15,6 +15,7 @@ final class MotionArtworkSource {
     private let remoteURL: URL
     private let directory = FileManager.default.temporaryDirectory
         .appendingPathComponent("MeloX-Motion-" + UUID().uuidString, isDirectory: true)
+    private var isCancelled = false
     private var download: Task<URL, Error>?
     private var renders: [Int: Task<URL, Error>] = [:]
     private var firstFrame: Task<CGImage, Error>?
@@ -31,7 +32,15 @@ final class MotionArtworkSource {
         try? FileManager.default.removeItem(at: directory)
     }
 
+    func cancel() {
+        isCancelled = true
+        download?.cancel()
+        firstFrame?.cancel()
+        for task in renders.values { task.cancel() }
+    }
+
     func localFile() async throws -> URL {
+        guard !isCancelled else { throw CancellationError() }
         if let download { return try await download.value }
         let task = Task { [remoteURL, directory] in
             let (file, response) = try await URLSession.shared.download(from: remoteURL)
@@ -53,6 +62,7 @@ final class MotionArtworkSource {
     }
 
     private func poster() async throws -> CGImage {
+        guard !isCancelled else { throw CancellationError() }
         if let firstFrame { return try await firstFrame.value }
         let task = Task {
             let asset = AVURLAsset(url: try await localFile())
@@ -73,10 +83,10 @@ final class MotionArtworkSource {
     func systemArtwork(tall: Bool) -> MPMediaItemAnimatedArtwork {
         let size = CGSize(width: 720, height: tall ? 960 : 720)
         return MPMediaItemAnimatedArtwork(
-            artworkID: "netease-motion-\(songID)-\(Int(size.height))",
+            artworkID: "netease-motion-v2-\(songID)-\(Int(size.height))",
             previewImageRequestHandler: { _ in
                 guard let image = try? await self.poster() else { return nil }
-                let preview = MotionArtworkComposition.frame(CIImage(cgImage: image), size: size)
+                let preview = MotionArtworkComposition.frame(CIImage(cgImage: image), size: size, forLockScreen: true)
                 guard let cg = Self.previewContext.createCGImage(preview, from: preview.extent)
                 else { return nil }
                 return UIImage(cgImage: cg)
@@ -88,6 +98,7 @@ final class MotionArtworkSource {
     private static let previewContext = CIContext()
 
     private func systemFile(size: CGSize) async throws -> URL {
+        guard !isCancelled else { throw CancellationError() }
         let key = Int(size.height)
         if let task = renders[key] { return try await task.value }
         let task = Task {

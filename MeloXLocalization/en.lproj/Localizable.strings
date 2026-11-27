@@ -435,6 +435,7 @@
 "ui.settings.player_appearance.beat_vignette" = "Beat Vignette";
 "ui.settings.player_appearance.audio_response" = "Respond to Music";
 "ui.settings.player_appearance.blur" = "Background Blur";
+"ui.settings.player_appearance.motion_artwork" = "Animated Artwork in Player and on Lock Screen";
 "ui.settings.player_appearance.shrink_paused_artwork" = "Shrink Artwork When Paused";
 "ui.settings.player_appearance.background.section" = "Background & Artwork";
 "ui.settings.player_appearance.screen_awake" = "Keep Screen Awake";

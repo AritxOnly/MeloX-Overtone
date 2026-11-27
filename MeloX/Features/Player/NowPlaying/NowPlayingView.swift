@@ -31,7 +31,7 @@ struct NowPlayingView: View {
     @Namespace private var pageArtworkNamespace
 
     private var visibleMotionSource: MotionArtworkSource? {
-        guard page == .artwork, !accessibilityReduceMotion, scenePhase == .active,
+        guard settings.motionArtworkEnabled, page == .artwork, !accessibilityReduceMotion, scenePhase == .active,
               let source = player.motionArtwork, source.songID == player.currentSong?.id
         else { return nil }
         return source
