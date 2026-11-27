@@ -26,15 +26,16 @@ struct MeloXApp: App {
         let settings = AppSettings()
         #if DEBUG && targetEnvironment(simulator)
         if MeloXDesignPreview.isEnabled {
-            settings.hasCompletedOnboarding = true
             settings.setAppLanguage(.simplifiedChinese)
         }
         #endif
         let releaseNotes = AppReleaseNotesStore(
             currentVersion: Bundle.main.appReleaseVersion,
-            hadCompletedOnboarding: settings.hasCompletedOnboarding,
+            hasLaunchedBefore: settings.hasLaunchedBefore,
             currentReleaseNotes: AppReleaseNotesLoader.load()
         )
+        // Record the first launch after release notes have inspected the prior state.
+        if !settings.hasLaunchedBefore { settings.hasLaunchedBefore = true }
         let api = NeteaseAPI(settings: settings)
         let library = LibraryStore(api: api, settings: settings)
         let cloud = CloudMusicStore(api: api, settings: settings)

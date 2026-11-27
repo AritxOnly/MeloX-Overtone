@@ -57,7 +57,7 @@ struct SearchView: View {
         .searchFocused($focused)
         .searchScopes($inLibrary, activation: .onSearchPresentation) {
             if submitted == nil {
-                Text("ui.service.netease").tag(false)
+                Text("ui.search.music_catalog").tag(false)
                 Text("ui.search.personal_library").tag(true)
             }
         }

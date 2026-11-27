@@ -41,7 +41,7 @@
 "ui.settings.navigation.page.subscribed_podcasts" = "Podcasts (Subscribed)";
 "ui.settings.navigation.placement.tab_bar" = "Tab Bar";
 
-"ui.settings.content_feature.cloud.detail" = "Access your NetEase Cloud Music uploads and cloud library";
+"ui.settings.content_feature.cloud.detail" = "Browse your uploads and cloud library";
 "ui.settings.content_feature.cloud.title" = "Cloud Music";
 "ui.settings.content_feature.downloads.detail" = "Local downloads and your downloaded library";
 "ui.settings.content_feature.history.detail" = "Playback history from this device and your account";
@@ -195,32 +195,32 @@
 "ui.podcast.sort.newest" = "Newest First";
 "ui.podcast.sort.oldest" = "Oldest First";
 
-"ui.error.api.request_encoding" = "Could not create the NetEase Cloud Music request.";
+"ui.error.api.request_encoding" = "Could not create the request.";
 "ui.error.api.invalid_response" = "The music service returned data Overtone could not recognize.";
 "ui.error.api.empty_response" = "The music service returned an empty response (%ld).";
 "ui.error.api.server" = "Request failed (%ld): %@";
 "ui.error.api.no_playable_source" = "This song may be unavailable due to copyright or regional restrictions.";
-"ui.error.api.login_required" = "Sign in to NetEase Cloud Music first.";
-"ui.error.api.operation_incomplete" = "NetEase Cloud Music did not complete the operation.";
+"ui.error.api.login_required" = "Sign in first.";
+"ui.error.api.operation_incomplete" = "The music service did not complete the operation.";
 "ui.error.api.decode_with_hex" = "Could not decode %ld bytes (%@): %@";
 "ui.error.api.decode" = "Could not decode %ld bytes (%@): %@";
 "ui.error.update.no_release" = "This repository has no published release yet.";
 "ui.error.update.invalid_release" = "The release information is incomplete.";
-"ui.error.heart_mode.no_playable_song" = "NetEase Cloud Music did not return a playable Heart Mode song.";
+"ui.error.heart_mode.no_playable_song" = "The music service did not return a playable Heart Mode song.";
 "ui.error.home.load_failed" = "Could not load Home recommendations.";
 "ui.error.private_radio.start_failed" = "Could not start Personal FM.";
 "ui.error.song_wiki.load_failed" = "Could not load song details.";
 "ui.error.decode.string_or_numeric_id" = "Expected a string or numeric identifier.";
 "ui.error.decode.integer" = "Expected an integer or integer string.";
 "ui.error.share.recipient_required" = "Select at least one recipient.";
-"ui.error.share.unsupported_timeline_resource" = "NetEase Cloud Music cannot repost this content type to your feed.";
+"ui.error.share.unsupported_timeline_resource" = "The music service cannot repost this content type to your feed.";
 
 "ui.cloud.storage_usage" = "%@ used of %@";
 "ui.error.cloud.upload_failed" = "Upload failed: %@";
 "ui.error.cloud.delete_failed" = "Delete failed: %@";
 "ui.error.cloud.read_file_failed" = "Could not read the selected file: %@";
 "ui.error.cloud.invalid_audio_file" = "The selected file is not a supported audio file.";
-"ui.error.cloud.no_upload_server" = "NetEase Cloud Music did not return an available upload server.";
+"ui.error.cloud.no_upload_server" = "The music service did not return an available upload server.";
 "ui.error.download.invalid_response" = "The song download service returned an invalid response.";
 "ui.error.download.empty_file" = "The downloaded song file is empty.";
 "ui.error.download.database_unavailable" = "The download database is unavailable.";
@@ -263,21 +263,21 @@
 "ui.listen_together.operation.joining" = "Joining";
 "ui.listen_together.operation.leaving" = "Leaving";
 "ui.listen_together.notice.room_ended" = "The Listen Together room has ended.";
-"ui.listen_together.notice.account_moved" = "Your NetEase account joined another Listen Together room.";
+"ui.listen_together.notice.account_moved" = "Your music account joined another Listen Together room.";
 "ui.error.listen_together.invitation_empty" = "Paste a Listen Together invitation link.";
 "ui.error.listen_together.missing_room_id" = "The invitation link is missing a room ID.";
 "ui.error.listen_together.missing_inviter_id" = "The invitation link is missing an inviter ID.";
 "ui.error.listen_together.song_required" = "Play a song before starting Listen Together.";
 "ui.error.listen_together.room_full" = "This Listen Together room is full.";
 "ui.error.listen_together.room_unavailable" = "This Listen Together room cannot be joined right now.";
-"ui.error.listen_together.missing_room" = "NetEase Cloud Music did not return a valid Listen Together room.";
-"ui.error.listen_together.missing_account" = "Could not read the current NetEase account. Sign in again and retry.";
+"ui.error.listen_together.missing_room" = "The music service did not return a valid Listen Together room.";
+"ui.error.listen_together.missing_account" = "Could not read the current music account. Sign in again and retry.";
 "ui.error.listen_together.invalid_playback_state" = "This Listen Together room has no playback state to sync yet.";
 "ui.error.listen_together.initial_sync_failed" = "The room was created, but the initial sync failed: %@";
 "ui.error.listen_together.waiting_for_playback" = "Joined the room and waiting for playback state: %@";
-"ui.error.listen_together.leave_failed" = "Local sync stopped, but the request to leave the NetEase room failed: %@";
-"ui.error.listen_together.end_failed" = "NetEase Cloud Music could not end the Listen Together room.";
-"ui.error.listen_together.operation_incomplete" = "NetEase Cloud Music did not complete the Listen Together operation.";
+"ui.error.listen_together.leave_failed" = "Local sync stopped, but the request to leave the room failed: %@";
+"ui.error.listen_together.end_failed" = "The music service could not end the Listen Together room.";
+"ui.error.listen_together.operation_incomplete" = "The music service did not complete the Listen Together operation.";
 
 "ui.lyrics.format.token.lyrics" = "{Lyrics}";
 "ui.lyrics.format.token.title" = "{Title}";
@@ -368,7 +368,7 @@
 "ui.settings.catalog.developer.title" = "Developer Options";
 "ui.settings.catalog.developer.subtitle" = "BeatNet analysis and player debugging tools";
 "ui.settings.catalog.developer.keywords" = "BeatNet|beat|downbeat|Onset|debug|Core ML|full-track analysis";
-"ui.settings.catalog.account.keywords" = "NetEase account|sign in|sign out|Cookie|profile|user ID";
+"ui.settings.catalog.account.keywords" = "music account|sign in|sign out|Cookie|profile|user ID";
 "ui.settings.catalog.reset.keywords" = "restore default player settings|reset|restore|player|lyrics|equalizer|AutoMix";
 
 "ui.settings.general.theme.picker" = "Theme";
@@ -387,14 +387,17 @@
 "ui.settings.general.library.restore.footer" = "Library returns to the last built-in page you viewed after relaunching.";
 "ui.settings.general.library.default.footer" = "The selected page appears the first time you open Library after each launch.";
 
-"ui.settings.account.cookie.footer" = "Your sign-in cookie is stored only on this device and is used to sync favorites, Cloud Music, and account content.";
-"ui.settings.account.logout.confirmation" = "Sign Out of This NetEase Account?";
+"ui.settings.account.cookie.footer" = "Sign in to sync your favorites, cloud library, and listening history.";
+"ui.settings.account.logout.confirmation" = "Sign Out of This Music Account?";
 "ui.settings.account.logout" = "Sign Out";
-"ui.settings.account.logout.message.downloads" = "The saved NetEase sign-in cookie and loaded account data will be removed from this device. Downloaded songs will not be deleted.";
-"ui.settings.account.logout.message" = "The saved NetEase sign-in cookie and loaded account data will be removed from this device.";
-"ui.settings.account.netease_account" = "NetEase Cloud Music Account";
+"ui.settings.account.logout.message.downloads" = "The saved sign-in cookie and loaded account data will be removed from this device. Downloaded songs will not be deleted.";
+"ui.settings.account.logout.message" = "The saved sign-in cookie and loaded account data will be removed from this device.";
+"ui.settings.account.netease_account" = "Music Account";
 "ui.settings.account.loading" = "Loading Account Information";
-"ui.settings.account.login" = "Sign In to NetEase Cloud Music";
+"ui.settings.account.login" = "Sign In";
+"ui.account.qr.instructions" = "Scan with the NetEase Cloud Music app and confirm sign-in to Overtone. On this phone, take a screenshot and choose it from the scanner’s photo library.";
+"ui.account.qr.expired" = "QR Code Expired";
+"ui.account.qr.confirm" = "Scanned. Confirm sign-in in the music app.";
 "ui.settings.account.login.subtitle" = "Sync favorites, Cloud Music, and playback history";
 "ui.settings.account.subtitle.level" = "Lv.%ld · User ID %ld";
 "ui.settings.account.subtitle" = "User ID %ld · Account Info & Sync";
@@ -507,7 +510,7 @@
 "ui.settings.live_activity.expanded.section" = "Expanded & Lock Screen";
 "ui.settings.live_activity.title" = "Live Activity Lyrics";
 
-"ui.about.tagline" = "A Third-Party NetEase Cloud Music Player";
+"ui.about.tagline" = "Music and synchronized lyrics";
 "ui.about.app_info.section" = "App Information";
 "ui.about.version" = "Version";
 "ui.about.build" = "Build";
@@ -518,7 +521,7 @@
 "ui.about.updates.section" = "Updates";
 "ui.about.updates.footer" = "Automatic checks only notify you when a new version is available. A failed check never interrupts app launch.";
 "ui.about.melox.section" = "About Overtone";
-"ui.about.description" = "Overtone is a native SwiftUI player for NetEase Cloud Music with synchronized lyrics.";
+"ui.about.description" = "Discover music, organize your favorites, and follow along with word-by-word lyrics.";
 "ui.about.shareholders.section" = "Shareholders";
 "ui.about.community.section" = "Project & Community";
 "ui.about.website" = "MeloX Upstream Website";
@@ -610,7 +613,7 @@
 "ui.settings.playback.remember_page" = "Remember Player Page";
 "ui.settings.playback.previous_restarts" = "Previous Button Restarts Current Song";
 "ui.settings.playback.section.behavior" = "Playback Behavior";
-"ui.settings.playback.behavior.footer" = "Starting in Heart Mode requires a NetEase Cloud Music account. On the next launch, My Favorite Music will load and begin playing. Page memory restores the last artwork, lyrics, or queue page. When previous-button restart is enabled, tapping Previous after 5 seconds restarts the current song first.";
+"ui.settings.playback.behavior.footer" = "Starting in Heart Mode requires sign-in. On the next launch, My Favorite Music will load and begin playing. Page memory restores the last artwork, lyrics, or queue page. When previous-button restart is enabled, tapping Previous after 5 seconds restarts the current song first.";
 "ui.settings.automix.title" = "AutoMix";
 "ui.settings.automix.enabled" = "AutoMix";
 "ui.settings.automix.transition_mode" = "Transition Mode";
@@ -896,7 +899,7 @@
 "ui.settings.storage.delete_all_downloads" = "Delete All Downloads";
 "ui.settings.storage.delete_all_downloads.subtitle" = "Also cancels active download tasks";
 "ui.settings.storage.section.destructive" = "Destructive Actions";
-"ui.settings.storage.destructive.footer" = "Deleted song files cannot be recovered, but favorites and playlists in NetEase Cloud Music are unaffected.";
+"ui.settings.storage.destructive.footer" = "Deleted song files cannot be recovered, but favorites and playlists in your library are unaffected.";
 "ui.settings.storage.operation.cleared_approximately" = "Cleared approximately %@";
 "ui.settings.storage.operation.cleared_network_cache" = "Cleared %@ of network and artwork cache";
 "ui.settings.storage.operation.cleared_temporary_files" = "Cleared %@ of temporary files";
@@ -947,7 +950,7 @@
 "ui.messages.filter.all" = "All";
 "ui.messages.filter.unread" = "Unread";
 "ui.messages.private.title" = "Private Messages";
-"ui.messages.private.open_hint" = "Open NetEase Cloud Music private messages";
+"ui.messages.private.open_hint" = "Open private messages";
 "ui.recognition.title" = "Song Recognition";
 "ui.recognition.source" = "Audio Source";
 "ui.recognition.source.microphone" = "Microphone";
@@ -972,7 +975,7 @@
 "ui.comments.delete" = "Delete Comment";
 "ui.comments.copy" = "Copy Text";
 "ui.comments.delete_failed" = "Couldn’t delete comment";
-"ui.account.login_settings" = "Sign In & Settings";
+"ui.account.login_settings" = "Sign In";
 "ui.launch.recommend.title" = "Enjoying Overtone?";
 "ui.launch.recommend.share_subject" = "Recommend Overtone";
 "ui.launch.recommend.share_message" = "I’m using Overtone and think you should try it too!";
@@ -982,7 +985,7 @@
 "ui.update.available.title" = "New Version Available";
 "ui.update.open_release_page" = "Open Release Page";
 "ui.update.available.message" = "Current version: %@. Latest version: %@. Open the release page to see what’s new.";
-"ui.clipboard.error.song_not_found" = "NetEase Cloud Music did not return information for this song.";
+"ui.clipboard.error.song_not_found" = "The music service did not return information for this song.";
 "ui.clipboard.title" = "Clipboard Link";
 "ui.clipboard.open_link_prompt" = "Open this link in Overtone?";
 "ui.clipboard.error.title" = "Could Not Open Clipboard Link";
@@ -999,9 +1002,9 @@
 "ui.legal.projects_licenses.title" = "Projects & Licenses";
 "ui.onboarding.account.logged_in_message" = "Your favorite songs, playlists, and listening history appear in Library.";
 "ui.onboarding.start" = "Start Using Overtone";
-"ui.account.login_netease" = "Sign In to NetEase Cloud Music";
+"ui.account.login_netease" = "Sign In";
 "ui.service.netease_cloud_music" = "NetEase Cloud Music";
-"ui.account.netease_account" = "NetEase Cloud Music Account";
+"ui.account.netease_account" = "Music Account";
 "ui.account.logged_in" = "Signed In";
 "ui.onboarding.account.connect" = "Connect NetEase Cloud Music";
 "ui.onboarding.account.connect_message" = "Sign in to sync your personal music library and use account features. Signing in is not required to start using Overtone.";
@@ -1101,7 +1104,8 @@
 "ui.search.popular_recommendations" = "Popular Recommendations";
 "ui.search.loading_recommendations" = "Loading Recommendations";
 "ui.search.recommendations_failed" = "Could Not Load Recommendations";
-"ui.search.prompt" = "Music or a NetEase Cloud Music Link";
+"ui.search.music_catalog" = "Music Catalog";
+"ui.search.prompt" = "Search music or paste a song link";
 "ui.search.failed" = "Search Failed";
 "ui.search.link_failed" = "Could Not Open Link";
 "ui.error.favorite_failed" = "Favorite Operation Failed";
@@ -1109,7 +1113,7 @@
 "ui.search.reading_song_link" = "Reading Song Link";
 "ui.search.section.linked_song" = "Song from Link";
 "ui.listen_together.invitation" = "Listen Together Invitation";
-"ui.search.listen_together_link_recognized" = "A NetEase Cloud Music Listen Together share link was recognized.";
+"ui.search.listen_together_link_recognized" = "A Listen Together share link was recognized.";
 "ui.toplists.title" = "Charts";
 "ui.toplists.loading" = "Loading Charts";
 "ui.toplists.empty" = "No Charts";
@@ -1126,12 +1130,12 @@
 "ui.home.no_recommendations" = "No Recommendations";
 "ui.home.no_personalized_recommendations" = "No Personalized Recommendations";
 "ui.home.pull_to_refresh" = "Pull to refresh and try again.";
-"ui.home.login_for_personalized_content" = "Sign in to NetEase Cloud Music to see the full personalized experience.";
+"ui.home.login_for_personalized_content" = "Sign in for personalized recommendations.";
 "ui.home.error.no_private_radar" = "No available Private Radar playlist was found in the current recommendations.";
-"ui.home.error.login_required" = "Sign in to NetEase Cloud Music first.";
+"ui.home.error.login_required" = "Sign in first.";
 "ui.home.error.liked_songs_required" = "Favorite some songs before using Heart Mode.";
 "ui.home.error.current_song_required" = "Play a song before searching for similar music.";
-"ui.home.error.no_playable_recommendations" = "NetEase Cloud Music did not return any playable recommendations.";
+"ui.home.error.no_playable_recommendations" = "The music service did not return any playable recommendations.";
 "ui.home.section.recommended_playlists" = "Recommended Playlists";
 "ui.home.section.recently_trending" = "Trending in Cloud Village";
 "ui.home.section.tailored" = "Recommended for Your Taste";
@@ -1202,7 +1206,7 @@
 "ui.library.searching_all_favorite_songs" = "Searching All Favorite Songs";
 "ui.library.search_again" = "Search Again";
 "ui.library.no_favorite_songs" = "No Favorite Songs Yet";
-"ui.library.no_favorite_songs.message" = "Swipe left on a song in a list to favorite it in NetEase Cloud Music.";
+"ui.library.no_favorite_songs.message" = "Swipe left on a song to add it to your favorites.";
 "ui.library.section.mine" = "Mine";
 "ui.library.my_listening_rank" = "My Listening Rank";
 "ui.library.my_listening_rank.hint" = "View your listening rank for the past week or all time";
@@ -1222,7 +1226,7 @@
 "ui.library.no_subscribed_podcasts.message" = "Open a podcast and tap the Subscribe button.";
 "ui.library.searching_all_subscribed_podcasts" = "Searching All Subscribed Podcasts";
 "ui.library.no_history" = "No Listening History Yet";
-"ui.library.no_history.message" = "Recently played music from NetEase Cloud Music appears here.";
+"ui.library.no_history.message" = "Your recently played songs appear here.";
 "ui.library.error.playlists" = "Playlists: %@";
 "ui.library.error.favorite_albums" = "Favorite albums: %@";
 "ui.library.error.subscribed_podcasts" = "Subscribed Podcasts: %@";
@@ -1268,7 +1272,7 @@
 "ui.downloads.select_quality" = "Choose Download Quality";
 "ui.playlists.add_to" = "Add to Playlist";
 "ui.playlists.add_failed" = "Could Not Add to Playlist";
-"ui.playlists.login_to_add" = "Sign in to NetEase Cloud Music before adding songs to one of your playlists.";
+"ui.playlists.login_to_add" = "Sign in before adding songs to one of your playlists.";
 "ui.playlists.loading" = "Loading Playlists";
 "ui.playlists.none_available" = "No Available Playlists";
 "ui.playlists.create_first" = "Create a playlist, then add your song.";
@@ -1573,7 +1577,7 @@
 "ui.cloud.total_song_count" = "%ld Songs Total";
 "ui.cloud.delete" = "Delete from Cloud Drive";
 "ui.cloud.empty" = "Cloud Drive Is Empty";
-"ui.cloud.empty.message" = "Upload local audio to play it in any NetEase Cloud Music client.";
+"ui.cloud.empty.message" = "Upload local audio to play it from your cloud library.";
 "ui.cloud.searching_all" = "Searching All Cloud Drive Songs";
 "ui.downloads.automatic_cache" = "Cache Automatically by Play Count";
 "ui.downloads.trigger_count" = "Trigger Count";
@@ -1647,7 +1651,7 @@
 "ui.podcasts.search_prompt" = "Search Podcast Episodes";
 "ui.podcasts.episode_order" = "Episode Order";
 "ui.podcasts.subscription_failed" = "Could Not Update Subscription";
-"ui.podcasts.login_to_subscribe" = "Sign in to NetEase Cloud Music before subscribing to podcasts.";
+"ui.podcasts.login_to_subscribe" = "Sign in before subscribing to podcasts.";
 "ui.podcasts.from" = "From";
 "ui.podcasts.episode_information" = "Episode Information";
 "ui.podcasts.episode_description" = "Episode Description";
@@ -1672,11 +1676,11 @@
 "ui.common.send" = "Send";
 "ui.common.optional" = "Optional";
 "ui.common.publish" = "Publish";
-"ui.error.netease_operation_incomplete" = "NetEase Cloud Music did not complete the operation.";
+"ui.error.netease_operation_incomplete" = "The music service did not complete the operation.";
 "ui.messages.start_private_message" = "New Private Message";
 "ui.messages.loading_private_messages" = "Loading Private Messages";
 "ui.messages.empty" = "No Private Messages";
-"ui.messages.empty.message" = "Messages sent through NetEase Cloud Music will appear here.";
+"ui.messages.empty.message" = "Your private messages appear here.";
 "ui.messages.no_messages" = "No Messages Yet";
 "ui.messages.no_messages.message" = "Start the conversation by sending a message.";
 "ui.messages.send_failed" = "Could Not Send Message";
@@ -1713,7 +1717,7 @@
 "ui.listen_together.join_room" = "Join Room";
 "ui.listen_together.invitation_requirements" = "Paste a Listen Together invitation link or room ID.";
 "ui.listen_together.login_required" = "Sign In Required";
-"ui.listen_together.login_message" = "Sign in to NetEase Cloud Music to create or join a room.";
+"ui.listen_together.login_message" = "Sign in to create or join a room.";
 "ui.listen_together.waiting_for_playback" = "Waiting for Playback";
 "ui.listen_together.room_sync" = "Room Synchronization";
 "ui.listen_together.room_members" = "Room Members";
@@ -1793,7 +1797,7 @@
 "ui.desktop.mini_player" = "Mini Player";
 "ui.common.lyrics" = "Lyrics";
 "ui.common.login" = "Sign In";
-"ui.account.not_signed_in" = "Not Signed In to NetEase Cloud Music";
+"ui.account.not_signed_in" = "Not Signed In";
 "ui.desktop.settings.tab.general" = "General";
 "ui.desktop.settings.tab.features" = "Features";
 "ui.desktop.settings.tab.files" = "Files";

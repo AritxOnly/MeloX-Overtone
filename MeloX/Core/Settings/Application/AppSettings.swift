@@ -112,7 +112,7 @@ final class AppSettings {
     static let defaultLyricsHighlightGradientReduction = 0.65
     static let lyricsHighlightGradientReductionRange = 0.0...1.0
     private enum Key {
-        static let hasCompletedOnboarding = "melox.hasCompletedOnboarding"
+        static let hasLaunchedBefore = "melox.hasCompletedOnboarding"
         static let cookie = "musicCookie"
         static let quality = "musicQuality"
         static let cellularQuality = "cellularMusicQuality"
@@ -263,11 +263,11 @@ final class AppSettings {
         static let automaticCacheQuality = "automaticCacheQuality"
     }
 
-    var hasCompletedOnboarding: Bool {
+    var hasLaunchedBefore: Bool {
         didSet {
             defaults.set(
-                hasCompletedOnboarding,
-                forKey: Key.hasCompletedOnboarding
+                hasLaunchedBefore,
+                forKey: Key.hasLaunchedBefore
             )
         }
     }
@@ -1094,8 +1094,8 @@ final class AppSettings {
             defaults: defaults
         )
         songRecognition = SongRecognitionPreferences(defaults: defaults)
-        hasCompletedOnboarding = defaults.bool(
-            forKey: Key.hasCompletedOnboarding
+        hasLaunchedBefore = defaults.bool(
+            forKey: Key.hasLaunchedBefore
         )
         let storedAppLanguage = AppLanguage(
             rawValue: defaults.string(forKey: Key.appLanguage) ?? ""
@@ -1596,9 +1596,6 @@ final class AppSettings {
         cookie = ""
     }
 
-    func completeOnboarding() {
-        hasCompletedOnboarding = true
-    }
 
     func resetPlayerSettings() {
         quality = .high

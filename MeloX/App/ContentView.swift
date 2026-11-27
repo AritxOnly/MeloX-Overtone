@@ -3,6 +3,7 @@ import UIKit
 
 private enum ContentSheet: String, Identifiable {
     case settings
+    case login
     case songRecognition
 
     var id: String { rawValue }
@@ -57,16 +58,6 @@ struct ContentView: View {
     }
 
     var body: some View {
-        Group {
-            if settings.hasCompletedOnboarding {
-                mainExperience
-            } else {
-                OnboardingView()
-            }
-        }
-    }
-
-    private var mainExperience: some View {
         playerAwareTabView
             .environment(
                 \.openMusicRoute,
@@ -127,6 +118,17 @@ struct ContentView: View {
                             .musicDestinations(
                                 in: musicNavigationNamespace
                             )
+                    case .login:
+                        NeteaseLoginView()
+                            .toolbar {
+                                ToolbarItem(placement: .topBarTrailing) {
+                                    Button {
+                                        presentedSheet = .settings
+                                    } label: {
+                                        Label("ui.settings.title", systemImage: "gearshape")
+                                    }
+                                }
+                            }
                     case .songRecognition:
                         SongRecognitionView()
                             .toolbar {
@@ -504,7 +506,7 @@ struct ContentView: View {
         if library.isLoggedIn {
             navigate(to: AccountRoute.home)
         } else {
-            presentedSheet = .settings
+            presentedSheet = .login
         }
     }
 

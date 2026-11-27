@@ -23,7 +23,8 @@ final class NeteaseDirectClient {
         requiresCheckToken: Bool = false,
         authenticated: Bool = false,
         domain: String = "https://interface.music.163.com",
-        cookieOS: String? = nil
+        cookieOS: String? = nil,
+        receiveCookies: (([HTTPCookie]) -> Void)? = nil
     ) async throws -> Response {
         var requestData = data
         let header = eapiHeader(
@@ -50,7 +51,8 @@ final class NeteaseDirectClient {
             userAgent: authenticated
                 ? "NeteaseMusic 9.0.90/5038 (iPhone; iOS 16.2; zh_CN)"
                 : "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148",
-            cookieHeaderOverride: authenticated ? encodedCookieHeader(header) : nil
+            cookieHeaderOverride: authenticated ? encodedCookieHeader(header) : nil,
+            receiveCookies: receiveCookies
         )
     }
 
@@ -183,7 +185,8 @@ final class NeteaseDirectClient {
         referer: String? = nil,
         cookieOS: String = "ios",
         appVersion: String = "9.0.90",
-        cookieHeaderOverride: String? = nil
+        cookieHeaderOverride: String? = nil,
+        receiveCookies: (([HTTPCookie]) -> Void)? = nil
     ) async throws -> Response {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -199,7 +202,12 @@ final class NeteaseDirectClient {
         request.httpBody = Self.formEncodedData(form)
 
         let (data, response) = try await session.data(for: request)
-        return try decode(data: data, response: response)
+        let value: Response = try decode(data: data, response: response)
+        if let receiveCookies, let http = response as? HTTPURLResponse,
+           http.url?.host == url.host, let headers = http.allHeaderFields as? [String: String] {
+            receiveCookies(HTTPCookie.cookies(withResponseHeaderFields: headers, for: url))
+        }
+        return value
     }
 
     // URL query encoding leaves '+' literal, but form decoders read it as a space.

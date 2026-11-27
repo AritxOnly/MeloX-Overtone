@@ -73,7 +73,7 @@ private struct AppLaunchExperienceModifier: ViewModifier {
         guard !didHandleLaunch else { return }
         didHandleLaunch = true
 
-        if settings.hasCompletedOnboarding,
+        if settings.hasLaunchedBefore,
            let pendingReleaseNotes = releaseNotes.releaseNotesToPresent {
             presentedReleaseNotes = pendingReleaseNotes
             return

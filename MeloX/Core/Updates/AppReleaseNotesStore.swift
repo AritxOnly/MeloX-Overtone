@@ -18,7 +18,7 @@ final class AppReleaseNotesStore {
 
     init(
         currentVersion: String,
-        hadCompletedOnboarding: Bool,
+        hasLaunchedBefore: Bool,
         currentReleaseNotes: AppReleaseNotes?,
         defaults: UserDefaults = .standard
     ) {
@@ -30,7 +30,7 @@ final class AppReleaseNotesStore {
             forKey: Key.lastPresentedVersion
         )
 
-        guard hadCompletedOnboarding else {
+        guard hasLaunchedBefore else {
             defaults.set(
                 currentVersion,
                 forKey: Key.lastPresentedVersion
