@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct NowPlayingLandscapeView: View {
+    @Environment(\.showsFullScreenMotionArtwork) private var showsMotion
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     @Environment(PlayerStore.self) private var player
     @Environment(AppSettings.self) private var settings
@@ -61,6 +62,8 @@ struct NowPlayingLandscapeView: View {
 
                 HStack(spacing: landscapeSpacing(for: proxy.size.width)) {
                     artwork(side: artworkSide)
+                        .opacity(showsMotion ? 0 : 1)
+                        .accessibilityHidden(showsMotion)
 
                     rightPanel
                         .frame(maxWidth: .infinity, maxHeight: .infinity)

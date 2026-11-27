@@ -173,6 +173,7 @@ final class PlayerStore {
 
     @ObservationIgnored
     private let nowPlayingSession: NowPlayingSession
+    var motionArtwork: MotionArtworkSource? { nowPlayingSession.motion.source }
 
     @ObservationIgnored
     private let lyricsLiveActivityController:
@@ -297,7 +298,7 @@ final class PlayerStore {
             engine: engine,
             analyzer: beatAnalyzer
         )
-        nowPlayingSession = NowPlayingSession(library: library)
+        nowPlayingSession = NowPlayingSession(library: library, api: api)
         lyricsLiveActivityController = LyricsLiveActivityController()
         self.lyricsNotificationController =
             lyricsNotificationController

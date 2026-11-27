@@ -26,7 +26,21 @@ struct NowPlayingView: View {
     @State private var hasDisplayDivision = false
     @State private var viewportSize = CGSize.zero
     @State private var showsFullScreenLyrics = false
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var readyMotionSource: ObjectIdentifier?
     @Namespace private var pageArtworkNamespace
+
+    private var visibleMotionSource: MotionArtworkSource? {
+        guard page == .artwork, !accessibilityReduceMotion, scenePhase == .active,
+              let source = player.motionArtwork, source.songID == player.currentSong?.id
+        else { return nil }
+        return source
+    }
+
+    private var showsMotion: Bool {
+        guard let source = visibleMotionSource else { return false }
+        return readyMotionSource == ObjectIdentifier(source)
+    }
 
     private var page: NowPlayingPage {
         pageTransition.page
@@ -43,10 +57,27 @@ struct NowPlayingView: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
+                if let source = visibleMotionSource {
+                    let id = ObjectIdentifier(source)
+                    NowPlayingMotionArtwork(source: source, isPlaying: player.isPlaying) { ready in
+                        guard visibleMotionSource === source else { return }
+                        readyMotionSource = ready ? id : nil
+                    }
+                    .id(id)
+                    .overlay {
+                        LinearGradient(colors: [.clear, .black.opacity(0.64)],
+                                       startPoint: .center, endPoint: .bottom)
+                    }
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                    .onDisappear { if readyMotionSource == id { readyMotionSource = nil } }
+                }
+
                 if usesMonochromeLyricsBackground {
                     Color.black
                         .ignoresSafeArea()
-                } else {
+                } else if !showsMotion {
                     NowPlayingBackground(
                         artworkURL:
                             player.currentSong?
@@ -160,6 +191,7 @@ struct NowPlayingView: View {
                 highlightedLyricID: $highlightedLyricID
             )
         }
+        .environment(\.showsFullScreenMotionArtwork, showsMotion)
         .keepsScreenAwake(keepsPlayerScreenAwake)
         .preferredColorScheme(.dark)
         .task(id: beatAnalysisTaskID) {
@@ -523,7 +555,7 @@ struct NowPlayingView: View {
         }
         .overlay {
             GeometryReader { _ in
-                if portraitArtworkFrame.width > 0 {
+                if portraitArtworkFrame.width > 0, !showsMotion {
                     NowPlayingPortraitArtwork(
                         song: song,
                         isArtworkPage: page == .artwork

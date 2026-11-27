@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct NowPlayingTabletPlayerColumn: View {
+    @Environment(\.showsFullScreenMotionArtwork) private var showsMotion
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     @Environment(PlayerStore.self) private var player
     @Environment(AppSettings.self) private var settings
@@ -16,6 +17,8 @@ struct NowPlayingTabletPlayerColumn: View {
         VStack(alignment: .leading, spacing: 0) {
             NowPlayingPortraitArtwork(song: song, isArtworkPage: true)
                 .modifier(NowPlayingArtworkShadow())
+                .opacity(showsMotion ? 0 : 1)
+                .accessibilityHidden(showsMotion)
                 .frame(width: layout.artworkSize, height: layout.artworkSize)
                 .scaleEffect(isArtworkExpanded ? 1 : NowPlayingArtworkPage.pausedArtworkScale)
                 .frame(maxWidth: .infinity)

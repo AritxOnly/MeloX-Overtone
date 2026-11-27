@@ -16,6 +16,9 @@ final class NowPlayingSession {
     private var nowPlayingInfo: [String: Any] = [:]
     private var artworkTask: Task<Void, Never>?
     private var representedSongID: Int?
+    let motion = MotionArtworkSelection()
+    private let api: NeteaseAPI
+    private var motionTask: Task<Void, Never>?
     private let library: LibraryStore
     private var favoriteObservation: Task<Void, Never>?
     private var favoriteTarget: Any?
@@ -28,12 +31,14 @@ final class NowPlayingSession {
         .shared()
     }
 
-    init(library: LibraryStore) {
+    init(library: LibraryStore, api: NeteaseAPI) {
+        self.api = api
         self.library = library
         installRemoteCommands()
     }
 
     deinit {
+        motionTask?.cancel()
         artworkTask?.cancel()
         favoriteObservation?.cancel()
         if let favoriteTarget {
@@ -51,6 +56,14 @@ final class NowPlayingSession {
         queueCount: Int,
         lyricsDisplaySettings: NowPlayingLyricsDisplaySettings
     ) {
+        let sameSong = representedSongID == song.id && !song.isPodcastProgram
+        let animatedInfo = sameSong ? nowPlayingInfo.filter {
+            MPNowPlayingInfoCenter.supportedAnimatedArtworkKeys.contains($0.key)
+        } : [:]
+        if !sameSong {
+            motionTask?.cancel()
+            motion.source = nil
+        }
         representedSongID = song.id
         configureFavoriteCommand(for: song)
         artworkTask?.cancel()
@@ -86,6 +99,10 @@ final class NowPlayingSession {
                 "netease:djradio:\(podcast.radioID)"
         } else if let albumID = song.album?.id {
             nowPlayingInfo[MPNowPlayingInfoCollectionIdentifier] = "netease:album:\(albumID)"
+        }
+        nowPlayingInfo.merge(animatedInfo) { _, new in new }
+        if !sameSong, !song.isPodcastProgram, song.id > 0 {
+            loadMotionArtwork(songID: song.id)
         }
         nowPlayingCenter.nowPlayingInfo = nowPlayingInfo
         loadArtwork(from: song.album?.artworkURL, songID: song.id)
@@ -135,6 +152,8 @@ final class NowPlayingSession {
     }
 
     func clear() {
+        motionTask?.cancel()
+        motion.source = nil
         representedSongID = nil
         configureFavoriteCommand(for: nil)
         artworkTask?.cancel()
@@ -240,6 +259,21 @@ final class NowPlayingSession {
     ) {
         let target = command.addTarget(handler: handler)
         commandTargets.append((command, target))
+    }
+
+    private func loadMotionArtwork(songID: Int) {
+        motionTask = Task { [weak self, api] in
+            guard let url = try? await api.motionArtworkURL(songID: songID),
+                  !Task.isCancelled, let self, representedSongID == songID else { return }
+            let source = MotionArtworkSource(songID: songID, url: url)
+            motion.source = source
+            for key in MPNowPlayingInfoCenter.supportedAnimatedArtworkKeys {
+                if key == MPNowPlayingInfoProperty1x1AnimatedArtwork || key == MPNowPlayingInfoProperty3x4AnimatedArtwork {
+                    nowPlayingInfo[key] = source.systemArtwork(tall: key == MPNowPlayingInfoProperty3x4AnimatedArtwork)
+                }
+            }
+            nowPlayingCenter.nowPlayingInfo = nowPlayingInfo
+        }
     }
 
     private func loadArtwork(from url: URL?, songID: Int) {

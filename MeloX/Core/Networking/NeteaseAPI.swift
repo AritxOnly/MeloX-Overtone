@@ -197,6 +197,20 @@ final class NeteaseAPI {
         return (detail.artist, detail.hotSongs, albums.hotAlbums)
     }
 
+    func motionArtworkURL(songID: Int) async throws -> URL? {
+        struct Response: Decodable {
+            struct Cover: Decodable { let videoPlayUrl: String? }
+            let data: Cover?
+        }
+        let response: Response = try await client.eapi(
+            "/api/songplay/dynamic-cover", data: ["songId": songID], authenticated: true
+        )
+        guard let value = response.data?.videoPlayUrl,
+              let url = securePlaybackURL(from: value), url.scheme == "https", url.host != nil
+        else { return nil }
+        return url
+    }
+
     func songDetails(ids: [Int]) async throws -> [Song] {
         guard !ids.isEmpty else { return [] }
         let songs = ids.map { ["id": $0] }
