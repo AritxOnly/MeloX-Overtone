@@ -395,6 +395,17 @@
 "ui.settings.account.netease_account" = "Music Account";
 "ui.settings.account.loading" = "Loading Account Information";
 "ui.settings.account.login" = "Sign In";
+"ui.account.login.method" = "Sign-In Method";
+"ui.account.login.sms" = "Text Code";
+"ui.account.login.qr" = "QR Code";
+"ui.account.login.web" = "Web";
+"ui.account.sms.country" = "Country code";
+"ui.account.sms.phone" = "Phone number";
+"ui.account.sms.code" = "Verification code";
+"ui.account.sms.send" = "Send Code";
+"ui.account.sms.resend" = "Resend in %d s";
+"ui.account.sms.sent" = "Code sent. Check your text messages.";
+"ui.account.sms.alternatives" = "If you see a security prompt, switch to Web to complete verification. You can also sign in with a QR code.";
 "ui.account.qr.instructions" = "Scan with the NetEase Cloud Music app and confirm sign-in to Overtone. On this phone, take a screenshot and choose it from the scanner’s photo library.";
 "ui.account.qr.expired" = "QR Code Expired";
 "ui.account.qr.confirm" = "Scanned. Confirm sign-in in the music app.";

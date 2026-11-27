@@ -3,6 +3,38 @@ import SwiftUI
 import WebKit
 
 struct NeteaseLoginView: View {
+    private enum Method { case sms, qr, web }
+    @Environment(\.dismiss) private var dismiss
+    @State private var method = Method.sms
+    @State private var sms = SMSLoginFields()
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Picker("ui.account.login.method", selection: $method) {
+                Text("ui.account.login.sms").tag(Method.sms)
+                Text("ui.account.login.qr").tag(Method.qr)
+                Text("ui.account.login.web").tag(Method.web)
+            }
+            .pickerStyle(.segmented)
+            .padding()
+
+            switch method {
+            case .sms: SMSLoginView(fields: $sms)
+            case .qr: QRLoginView()
+            case .web: WebLoginView()
+            }
+        }
+        .navigationTitle("ui.settings.account.login")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("ui.common.cancel", role: .cancel) { dismiss() }
+            }
+        }
+    }
+}
+
+private struct QRLoginView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppSettings.self) private var settings
     @Environment(NeteaseAPI.self) private var api
@@ -42,13 +74,6 @@ struct NeteaseLoginView: View {
             }
             .padding(24)
             .frame(maxWidth: .infinity)
-        }
-        .navigationTitle("ui.watch.qr.title")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("ui.common.cancel", role: .cancel) { dismiss() }
-            }
         }
         .task(id: attempt) { await signIn() }
     }
@@ -94,6 +119,59 @@ struct NeteaseLoginView: View {
             image = nil
             canRetry = true
         }
+    }
+}
+
+private struct WebLoginView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(AppSettings.self) private var settings
+    @State private var session = Session()
+    @State private var attempt = 0
+    @State private var loadFailed = false
+
+    private struct Session {
+        let store = WKWebsiteDataStore.nonPersistent()
+        let page: WebPage
+
+        init() {
+            var config = WebPage.Configuration()
+            config.websiteDataStore = store
+            config.defaultNavigationPreferences.preferredContentMode = .desktop
+            page = WebPage(configuration: config)
+        }
+    }
+
+    var body: some View {
+        WebView(session.page)
+            .webViewBackForwardNavigationGestures(.enabled)
+            .overlay(alignment: .top) {
+                if session.page.isLoading {
+                    ProgressView(value: session.page.estimatedProgress)
+                } else if loadFailed {
+                    Button("ui.common.reload") { attempt += 1 }
+                        .buttonStyle(.borderedProminent)
+                }
+            }
+            .task(id: attempt) {
+                loadFailed = false
+                do {
+                    for try await _ in session.page.load(URL(string: "https://music.163.com/#/login")) {}
+                } catch {
+                    if !Task.isCancelled { loadFailed = true }
+                }
+            }
+            .task {
+                while !Task.isCancelled {
+                    let cookies = await session.store.httpCookieStore.allCookies()
+                    guard !Task.isCancelled else { return }
+                    if let header = musicSessionHeader(from: cookies) {
+                        settings.cookie = header
+                        dismiss()
+                        return
+                    }
+                    try? await Task.sleep(for: .seconds(1))
+                }
+            }
     }
 }
 

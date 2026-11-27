@@ -59,7 +59,8 @@ final class NeteaseDirectClient {
     func weapi<Response: Decodable>(
         _ uri: String,
         data: [String: Any] = [:],
-        retryEmptyResponse: Bool = true
+        retryEmptyResponse: Bool = true,
+        receiveCookies: (([HTTPCookie]) -> Void)? = nil
     ) async throws -> Response {
         let path = uri.replacingOccurrences(of: "/api/", with: "/weapi/")
         guard let url = URL(string: "https://music.163.com\(path)") else {
@@ -84,7 +85,8 @@ final class NeteaseDirectClient {
                     form: ["params": params, "encSecKey": encSecKey],
                     userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 Edg/124.0.0.0",
                     referer: "https://music.163.com",
-                    cookieHeaderOverride: processedWeapiCookieHeader(for: uri)
+                    cookieHeaderOverride: processedWeapiCookieHeader(for: uri),
+                    receiveCookies: receiveCookies
                 )
             } catch APIError.emptyResponse(let statusCode) {
                 guard attempt + 1 < attempts else {

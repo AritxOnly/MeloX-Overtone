@@ -120,15 +120,6 @@ struct ContentView: View {
                             )
                     case .login:
                         NeteaseLoginView()
-                            .toolbar {
-                                ToolbarItem(placement: .topBarTrailing) {
-                                    Button {
-                                        presentedSheet = .settings
-                                    } label: {
-                                        Label("ui.settings.title", systemImage: "gearshape")
-                                    }
-                                }
-                            }
                     case .songRecognition:
                         SongRecognitionView()
                             .toolbar {
@@ -393,7 +384,7 @@ struct ContentView: View {
                 HStack(spacing: 10) {
                     accountToolbarLabel
                         .frame(width: 38, height: 38)
-                    Text(library.profile?.nickname ?? L10n.string("ui.account.login_settings"))
+                    Text(library.profile?.nickname ?? L10n.string("ui.account.profile"))
                         .font(.subheadline.weight(.medium))
                         .lineLimit(2)
                     Spacer(minLength: 0)
@@ -475,39 +466,37 @@ struct ContentView: View {
             .id(profile.id)
         } else {
             Group {
-                if library.isLoggedIn && library.phase == .loading {
+                if !library.isLoggedIn {
+                    Button("ui.settings.account.login") { presentedSheet = .login }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .accessibilityIdentifier("guest-profile-login")
+                        .padding()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                } else if library.phase == .loading {
                     ProgressView("ui.settings.account.loading")
                 } else {
                     ContentUnavailableView {
-                        Label(
-                            L10n.string(library.isLoggedIn
-                                ? "ui.settings.account.unavailable"
-                                : "ui.account.login_required"),
-                            systemImage: "person.crop.circle.badge.exclamationmark"
-                        )
+                        Label("ui.settings.account.unavailable", systemImage: "person.crop.circle.badge.exclamationmark")
                     } actions: {
-                        if library.isLoggedIn {
-                            Button("ui.common.retry") {
-                                Task { await library.refresh(force: true) }
-                            }
-                        }
-                        Button("ui.settings.title") {
-                            presentedSheet = .settings
+                        Button("ui.common.retry") {
+                            Task { await library.refresh(force: true) }
                         }
                     }
                 }
             }
             .navigationTitle("ui.account.profile")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("ui.settings.title", systemImage: "gearshape") { presentedSheet = .settings }
+                }
+            }
         }
     }
 
     private func openAccount() {
-        if library.isLoggedIn {
-            navigate(to: AccountRoute.home)
-        } else {
-            presentedSheet = .login
-        }
+        navigate(to: AccountRoute.home)
     }
 
     private func presentPlayer(page: NowPlayingPage? = nil) {
@@ -566,9 +555,7 @@ struct ContentView: View {
         if let profile = library.profile {
             return L10n.format("ui.account.profile_for_user", profile.nickname)
         }
-        return library.isLoggedIn
-            ? L10n.string("ui.account.profile")
-            : L10n.string("ui.account.login_settings")
+        return L10n.string("ui.account.profile")
     }
 
     private func navigationPathBinding(
