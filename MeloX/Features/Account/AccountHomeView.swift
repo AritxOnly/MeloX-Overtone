@@ -2,6 +2,9 @@ import SwiftUI
 
 struct AccountHomeView: View {
     let initialProfile: AccountProfile
+    let onOpenPlaylist: ((Playlist) -> Void)?
+    let onOpenSettings: (() -> Void)?
+    let onOpenSongRecognition: (() -> Void)?
 
     @Environment(NeteaseAPI.self) private var api
     @Environment(\.colorScheme) private var systemColorScheme
@@ -16,13 +19,19 @@ struct AccountHomeView: View {
 
     init(
         initialProfile: AccountProfile,
-        initialDetail: AccountDetail?,
-        initialPlaylists: [Playlist]
+        initialDetail: AccountDetail? = nil,
+        initialPlaylists: [Playlist] = [],
+        onOpenPlaylist: ((Playlist) -> Void)? = nil,
+        onOpenSettings: (() -> Void)? = nil,
+        onOpenSongRecognition: (() -> Void)? = nil
     ) {
         let cachedAssets = ArtworkAccentColorProvider.cachedDetailAssets(
             for: initialProfile.artworkURL
         )
         self.initialProfile = initialProfile
+        self.onOpenPlaylist = onOpenPlaylist
+        self.onOpenSettings = onOpenSettings
+        self.onOpenSongRecognition = onOpenSongRecognition
         _detail = State(initialValue: initialDetail)
         _playlists = State(initialValue: initialPlaylists)
         _phase = State(initialValue: .loaded)
@@ -35,8 +44,10 @@ struct AccountHomeView: View {
     var body: some View {
         AccountHomeContent(
             profile: displayedProfile,
+            isPersonalAccount: onOpenSettings != nil,
             detail: detail,
             playlists: playlists,
+            onOpenPlaylist: onOpenPlaylist,
             palette: resolvedPalette,
             blurredBackdropImage: blurredBackdropImage,
             isLoading: phase == .loading,
@@ -49,11 +60,9 @@ struct AccountHomeView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
-        .toolbarColorScheme(interfaceColorScheme, for: .navigationBar, .tabBar)
         .toolbar {
             accountToolbar
         }
-        .environment(\.colorScheme, interfaceColorScheme)
         .task {
             await load()
         }
@@ -67,12 +76,8 @@ struct AccountHomeView: View {
     }
 
     private var resolvedPalette: ArtworkDetailPalette {
-        artworkPalette
+        artworkPalette?.collectionPalette(for: systemColorScheme)
             ?? .fallback(prefersDarkAppearance: systemColorScheme == .dark)
-    }
-
-    private var interfaceColorScheme: ColorScheme {
-        resolvedPalette.colorScheme
     }
 
     private var homepageURL: URL {
@@ -81,6 +86,19 @@ struct AccountHomeView: View {
 
     @ToolbarContentBuilder
     private var accountToolbar: some ToolbarContent {
+        if onOpenSettings != nil {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                NavigationLink(value: AccountRoute.privateMessages) {
+                    Image(systemName: "envelope")
+                }
+                .tint(.primary)
+                .accessibilityLabel("ui.messages.private.title")
+            }
+            .sharedBackgroundVisibility(.visible)
+
+            ToolbarSpacer(.fixed, placement: .topBarTrailing)
+        }
+
         ToolbarItemGroup(placement: .topBarTrailing) {
             ShareLink(item: homepageURL) {
                 Image(systemName: "square.and.arrow.up")
@@ -88,17 +106,16 @@ struct AccountHomeView: View {
             .tint(.primary)
             .accessibilityLabel("ui.account.share_profile")
 
-            Menu {
-                Button {
-                    Task { await load() }
+            if let onOpenSettings, let onOpenSongRecognition {
+                Menu {
+                    Button("ui.settings.title", systemImage: "gearshape", action: onOpenSettings)
+                    Button("ui.recognition.title", systemImage: "waveform", action: onOpenSongRecognition)
                 } label: {
-                    Label("ui.common.refresh", systemImage: "arrow.clockwise")
+                    Image(systemName: "ellipsis")
                 }
-            } label: {
-                Image(systemName: "ellipsis")
+                .tint(.primary)
+                .accessibilityLabel("ui.common.more")
             }
-            .tint(.primary)
-            .accessibilityLabel("ui.common.more")
         }
         .sharedBackgroundVisibility(.visible)
     }
@@ -132,20 +149,19 @@ struct AccountHomeView: View {
 
         phase = .loading
         errorMessage = nil
+        defer { phase = .loaded }
         do {
             async let loadedDetail = api.userDetail(userID: initialProfile.id)
             async let loadedPlaylists = api.userPlaylists(userID: initialProfile.id)
-            let (newDetail, newPlaylists) = try await (
-                loadedDetail,
-                loadedPlaylists
-            )
+            let newDetail = try await loadedDetail
+            try Task.checkCancellation()
             detail = newDetail
+            let newPlaylists = try await loadedPlaylists
+            try Task.checkCancellation()
             playlists = newPlaylists
-            phase = .loaded
         } catch is CancellationError {
             return
         } catch {
-            phase = .loaded
             errorMessage = error.localizedDescription
         }
     }

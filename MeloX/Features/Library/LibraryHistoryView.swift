@@ -11,7 +11,7 @@ struct LibraryHistoryView: View {
             if !displayedSongs.isEmpty {
                 SongListPlaybackActions { shuffled in
                     let songs = displayedSongs
-                    Task { await player.playAll(shuffled ? songs.shuffled() : songs) }
+                    Task { await player.playAll(songs, shuffled: shuffled) }
                 }
             }
 

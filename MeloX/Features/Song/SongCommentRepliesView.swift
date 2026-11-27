@@ -1,182 +1,129 @@
+import Nuke
 import SwiftUI
 
-struct SongCommentRepliesSheet: View {
-    @Environment(\.dismiss) private var dismiss
+struct SongCommentThread: View {
+    @Environment(NeteaseAPI.self) private var api
+    @Environment(\.colorScheme) private var colorScheme
 
     let songID: Int
-    let parentComment: SongComment
+    let root: SongComment
+    let featured: Bool
+
+    let avatarPrefetcher: ImagePrefetcher
+    let deletedIDs: Set<Int64>
+    @Binding var localReplies: SongCommentEdits
+    let onReply: (SongComment) -> Void
+    let onDelete: (SongComment) -> Void
+    private static let batchSize = 10
+    @State private var visibleLimit = Self.batchSize
+    @State private var expanded = false
+    @State private var replies: [SongComment] = []
+    @State private var authors: [Int64: String] = [:]
+    @State private var nextTime: Int64? = -1
+    @State private var errorMessage: String?
+    @State private var loading = false
+
+    private var visibleReplies: [SongComment] {
+        (localReplies.posted + replies).filter { !deletedIDs.contains($0.id) }
+    }
 
     var body: some View {
-        NavigationStack {
-            SongCommentRepliesView(songID: songID, parentComment: parentComment)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            dismiss()
-                        } label: {
-                            Image(systemName: "xmark")
-                        }
-                        .accessibilityLabel("ui.comments.close_replies")
-                        .tint(.primary)
+        VStack(alignment: .leading, spacing: featured ? 6 : 1) {
+            SongCommentRow(comment: root, featured: featured, onReply: { onReply(root) }, onDelete: onDelete)
+            let replyCount = max(0, root.replyCount + localReplies.posted.count - replies.filter { deletedIDs.contains($0.id) }.count)
+            if replyCount > 0 {
+                Button {
+                    expanded.toggle()
+                    visibleLimit = Self.batchSize
+                    if expanded && nextTime == -1 {
+                        Task { await loadPage() }
+                    }
+                } label: {
+                    HStack(spacing: 5) {
+                        Text(expanded ? L10n.string("ui.common.collapse")
+                             : L10n.format("ui.comments.expand_replies", replyCount))
+                        Image(systemName: expanded ? "chevron.up" : "chevron.down")
+                            .imageScale(.small)
+                    }
+                    .font(.caption)
+                    .padding(.vertical, 3)
+                }
+                .padding(.leading, 40)
+                .buttonStyle(.borderless)
+            }
+        }
+        .padding(featured ? 16 : 0)
+        .background {
+            if featured {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(colorScheme == .dark
+                          ? Color(red: 0.22, green: 0.18, blue: 0.17)
+                          : Color(red: 0.957, green: 0.922, blue: 0.902))
+            }
+        }
+        .padding(.top, 12)
+        .padding(.bottom, 4)
+
+        .onChange(of: localReplies.posted.first?.id, initial: true) { _, newest in
+            guard newest != nil else { return }
+            expanded = true
+            if nextTime == -1 { Task { await loadPage() } }
+        }
+
+        if expanded {
+            ForEach(visibleReplies.prefix(visibleLimit)) { reply in
+                SongCommentRow(comment: reply, isFloorReply: true, replyTarget: reply.replyTarget(inFloor: root.id, authors: authors), onReply: { onReply(reply) }, onDelete: onDelete)
+                    .padding(.leading, 40)
+                    .padding(.vertical, 4)
+            }
+            if let errorMessage {
+                VStack(alignment: .leading) {
+                    Text(errorMessage).font(.caption).foregroundStyle(.secondary)
+                    Button("ui.common.retry") { Task { await loadPage() } }
+                }
+                .padding(.leading, 40)
+            } else if visibleReplies.isEmpty && nextTime == -1 {
+                ProgressView("ui.comments.replies.loading")
+            } else if nextTime != nil || visibleReplies.count > visibleLimit {
+                Button("ui.comments.more_replies") {
+                    visibleLimit = min(visibleLimit, visibleReplies.count) + Self.batchSize
+                    if visibleReplies.count < visibleLimit && nextTime != nil {
+                        Task { await loadPage() }
                     }
                 }
-        }
-        .presentationDragIndicator(.visible)
-    }
-}
-
-struct SongCommentRepliesView: View {
-    @Environment(NeteaseAPI.self) private var api
-
-    let songID: Int
-    let parentComment: SongComment
-
-    @State private var ownerComment: SongComment?
-    @State private var replies: [SongComment] = []
-    @State private var totalCount = 0
-    @State private var phase: LoadingPhase = .loading
-    @State private var hasMore = false
-    @State private var isLoadingMore = false
-    @State private var paginationError: String?
-    @State private var reloadToken = 0
-
-    var body: some View {
-        List {
-            Section("ui.comments.original") {
-                SongCommentRow(comment: ownerComment ?? parentComment)
-            }
-
-            Section {
-                repliesContent
-
-                if hasMore || paginationError != nil {
-                    loadMoreRow
-                }
-            } header: {
-                Text(
-                    totalCount > 0
-                        ? L10n.format("ui.comments.all_replies_count", totalCount)
-                        : L10n.string("ui.comments.all_replies")
-                )
-            }
-        }
-        .listStyle(.insetGrouped)
-        .navigationTitle("ui.comments.replies.title")
-        .navigationBarTitleDisplayMode(.inline)
-        .refreshable {
-            await loadReplies()
-        }
-        .task(id: reloadToken) {
-            await loadReplies()
-        }
-    }
-
-    @ViewBuilder
-    private var repliesContent: some View {
-        switch phase {
-        case .loading where replies.isEmpty:
-            HStack {
-                Spacer()
-                ProgressView("ui.comments.replies.loading")
-                Spacer()
-            }
-        case .failed(let message) where replies.isEmpty:
-            VStack(spacing: 12) {
-                Label("ui.comments.replies.load_failed", systemImage: "exclamationmark.bubble")
-                    .font(.headline)
-                Text(message)
+                .disabled(loading)
+                .padding(.leading, 40)
+            } else if visibleReplies.isEmpty {
+                Text("ui.comments.replies.empty")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                Button("ui.common.retry") {
-                    reloadToken += 1
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 24)
-        default:
-            if replies.isEmpty {
-                ContentUnavailableView("ui.comments.replies.empty", systemImage: "bubble.left")
-            } else {
-                ForEach(replies) { reply in
-                    SongCommentRow(comment: reply)
-                }
+                    .padding(.leading, 40)
             }
         }
     }
 
-    private var loadMoreRow: some View {
-        Group {
-            if let paginationError {
-                Button {
-                    Task { await loadMoreReplies() }
-                } label: {
-                    VStack(spacing: 4) {
-                        Text("ui.comments.replies.reload_more")
-                        Text(paginationError)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            } else {
-                HStack {
-                    Spacer()
-                    ProgressView("ui.comments.replies.loading_more")
-                    Spacer()
-                }
-                .task {
-                    await loadMoreReplies()
-                }
-            }
-        }
-    }
-
-    private func loadReplies() async {
-        phase = .loading
-        paginationError = nil
-
+    // A newly submitted reply belongs to this floor even while its read endpoint catches up.
+    private func loadPage() async {
+        guard let cursor = nextTime, !loading else { return }
+        loading = true
+        defer { loading = false }
         do {
-            let response = try await api.songCommentReplies(
-                songID: songID,
-                parentCommentID: parentComment.id
-            )
+            let page = try await api.songCommentReplies(
+                songID: songID, parentCommentID: root.id, time: cursor, limit: Self.batchSize
+            ).data
             try Task.checkCancellation()
-            ownerComment = response.data.ownerComment
-            replies = response.data.comments
-            totalCount = response.data.totalCount
-            hasMore = response.data.hasMore && !response.data.comments.isEmpty
-            phase = .loaded
-        } catch is CancellationError {
-            return
+            var seen = Set(replies.map(\.id))
+            seen.insert(root.id)
+            let rows = (page.bestComments + page.comments).filter { seen.insert($0.id).inserted }
+            for row in rows { authors[row.id] = row.user.nickname }
+            let newVisibleCount = max(0, visibleLimit - replies.count)
+            avatarPrefetcher.startPrefetching(with: rows.prefix(newVisibleCount).compactMap { $0.user.artworkURL })
+            localReplies.reconcile(with: rows)
+            replies.append(contentsOf: rows)
+            nextTime = page.hasMore && page.time != cursor ? page.time : nil
+            errorMessage = nil
         } catch {
-            phase = .failed(error.localizedDescription)
-        }
-    }
-
-    private func loadMoreReplies() async {
-        guard hasMore, !isLoadingMore else { return }
-        isLoadingMore = true
-        paginationError = nil
-        defer { isLoadingMore = false }
-
-        do {
-            let response = try await api.songCommentReplies(
-                songID: songID,
-                parentCommentID: parentComment.id,
-                time: Int64(replies.last?.time ?? -1)
-            )
-            try Task.checkCancellation()
-            let loadedIDs = Set(replies.map(\.id))
-            let newReplies = response.data.comments.filter { !loadedIDs.contains($0.id) }
-            replies.append(contentsOf: newReplies)
-            totalCount = response.data.totalCount
-            hasMore = response.data.hasMore && !newReplies.isEmpty
-        } catch is CancellationError {
-            return
-        } catch {
-            paginationError = error.localizedDescription
+            if !Task.isCancelled { errorMessage = error.localizedDescription }
         }
     }
 }

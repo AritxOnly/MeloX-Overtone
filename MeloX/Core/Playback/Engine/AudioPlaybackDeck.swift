@@ -13,11 +13,14 @@ final class AudioPlaybackDeck: NSObject, @preconcurrency AudioPlayerDelegate {
     private(set) var itemID: UUID?
     private(set) var error: Error?
     private(set) var channelCount: AVAudioChannelCount = 2
+    private var outputFormat: AVAudioFormat?
     private var player: AudioStreaming.AudioPlayer?
     private var loadContinuation: CheckedContinuation<Bool, Never>?
     private var source: PlaybackSource?
     private var finishedPosition: TimeInterval?
     private var currentEntryID: AudioEntryId?
+    private var queuedEntry: (id: AudioEntryId, context: PreparedAutoMixContext)?
+    var onQueuedTrackStarted: ((PreparedAutoMixContext) -> Void)?
     private var initialSeek: TimeInterval?
     private var isSeeking = false
     private var wantsPlayback = false
@@ -72,19 +75,23 @@ final class AudioPlaybackDeck: NSObject, @preconcurrency AudioPlayerDelegate {
         itemIdentifier = identifier
         self.source = source
         wantsPlayback = autoplay
-        initialSeek = max(startAt, 0)
+        initialSeek = startAt > 0 ? startAt : nil
         isSeeking = true
         transition(to: .loading)
         let format = await AudioPlaybackFormat.load(from: source.url)
         guard itemID == id, !Task.isCancelled else { return false }
+        let bytesPerSecond = (format?.sampleRate ?? 44_100) * Double(format?.channelCount ?? 2) * 4
+        let bufferSeconds = min(max(source.preferredForwardBufferDuration, 8), 32 * 1024 * 1024 / bytesPerSecond)
         let player = AudioStreaming.AudioPlayer(
             configuration: AudioPlayerConfiguration(
-                bufferSizeInSeconds: max(source.preferredForwardBufferDuration, 8),
-                secondsRequiredToStartPlaying: 0.3, gracePeriodAfterSeekInSeconds: 0.1),
-            outputFormat: format)
+                bufferSizeInSeconds: bufferSeconds,
+                secondsRequiredToStartPlaying: 0.3, gracePeriodAfterSeekInSeconds: 0.1,
+                secondsRequiredToStartPlayingAfterBufferUnderrun: source.url.isFileURL ? 1 : max(1, min(4, Int(bufferSeconds)))),
+            outputFormat: format, responseCache: .shared)
         self.player = player
+        outputFormat = format
         channelCount = format?.channelCount ?? 2
-        player.volume = 0
+        player.volume = wantsPlayback && initialSeek == nil ? outputVolume : 0
         player.delegate = self
         equalizer.attach(to: player)
         #if os(iOS)
@@ -125,7 +132,10 @@ final class AudioPlaybackDeck: NSObject, @preconcurrency AudioPlayerDelegate {
     }
 
     func seek(to seconds: TimeInterval) {
-        guard let player else { initialSeek = max(seconds, 0); return }
+        guard let player, currentEntryID != nil, initialSeek == nil else {
+            initialSeek = max(seconds, 0)
+            return
+        }
         isSeeking = true
         finishedPosition = nil
         player.volume = 0
@@ -140,6 +150,35 @@ final class AudioPlaybackDeck: NSObject, @preconcurrency AudioPlayerDelegate {
         player.resume()
     }
 
+    func enqueue(_ context: PreparedAutoMixContext) async {
+        guard let player, let itemID else { return }
+        // The render graph keeps its output format across a queued boundary.
+        // Rebuild normally when the successor needs a different channel layout
+        // or a higher output sample rate.
+        let nextFormat = await AudioPlaybackFormat.load(from: context.source.url)
+        guard !Task.isCancelled, self.itemID == itemID, queuedEntry == nil,
+              let nextFormat, nextFormat.channelCount == channelCount,
+              // AVAsset can report stereo with either an implicit or an explicit layout.
+              channelCount <= 2 || nextFormat.channelLayout == outputFormat?.channelLayout,
+              nextFormat.sampleRate <= (outputFormat?.sampleRate ?? 44_100),
+              player.state != .stopped, player.state != .error else { return }
+        queuedEntry = (player.enqueue(url: context.source.url), context)
+    }
+
+    func cancelQueuedEntry() {
+        guard let queuedEntry, let player, let source else { return }
+        self.queuedEntry = nil
+        guard !player.removeUpcoming(queuedEntry.id) else { return }
+        // The ring buffer already contains the successor. Rebuild from the
+        // outgoing position so an edited queue cannot play stale samples.
+        initialSeek = player.progress
+        currentEntryID = nil
+        isSeeking = true
+        player.volume = 0
+        transition(to: .loading)
+        player.play(url: source.url)
+    }
+
     func setEqualizerConfiguration(_ configuration: AudioEqualizerConfiguration) {
         equalizer.update(configuration: configuration)
     }
@@ -152,6 +191,7 @@ final class AudioPlaybackDeck: NSObject, @preconcurrency AudioPlayerDelegate {
     }
 
     func clear() {
+        queuedEntry = nil
         itemID = nil
         itemIdentifier = nil
         source = nil
@@ -160,6 +200,7 @@ final class AudioPlaybackDeck: NSObject, @preconcurrency AudioPlayerDelegate {
         player?.delegate = nil
         player?.stop()
         player = nil
+        outputFormat = nil
         initialSeek = nil
         isSeeking = false
         wantsPlayback = false
@@ -179,10 +220,19 @@ final class AudioPlaybackDeck: NSObject, @preconcurrency AudioPlayerDelegate {
 
     func audioPlayerDidStartPlaying(player: AudioStreaming.AudioPlayer, with entryId: AudioEntryId) {
         guard player === self.player else { return }
+        if let queuedEntry, queuedEntry.id == entryId {
+            self.queuedEntry = nil
+            currentEntryID = entryId
+            source = queuedEntry.context.source
+            finishedPosition = nil
+            onQueuedTrackStarted?(queuedEntry.context)
+            return
+        }
+        guard entryId.id == source?.url.absoluteString else { return }
         currentEntryID = entryId
         guard let target = initialSeek else { return }
         initialSeek = nil
-        player.seek(to: target)
+        if target > 0 { player.seek(to: target) }
     }
 
     func audioPlayerStateChanged(player: AudioStreaming.AudioPlayer,
@@ -211,6 +261,7 @@ final class AudioPlaybackDeck: NSObject, @preconcurrency AudioPlayerDelegate {
     func audioPlayerDidFinishPlaying(player: AudioStreaming.AudioPlayer, entryId: AudioEntryId,
                                      stopReason: AudioPlayerStopReason, progress: Double, duration: Double) {
         guard player === self.player, currentEntryID == entryId, stopReason == .eof else { return }
+        guard queuedEntry == nil else { return }
         finishedPosition = progress
         isSeeking = false
         wantsPlayback = false
@@ -221,6 +272,12 @@ final class AudioPlaybackDeck: NSObject, @preconcurrency AudioPlayerDelegate {
     }
     func audioPlayerUnexpectedError(player: AudioStreaming.AudioPlayer, error: AudioPlayerError) {
         guard player === self.player else { return }
+        if let queuedEntry, player.readingEntryID == queuedEntry.id {
+            // The error belongs to read-ahead. Keep the current track and let
+            // normal queue advancement retry the successor at EOF.
+            cancelQueuedEntry()
+            return
+        }
         self.error = error
         isSeeking = false
         wantsPlayback = false

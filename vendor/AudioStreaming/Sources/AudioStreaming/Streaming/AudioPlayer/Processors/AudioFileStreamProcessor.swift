@@ -416,9 +416,7 @@ final class AudioFileStreamProcessor {
         )
         convertInfo.audioBuffer.mData = UnsafeMutableRawPointer(mutating: inInputData)
         convertInfo.audioBuffer.mDataByteSize = inNumberBytes
-        if let playingAudioStreamFormat = playerContext.audioPlayingEntry?.audioStreamFormat {
-            convertInfo.audioBuffer.mNumberChannels = playingAudioStreamFormat.mChannelsPerFrame
-        }
+        convertInfo.audioBuffer.mNumberChannels = entry.audioStreamFormat.mChannelsPerFrame
 
         updateProcessedPackets(
             inPacketDescriptions: inPacketDescriptions,

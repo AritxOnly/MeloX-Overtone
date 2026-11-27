@@ -20,17 +20,6 @@ struct NowPlayingPortraitArtwork: View {
             cornerRadius: isArtworkPage ? 10 : 8
         )
         .scaleEffect(bounceScale)
-        .shadow(
-            color: .black.opacity(shadowOpacity),
-            radius: shadowRadius,
-            y: shadowOffset
-        )
-        .animation(
-            accessibilityReduceMotion
-                ? nil
-                : .easeInOut(duration: 0.3),
-            value: player.isPlaying
-        )
         .accessibilityElement()
         .accessibilityLabel(L10n.format("ui.song.artwork_accessibility", song.name))
         .task(id: shouldBounce) {
@@ -40,21 +29,6 @@ struct NowPlayingPortraitArtwork: View {
 
     private var shouldBounce: Bool {
         isArtworkPage && player.isPlaying
-    }
-
-    private var shadowOpacity: Double {
-        guard isArtworkPage else { return 0 }
-        return player.isPlaying ? 0.34 : 0.18
-    }
-
-    private var shadowRadius: CGFloat {
-        guard isArtworkPage else { return 0 }
-        return player.isPlaying ? 26 : 14
-    }
-
-    private var shadowOffset: CGFloat {
-        guard isArtworkPage else { return 0 }
-        return player.isPlaying ? 15 : 8
     }
 
     private func animateBounce() async {
@@ -77,5 +51,25 @@ struct NowPlayingPortraitArtwork: View {
         withAnimation(.spring(duration: 0.42, bounce: 0.24)) {
             bounceScale = 1
         }
+    }
+}
+
+struct NowPlayingArtworkShadow: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(PlayerStore.self) private var player
+
+    var isVisible = true
+
+    func body(content: Content) -> some View {
+        content
+            .shadow(
+                color: isVisible ? .black.opacity(player.isPlaying ? 0.34 : 0.18) : .clear,
+                radius: player.isPlaying ? 26 : 14,
+                y: player.isPlaying ? 15 : 8
+            )
+            .animation(
+                reduceMotion ? nil : .easeInOut(duration: 0.3),
+                value: player.isPlaying
+            )
     }
 }

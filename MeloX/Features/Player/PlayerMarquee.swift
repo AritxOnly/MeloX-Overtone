@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct MiniPlayerMarquee: View {
+struct PlayerMarquee: View {
     let text: String
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -18,6 +18,8 @@ struct MiniPlayerMarquee: View {
                 scrollingText
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: text))
         .onChange(of: text) { start = .now }
         .onChange(of: scenePhase) { start = .now }
     }

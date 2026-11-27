@@ -2,6 +2,7 @@ import SwiftUI
 
 struct UserListeningRankView: View {
     let userID: Int
+    var isPersonalAccount = true
 
     @Environment(NeteaseAPI.self) private var api
     @Environment(PlayerStore.self) private var player
@@ -28,7 +29,7 @@ struct UserListeningRankView: View {
 
             content
         }
-        .navigationTitle("ui.library.my_listening_rank")
+        .navigationTitle(isPersonalAccount ? LocalizedStringKey("ui.library.my_listening_rank") : "ui.account.listening_rank.title")
         .navigationBarTitleDisplayMode(.inline)
         .task(id: selectedPeriod) {
             await load(period: selectedPeriod)

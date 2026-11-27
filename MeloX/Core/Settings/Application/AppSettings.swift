@@ -117,6 +117,7 @@ final class AppSettings {
         static let quality = "musicQuality"
         static let cellularQuality = "cellularMusicQuality"
         static let playerVolumeControlMode = "playerVolumeControlMode"
+        static let bluetoothDeviceMappings = "bluetoothDeviceMappings"
         static let systemNowPlayingLyricsEnabled =
             "systemNowPlayingLyricsEnabled"
         static let systemNowPlayingLyricsTitleFormat =
@@ -150,6 +151,8 @@ final class AppSettings {
         static let accent = "appAccent"
         static let appearance = "appAppearance"
         static let area = "musicArea"
+        static let homeSectionOrder = "homeSectionOrder"
+        static let homeQuickActionOrder = "homeQuickActionOrder"
         static let showPlayCount = "showPlayCount"
         static let playerBackgroundStyle = "playerBackgroundStyle"
         static let playerBackgroundMotionIntensity =
@@ -298,6 +301,12 @@ final class AppSettings {
                 playerVolumeControlMode.rawValue,
                 forKey: Key.playerVolumeControlMode
             )
+        }
+    }
+
+    var bluetoothDeviceMappings: [String: BluetoothDeviceMapping] {
+        didSet {
+            defaults.set(try? JSONEncoder().encode(bluetoothDeviceMappings), forKey: Key.bluetoothDeviceMappings)
         }
     }
 
@@ -453,6 +462,14 @@ final class AppSettings {
 
     var musicArea: String {
         didSet { defaults.set(musicArea, forKey: Key.area) }
+    }
+
+    var homeSectionOrder: [HomeSection] {
+        didSet { defaults.set(homeSectionOrder.map(\.id), forKey: Key.homeSectionOrder) }
+    }
+
+    var homeQuickActionOrder: [HomeQuickAction] {
+        didSet { defaults.set(homeQuickActionOrder.map(\.id), forKey: Key.homeQuickActionOrder) }
     }
 
     var showPlayCount: Bool {
@@ -1089,6 +1106,9 @@ final class AppSettings {
         playerVolumeControlMode = PlayerVolumeControlMode(
             rawValue: defaults.string(forKey: Key.playerVolumeControlMode) ?? ""
         ) ?? Self.defaultPlayerVolumeControlMode
+        bluetoothDeviceMappings = defaults.data(forKey: Key.bluetoothDeviceMappings).flatMap {
+            try? JSONDecoder().decode([String: BluetoothDeviceMapping].self, from: $0)
+        } ?? [:]
         systemNowPlayingLyricsEnabled = defaults.object(
             forKey: Key.systemNowPlayingLyricsEnabled
         ) as? Bool
@@ -1147,6 +1167,14 @@ final class AppSettings {
             rawValue: defaults.string(forKey: Key.appearance) ?? ""
         ) ?? .system
         musicArea = defaults.string(forKey: Key.area) ?? "ALL"
+        homeSectionOrder = Self.restoreHomeOrder(
+            defaults.stringArray(forKey: Key.homeSectionOrder),
+            defaultOrder: HomeSection.defaultOrder
+        )
+        homeQuickActionOrder = Self.restoreHomeOrder(
+            defaults.stringArray(forKey: Key.homeQuickActionOrder),
+            defaultOrder: HomeQuickAction.allCases
+        )
         showPlayCount = defaults.object(forKey: Key.showPlayCount) as? Bool ?? true
         playerBackgroundStyle = PlayerBackgroundStyle(
             rawValue: defaults.string(
@@ -1542,6 +1570,15 @@ final class AppSettings {
         ) ?? .high
     }
 
+    private static func restoreHomeOrder<Item: Identifiable>(
+        _ storedIDs: [String]?, defaultOrder: [Item]
+    ) -> [Item] where Item.ID == String {
+        guard let storedIDs else { return defaultOrder }
+        var remaining = Dictionary(uniqueKeysWithValues: defaultOrder.map { ($0.id, $0) })
+        let restored = storedIDs.compactMap { remaining.removeValue(forKey: $0) }
+        return restored + defaultOrder.filter { remaining[$0.id] != nil }
+    }
+
     func setAppLanguage(_ language: AppLanguage) {
         guard appLanguage != language else { return }
         L10n.activate(language)
@@ -1561,6 +1598,7 @@ final class AppSettings {
         quality = .high
         cellularQuality = .high
         playerVolumeControlMode = Self.defaultPlayerVolumeControlMode
+        bluetoothDeviceMappings = [:]
         systemNowPlayingLyricsEnabled =
             Self.defaultSystemNowPlayingLyricsEnabled
         systemNowPlayingLyricsTitleFormat =

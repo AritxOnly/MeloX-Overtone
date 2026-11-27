@@ -3,11 +3,10 @@ import SwiftUI
 struct SettingsHomeToolbarTitle: View {
     var body: some View {
         HStack(spacing: 8) {
-            Image("MeloXLogo")
+            Image("MeloXSettingsLogo")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 28, height: 28)
-                .clipShape(.rect(cornerRadius: 7, style: .continuous))
                 .accessibilityHidden(true)
 
             Text("ui.app.name")

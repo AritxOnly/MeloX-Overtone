@@ -34,10 +34,7 @@ struct WatchSong: Codable, Hashable, Identifiable {
     let audioAvailability: WatchSongAudioAvailability
 
     var artistText: String {
-        L10n.joined(
-            artists.map(\.name),
-            separatorKey: "ui.common.artist_separator"
-        )
+        L10n.artistNames(artists.map(\.name))
     }
 
     var duration: TimeInterval {

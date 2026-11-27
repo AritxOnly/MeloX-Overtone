@@ -18,6 +18,7 @@ struct NowPlayingView: View {
     @State private var appleMusicControlsActivityGeneration = 0
     @State private var highlightedLyricID: LyricLine.ID?
     @State private var showsTextPVLandscapeSuggestion = false
+    @State private var isReorderingQueue = false
     @State private var isQueueSongHeaderHidden = false
     @State private var queueSongHeaderOffset: CGFloat = 0
     @State private var artworkPageFrame = CGRect.zero
@@ -220,6 +221,7 @@ struct NowPlayingView: View {
             await presentLyricsEntrance()
         }
         .onChange(of: page) { _, newPage in
+            isReorderingQueue = false
             showsFullScreenLyrics = false
             if newPage == .lyrics,
                settings.lyricsStyle == .appleMusic {
@@ -328,6 +330,9 @@ struct NowPlayingView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .overlay(alignment: .bottom) {
                     portraitPlayerControlsLayer(for: song)
+                        .opacity(page == .queue && isReorderingQueue ? 0 : 1)
+                        .allowsHitTesting(!(page == .queue && isReorderingQueue))
+                        .accessibilityHidden(page == .queue && isReorderingQueue)
                 }
         }
         .padding(.horizontal, Self.portraitHorizontalPadding)
@@ -545,9 +550,9 @@ struct NowPlayingView: View {
                     .allowsHitTesting(false)
                 }
             }
-            // Keep page-transition clipping vertically while allowing the
-            // expanded artwork to use the portrait layout's side margins.
+            // Clip the moving cover first so its shadow can fade past the drag handle.
             .clipped()
+            .modifier(NowPlayingArtworkShadow(isVisible: page == .artwork))
             .padding(
                 .horizontal,
                 -Self.portraitHorizontalPadding
@@ -641,7 +646,8 @@ struct NowPlayingView: View {
             },
             onSongHeaderOffsetChange: {
                 queueSongHeaderOffset = $0
-            }
+            },
+            onReorderingChange: { isReorderingQueue = $0 }
         )
         .clipped()
         .nowPlayingQueuePagePresentation(

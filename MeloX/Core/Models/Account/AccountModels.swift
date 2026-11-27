@@ -34,6 +34,14 @@ struct AccountProfile: Codable, Hashable, Identifiable {
     }
 }
 
+extension AccountProfile {
+    init(userID: Int, nickname: String, avatarURLString: String?) {
+        self.init(id: userID, nickname: nickname, avatarURLString: avatarURLString,
+                  backgroundURLString: nil, signature: nil, follows: nil, followeds: nil,
+                  eventCount: nil, playlistCount: nil, playlistBeSubscribedCount: nil)
+    }
+}
+
 struct AccountDetail: Codable, Hashable {
     let profile: AccountProfile
     let level: Int

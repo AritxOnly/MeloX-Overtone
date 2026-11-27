@@ -11,6 +11,7 @@ struct PodcastHomeView: View {
     @State private var subscriptions: [Podcast] = []
     @State private var phase: LoadingPhase = .loading
     @State private var reloadToken = 0
+    @State private var isWide = false
 
     private let categoryColumns = [
         GridItem(.adaptive(minimum: 154), spacing: 12),
@@ -93,7 +94,7 @@ struct PodcastHomeView: View {
                         NavigationLink(
                             value: MusicRoute.podcast(featured)
                         ) {
-                            FeaturedPodcastView(podcast: featured)
+                            FeaturedPodcastView(podcast: featured, isWide: isWide)
                         }
                         .buttonStyle(.plain)
                     }
@@ -113,6 +114,11 @@ struct PodcastHomeView: View {
             }
             .padding(.vertical, 8)
             .padding(.bottom, 24)
+        }
+        .onGeometryChange(for: Bool.self) { proxy in
+            MusicShelfLayout(containerWidth: proxy.size.width).isWide
+        } action: { value in
+            isWide = value
         }
         .refreshable {
             await load()

@@ -4,7 +4,6 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD="${BUILD_DIR:-$ROOT/build}"
 PROJECT="$ROOT/MeloX.xcodeproj"
-BUILD_VARIANT="${MELOX_BUILD_BUNDLE_VARIANT:-legacy}"
 SCHEME="MeloX"
 APP_NAME="MeloX"
 DERIVED_DATA="$BUILD/DerivedData-iOS"
@@ -12,73 +11,21 @@ STAGING="$BUILD/IPA"
 IPA_PATH="$BUILD/MeloX-Overtone-iOS-unsigned.ipa"
 RELEASE_NOTES_PATH="$BUILD/ReleaseNotes.json"
 RELEASE_NOTES_MARKDOWN_PATH="$BUILD/ReleaseNotes.md"
-TEMPORARY_PROJECT=""
-TEMPORARY_WATCH_INFO=""
+# Older CI callers used "legacy" for the unsigned build.
+case "${MELOX_BUILD_BUNDLE_VARIANT:-personal}" in
+  personal|legacy) ;;
+  *) echo "Unsigned IPAs use the personal identity. For TestFlight use Tools/archive_testflight.py." >&2; exit 1 ;;
+esac
 
-cleanup_temporary_build_inputs() {
-  if [[ -n "$TEMPORARY_PROJECT" && -d "$TEMPORARY_PROJECT" ]]; then
-    rm -rf -- "$TEMPORARY_PROJECT"
-  fi
-  if [[ -n "$TEMPORARY_WATCH_INFO" && -f "$TEMPORARY_WATCH_INFO" ]]; then
-    rm -f -- "$TEMPORARY_WATCH_INFO"
-  fi
-}
-
-trap cleanup_temporary_build_inputs EXIT INT TERM
+EXPECTED_APP_BUNDLE_ID="com.aritxonly.MeloX"
+EXPECTED_WIDGET_BUNDLE_ID="$EXPECTED_APP_BUNDLE_ID.LyricsWidget"
+EXPECTED_WATCH_BUNDLE_ID="$EXPECTED_APP_BUNDLE_ID.watchkitapp"
 
 rm -rf "$DERIVED_DATA" "$STAGING"
 rm -f "$IPA_PATH" "$RELEASE_NOTES_PATH" "$RELEASE_NOTES_MARKDOWN_PATH"
 mkdir -p "$BUILD"
 
-case "$BUILD_VARIANT" in
-  legacy)
-    # GitHub CI、Release 和 Telegram 继续使用独立的 legacy 发布身份。只修改临时
-    # xcodeproj/Info.plist 副本，避免污染当前用于 TestFlight 的项目配置。
-    TEMPORARY_PROJECT="$ROOT/.MeloX-Legacy-Build-$$.xcodeproj"
-    TEMPORARY_WATCH_INFO="$BUILD/MeloXWatch-Legacy-Info-$$.plist"
-
-    if [[ -e "$TEMPORARY_PROJECT" || -e "$TEMPORARY_WATCH_INFO" ]]; then
-      echo "Temporary build input already exists; refusing to overwrite / 临时构建输入已存在，拒绝覆盖"
-      exit 1
-    fi
-
-    ditto --norsrc "$PROJECT" "$TEMPORARY_PROJECT"
-    ditto --norsrc "$ROOT/MeloXWatch/Info.plist" "$TEMPORARY_WATCH_INFO"
-
-    # Scheme containers must follow the renamed project in the build copy.
-    TEMPORARY_PROJECT_NAME="$(basename "$TEMPORARY_PROJECT")"
-    find "$TEMPORARY_PROJECT" -name '*.xcscheme' -type f -exec \
-      sed -i '' \
-        -e "s#container:MeloX.xcodeproj#container:$TEMPORARY_PROJECT_NAME#g" \
-        {} +
-
-    sed -i '' \
-      -e 's/com\.aritxonly\.MeloX/com.aritxonly.legacy.MeloX/g' \
-      -e "s#INFOPLIST_FILE = MeloXWatch/Info.plist;#INFOPLIST_FILE = \"$TEMPORARY_WATCH_INFO\";#g" \
-      "$TEMPORARY_PROJECT/project.pbxproj"
-    /usr/libexec/PlistBuddy \
-      -c "Set :WKCompanionAppBundleIdentifier com.aritxonly.legacy.MeloX" \
-      "$TEMPORARY_WATCH_INFO"
-
-    PROJECT="$TEMPORARY_PROJECT"
-    EXPECTED_APP_BUNDLE_ID="com.aritxonly.legacy.MeloX"
-    EXPECTED_WIDGET_BUNDLE_ID="com.aritxonly.legacy.MeloX.LyricsWidget"
-    EXPECTED_WATCH_BUNDLE_ID="com.aritxonly.legacy.MeloX.watchkitapp"
-    ;;
-  testflight)
-    # TestFlight 使用项目当前的 App Store Connect 身份。
-    EXPECTED_APP_BUNDLE_ID="com.aritxonly.MeloX"
-    EXPECTED_WIDGET_BUNDLE_ID="com.aritxonly.MeloX.LyricsWidget"
-    EXPECTED_WATCH_BUNDLE_ID="com.aritxonly.MeloX.watchkitapp"
-    ;;
-  *)
-    echo "Unknown MELOX_BUILD_BUNDLE_VARIANT / 未知构建变体：${BUILD_VARIANT}"
-    echo "Available values / 可用值：legacy, testflight"
-    exit 1
-    ;;
-esac
-
-echo "========== Build iOS Release / 构建 iOS Release（${BUILD_VARIANT}）=========="
+echo "========== Build personal unsigned IPA / 构建个人版未签名 IPA =========="
 
 xcodebuild clean build \
   -project "$PROJECT" \
@@ -86,12 +33,13 @@ xcodebuild clean build \
   -configuration Release \
   -destination "generic/platform=iOS" \
   -derivedDataPath "$DERIVED_DATA" \
+  OVERTONE_BASE_BUNDLE_ID="$EXPECTED_APP_BUNDLE_ID" \
+  OVERTONE_WIDGET_SUFFIX=LyricsWidget \
   REGISTER_APP_GROUPS=NO \
   CODE_SIGN_STYLE=Manual \
   CODE_SIGNING_ALLOWED=NO \
   CODE_SIGNING_REQUIRED=NO \
   CODE_SIGN_IDENTITY="" \
-  CODE_SIGN_ENTITLEMENTS="" \
   DEVELOPMENT_TEAM="" \
   PROVISIONING_PROFILE="" \
   PROVISIONING_PROFILE_SPECIFIER=""
@@ -124,7 +72,7 @@ assert_bundle_identifier() {
 
   actual_bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$bundle_path/Info.plist")"
   if [[ "$actual_bundle_id" != "$expected_bundle_id" ]]; then
-    echo "$product_name Bundle ID does not match $BUILD_VARIANT requirements / Bundle ID 不符合构建要求"
+    echo "$product_name Bundle ID does not match the personal identity / Bundle ID 不符合构建要求"
     echo "Expected / 期望：$expected_bundle_id"
     echo "Actual / 实际：$actual_bundle_id"
     exit 1
@@ -135,18 +83,10 @@ assert_bundle_identifier "$APP_PATH" "$EXPECTED_APP_BUNDLE_ID" "MeloX"
 assert_bundle_identifier "$WIDGET_PATH" "$EXPECTED_WIDGET_BUNDLE_ID" "MeloXLyricsWidget"
 assert_bundle_identifier "$WATCH_PATH" "$EXPECTED_WATCH_BUNDLE_ID" "MeloX Watch App"
 
-if [[ "$BUILD_VARIANT" == "legacy" ]]; then
-  WATCH_COMPANION_BUNDLE_ID="$(
-    /usr/libexec/PlistBuddy \
-      -c 'Print :WKCompanionAppBundleIdentifier' \
-      "$WATCH_PATH/Info.plist"
-  )"
-  if [[ "$WATCH_COMPANION_BUNDLE_ID" != "$EXPECTED_APP_BUNDLE_ID" ]]; then
-    echo "Watch Companion Bundle ID does not match legacy requirements / Bundle ID 不符合 legacy 构建要求"
-    echo "Expected / 期望：$EXPECTED_APP_BUNDLE_ID"
-    echo "Actual / 实际：$WATCH_COMPANION_BUNDLE_ID"
-    exit 1
-  fi
+WATCH_COMPANION_BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :WKCompanionAppBundleIdentifier' "$WATCH_PATH/Info.plist")"
+if [[ "$WATCH_COMPANION_BUNDLE_ID" != "$EXPECTED_APP_BUNDLE_ID" ]]; then
+  echo "Watch companion mismatch: $WATCH_COMPANION_BUNDLE_ID (expected $EXPECTED_APP_BUNDLE_ID)" >&2
+  exit 1
 fi
 
 ditto --norsrc "$APP_PATH/ReleaseNotes.json" "$RELEASE_NOTES_PATH"

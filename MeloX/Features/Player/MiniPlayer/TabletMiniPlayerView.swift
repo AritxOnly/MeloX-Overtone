@@ -84,10 +84,10 @@ struct TabletMiniPlayerView: View {
                     )
 
                 VStack(alignment: .leading, spacing: 3) {
-                    MiniPlayerMarquee(text: song.name)
+                    PlayerMarquee(text: song.name)
                         .font(.subheadline.weight(.semibold))
                         .lineLimit(1)
-                    MiniPlayerMarquee(text: song.artistText)
+                    PlayerMarquee(text: song.artistText)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -115,7 +115,7 @@ struct TabletMiniPlayerView: View {
 
             Button(action: player.togglePlayback) {
                 Group {
-                    if player.isLoading {
+                    if player.isWaitingToPlay {
                         ProgressView()
                     } else {
                         Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")

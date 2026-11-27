@@ -5,8 +5,9 @@ import UIKit
 
 @MainActor
 final class NowPlayingSession {
-    var onPlay: (() -> Void)?
+    var onPlay: (() async -> Void)?
     var onPause: (() -> Void)?
+    var onTogglePlayPause: (() async -> Void)?
     var onNext: (() -> Void)?
     var onPrevious: (() -> Void)?
     var onSeek: ((TimeInterval) -> Void)?
@@ -118,7 +119,8 @@ final class NowPlayingSession {
     func updatePlayback(
         position: TimeInterval,
         duration: TimeInterval,
-        isPlaying: Bool
+        isPlaying: Bool,
+        isWaitingToPlay: Bool
     ) {
         guard representedSongID != nil else { return }
         nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = max(duration, 0)
@@ -127,8 +129,9 @@ final class NowPlayingSession {
         nowPlayingInfo[MPNowPlayingInfoPropertyDefaultPlaybackRate] = 1.0
         nowPlayingCenter.nowPlayingInfo = nowPlayingInfo
         nowPlayingCenter.playbackState = isPlaying ? .playing : .paused
-        commandCenter.playCommand.isEnabled = !isPlaying
-        commandCenter.pauseCommand.isEnabled = isPlaying
+        let wantsPlayback = isPlaying || isWaitingToPlay
+        commandCenter.playCommand.isEnabled = !wantsPlayback
+        commandCenter.pauseCommand.isEnabled = wantsPlayback
     }
 
     func clear() {
@@ -139,6 +142,8 @@ final class NowPlayingSession {
         nowPlayingInfo = [:]
         nowPlayingCenter.nowPlayingInfo = nil
         nowPlayingCenter.playbackState = .stopped
+        commandCenter.playCommand.isEnabled = true
+        commandCenter.pauseCommand.isEnabled = false
     }
 
     private func installRemoteCommands() {
@@ -148,7 +153,7 @@ final class NowPlayingSession {
         favorite.localizedShortTitle = favorite.localizedTitle
         commandCenter.playCommand.isEnabled = true
         commandCenter.pauseCommand.isEnabled = false
-        commandCenter.togglePlayPauseCommand.isEnabled = false
+        commandCenter.togglePlayPauseCommand.isEnabled = true
         commandCenter.nextTrackCommand.isEnabled = true
         commandCenter.previousTrackCommand.isEnabled = true
         commandCenter.changePlaybackPositionCommand.isEnabled = true
@@ -162,11 +167,15 @@ final class NowPlayingSession {
         commandCenter.changeShuffleModeCommand.isEnabled = false
 
         addTarget(to: commandCenter.playCommand) { [weak self] _ in
-            Task { @MainActor in self?.onPlay?() }
+            Task { @MainActor in await self?.onPlay?() }
             return .success
         }
         addTarget(to: commandCenter.pauseCommand) { [weak self] _ in
             Task { @MainActor in self?.onPause?() }
+            return .success
+        }
+        addTarget(to: commandCenter.togglePlayPauseCommand) { [weak self] _ in
+            Task { @MainActor in await self?.onTogglePlayPause?() }
             return .success
         }
         addTarget(to: commandCenter.nextTrackCommand) { [weak self] _ in

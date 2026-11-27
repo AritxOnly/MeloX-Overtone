@@ -3,14 +3,15 @@ import Foundation
 enum SettingsRoute: Hashable {
     case recognition
     case privateMessages
-    case accountHome
     case playback
+    case bluetoothDeviceMappings
     case playerAppearance
     case lyrics
     case systemPlayback
     case general
     case contentFeatures
     case content
+    case homeLayout
     case storage
     case skylineLyrics
     case floatingLyrics
@@ -51,6 +52,13 @@ enum SettingsCatalog {
                     subtitle: L10n.string("ui.settings.catalog.playback.subtitle"),
                     systemImage: "waveform",
                     keywords: L10n.keywords("ui.settings.catalog.playback.keywords")
+                ),
+                SettingsCatalogItem(
+                    route: .bluetoothDeviceMappings,
+                    title: L10n.string("ui.settings.bluetooth_devices.title"),
+                    subtitle: L10n.string("ui.settings.bluetooth_devices.subtitle"),
+                    systemImage: "headphones",
+                    keywords: L10n.keywords("ui.settings.bluetooth_devices.keywords")
                 ),
                 SettingsCatalogItem(
                     route: .playerAppearance,
@@ -110,6 +118,13 @@ enum SettingsCatalog {
                     subtitle: L10n.string("ui.settings.catalog.content.subtitle"),
                     systemImage: "rectangle.stack",
                     keywords: L10n.keywords("ui.settings.catalog.content.keywords")
+                ),
+                SettingsCatalogItem(
+                    route: .homeLayout,
+                    title: L10n.string("ui.settings.home_layout.title"),
+                    subtitle: L10n.string("ui.settings.home_layout.subtitle"),
+                    systemImage: "list.bullet.indent",
+                    keywords: L10n.keywords("ui.settings.home_layout.keywords")
                 ),
                 SettingsCatalogItem(
                     route: .storage,

@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MeloX · 歌曲评论与私信</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eeece7;color:#262326;font:15px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}button,input{font:inherit}button{color:inherit;background:none;border:0;cursor:pointer}button:focus-visible,input:focus-visible{outline:3px solid #bd594e;outline-offset:2px}header{max-width:1040px;margin:auto;border-bottom:1px solid #cbc8c1;display:flex;align-items:center;gap:18px;padding:23px 12px 18px}header b{font:bold italic 29px/1 Georgia;letter-spacing:-2px}header span{font-size:13px;color:#675f5b}header small{margin-left:auto;font:12px ui-monospace,monospace;color:#736a65}.board{display:grid;grid-template-columns:repeat(2,minmax(0,400px));gap:7vw;justify-content:center;padding:27px 20px 40px}.caption{display:flex;align-items:baseline;justify-content:space-between;margin:0 5px 11px}.caption b{font-size:15px}.caption small,.muted,time{color:#756e6d;font-size:12px}.phone{background:#fffdf9;border-radius:29px;box-shadow:0 0 0 1px #c9c5bd,0 15px 35px #44332712;height:clamp(612px,76vh,820px);display:flex;flex-direction:column;overflow:hidden;position:relative}.screen{height:100%;display:flex;flex-direction:column;min-height:0;animation:enter .2s ease-out}.scroll{overflow:auto;overscroll-behavior:contain;min-height:0;flex:1;scrollbar-width:thin}.top{display:flex;justify-content:space-between;align-items:center;padding:8px 15px;min-height:51px}.top button,.circle{display:inline-flex;align-items:center;gap:3px;min-height:40px}.icon{width:20px;height:20px;stroke:currentColor;stroke-width:1.65;fill:none;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}.top .right{min-width:42px;justify-content:center}.hero{position:relative;isolation:isolate;color:inherit;overflow:hidden;background:inherit}.player:before{content:"";position:absolute;inset:-40px;background:linear-gradient(15deg,#281c2eea,#42334495),url(fairy-stage.jpg) center 43%/cover;filter:blur(20px);z-index:-1}.song{display:flex;align-items:center;gap:17px;padding:6px 23px 24px}.art{display:block;width:82px;aspect-ratio:1;border-radius:9px;box-shadow:0 4px 14px #0002}.song h2,.player h2{font:600 33px/1.1 Georgia,serif;margin:0 0 8px;letter-spacing:-1px}.song small{color:#6e6e73}.tiny{font:10px ui-monospace,monospace;letter-spacing:2px}.tabs{display:flex;align-items:center;gap:18px;padding:13px 21px 0;border-bottom:1px solid #ded9d3}.tabs strong{font-size:20px;margin-right:auto;padding-bottom:11px}.tabs button{min-height:42px;padding:0 2px 10px;font-size:13px;color:#756b69;border-bottom:2px solid transparent}.tabs .sel{border-color:#ad5041;color:#923a30;font-weight:650}.feed,.list{padding:0 22px}.feature{padding:17px 18px 13px;background:#f4ebe6;border-radius:14px;margin:17px 0 4px}.quote{font:bold 48px/.6 Georgia;color:#a65345;display:block;height:25px}.feature blockquote{font:600 20px/1.6 "Songti SC","STSong",serif;margin:2px 0 15px;letter-spacing:.2px}.person,.meta,.row,.share,.mini{display:flex;align-items:center}.person{gap:8px}.avatar{width:38px;height:38px;border-radius:50%;display:inline-grid;place-items:center;flex:none;background:var(--av);color:#fff;font:italic 21px Georgia,serif;box-shadow:inset 0 0 0 1px #0001}.person .avatar{width:29px;height:29px;font-size:16px}.name{font-size:13px;font-weight:650}.row{padding:15px 0;border-bottom:1px solid #e8e4de;gap:12px;width:100%;text-align:left}.comment{align-items:flex-start}.comment .avatar{width:30px;height:30px;font-size:16px}.fill{flex:1;min-width:0}.meta{justify-content:space-between;gap:9px}.comment p{margin:5px 0 7px;font-size:14px}.foot{display:flex;align-items:center;justify-content:space-between;color:#786d68;font-size:12px}.foot button{color:#914837;padding:7px 0}.likes{display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums}.likes .icon{width:15px}.feature .foot{margin-top:6px}.mini{border-top:1px solid #dfd8d1;padding:9px 18px;gap:11px;background:#faf6ef}.mini img,.share img{width:36px;border-radius:5px}.mini b,.mini small,.share b,.share small{display:block}.mini b,.share b{font-size:14px}.mini small,.share small{font-size:11px;color:#706761}.mini button{min-width:42px;height:40px}.title{margin:7px 22px 0;font-size:35px;letter-spacing:-2px;line-height:1.25}.sub{margin:6px 23px 14px;color:#786e67;font-size:13px}.filters{display:flex;gap:7px;margin:0 22px 8px}.filters button{border-radius:20px;background:#efede8;padding:6px 14px;font-size:12px}.filters .sel{background:#302d2e;color:white}.inboxrow{align-items:flex-start}.inboxrow .avatar{width:43px;height:43px}.inboxrow b{font-size:15px}.snippet{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#746c69;font-size:13px}.badge{flex:none;border-radius:20px;background:#ac4f40;color:white;font:600 11px/18px system-ui;text-align:center;min-width:18px;padding:0 4px}.share{gap:9px;background:#f3ece7;padding:8px 10px;border-radius:8px;margin-top:8px}.share .icon{margin-left:auto;color:#a86655}.inboxrow:last-child{border:0}.empty{text-align:center;color:#716966;padding:40px 0}.section{font-size:13px;margin:20px 0 3px;color:#6d625d}.player{position:relative;isolation:isolate;overflow:hidden;background:#4c3743;color:#fff}.playerbody{margin:auto;width:80%;padding:20px 0}.largeart{width:100%;border-radius:14px;margin-bottom:22px}.action{background:#322d30;color:white;padding:11px 19px;border-radius:25px}.player .action{background:#ffffff25}.playerbody .meta{margin-top:15px}.playerbody .circle{justify-content:center;width:44px}.homeart{height:215px;border-radius:18px;margin:18px 22px;background:linear-gradient(0deg,#342131cf,transparent),url(fairy-stage.jpg) center 36%/cover;display:flex;align-items:end;color:white;padding:17px;font:bold 27px Georgia}.msg{padding:16px 20px;display:flex;flex-direction:column;align-items:flex-start;gap:10px}.bubble{background:#efeae3;border-radius:14px;padding:10px 13px;max-width:83%;overflow-wrap:anywhere}.mine{align-self:flex-end;background:#674e56;color:white}.compose{display:flex;padding:11px 15px;gap:8px;border-top:1px solid #ded8d2}.compose input{min-width:0;flex:1;background:#f1ede7;border:0;border-radius:20px;padding:8px 14px}.compose button{background:#674e56;color:white;border-radius:20px;padding:6px 13px}.switch{display:none}.contacthead{text-align:center;font-weight:650}.sectionpad{padding:0 22px}.mobileOnly{display:none}@keyframes enter{from{opacity:.7;transform:translateX(5px)}}@media(prefers-reduced-motion:reduce){*{animation:none!important}}@media(max-width:760px){header{padding:10px 15px;gap:10px}header small,header span{display:none}.switch{display:flex;margin-left:auto;gap:4px}.switch button{padding:4px 12px;border-radius:18px;font-size:13px}.switch .sel{background:#312d30;color:white}.board{display:block;padding:0}.caption{display:none}.phone{height:calc(100dvh - 50px);border-radius:0;box-shadow:none}.board>section[hidden]{display:none}.mobileOnly{display:inline}}@media(min-width:761px){.board>section[hidden]{display:block}}
+
+.layer {position:absolute;inset:0;background:#25202a66;display:flex;align-items:flex-end}
+.sheet {position:relative;width:100%;height:calc(100% - 21px);border-radius:32px 32px 0 0;background:#fffdf9;box-shadow:0 -2px 18px #16091624;overflow:hidden;display:flex;flex-direction:column}
+.layer.nested .sheet {height:calc(100% - 35px)}
+.sheet>.screen {flex:1}
+.grip {height:16px;flex:none;display:grid;place-items:center;touch-action:none}
+.grip:after {content:"";width:36px;height:5px;border-radius:8px;background:#998f9080}
+.sheetbar {justify-content:flex-end;padding:0 13px 3px;min-height:38px}
+.sheetbar button {justify-content:center;min-width:44px;min-height:40px}
+.sheet .top {touch-action:none}
+.player .menu {border-radius:16px;background:#fffdf9;color:#302d30;margin-top:10px;padding:6px 12px}
+.account {margin:20px 16px;padding:0 16px;background:#f4eee9;border-radius:20px}
+.account button {justify-content:space-between}
+#mail .sheet,.hero {background:#fff}
+.inboxrow {align-items:center;gap:9px;min-height:68px}
+.unreadDot {width:8px;height:8px;border-radius:50%;flex:none}
+.unreadDot.on {background:#007aff}
+.inboxrow .snippet {display:block}
+.inboxrow .icon {width:15px;height:15px}
+.mailTools {display:flex;align-items:center;gap:8px}
+.mailTools select {font:inherit;border:0;background:transparent;color:#007aff}
+#mail .title {margin-bottom:12px}
+details summary {cursor:pointer;color:#56565c}
+#music .sheet {background:#f2f2f7;color:#202024;box-shadow:none}
+#music .sheet .scroll {padding:0}
+#music .sheet::after {content:"";position:absolute;inset:0 0 auto;height:62px;pointer-events:none;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);mask-image:linear-gradient(black,transparent);opacity:0;transition:opacity .15s}
+#music .sheet.scrolled::after {opacity:1}
+#music .sheet .grip {position:absolute;inset:0 0 auto;z-index:2}
+#music .sheet .sheetbar {position:absolute;right:0;top:10px;z-index:2;padding:4px 16px}
+#music .sheetbar button {border-radius:50%;background:rgb(245 245 247 / .8);color:#19191a;width:44px;height:44px}
+@media(prefers-color-scheme:dark){#music .sheetbar button {background:rgb(46 46 48 / .8);color:white}}
+#music .tabs,#music .comment {border:0}
+#music .tabs {position:relative;isolation:isolate;display:flex;gap:0;margin:8px 16px;padding:2px;border-radius:9px;background:rgb(120 120 128 / 16%)}
+#music .tabs::before {content:"";position:absolute;inset:2px auto 2px 2px;width:calc(50% - 2px);z-index:-1;border-radius:7px;background:rgb(255 255 255 / 65%);transition:transform .2s ease}
+#music .tabs:has([data-action=latest].sel)::before {transform:translateX(100%)}
+#music .tabs button {flex:1;min-height:30px;padding:0;border:0}
+@media(prefers-color-scheme:dark){#music .tabs::before {background:#626268}}
+@media(prefers-reduced-motion:reduce){#music .tabs::before {transition:none}}
+#music .tabs button,#music .sheet time,#music .sheet .likes {color:#66666b}
+#music .tabs .sel {color:inherit;border-color:currentColor}
+#music .grip:after {background:currentColor;opacity:.24}
+#music .sheet .hero {position:relative;isolation:isolate;overflow:hidden;background:#38383a;color:white}
+#music .hero::before {content:"";position:absolute;inset:-9px;z-index:-1;background:linear-gradient(90deg,#0002,#0007 40%,#0008),url(fairy-stage.jpg) center/cover;filter:blur(8px)}
+#music .song {padding:56px 20px 24px;gap:16px;align-items:flex-end}
+#music .song .art {flex:none}
+#music .song div {min-width:0}
+#music .song :is(h2,small) {display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#music .song small {color:#fffd}
+#music .art {width:88px;box-shadow:none}
+#music .song h2 {font-size:32px}
+#music .feed {padding:0 16px}
+@media(prefers-color-scheme:dark){
+  #music .sheet {background:#1c1c1e;color:#f2f2f7}
+  #music .tabs button,#music .sheet time,#music .sheet .likes {color:#b8b8bb}
+}
+#music .comment {padding:12px 0 4px;gap:8px}
+#music .comment p {margin:2px 0;font-size:14px}
+#music .comment .avatar {width:32px;height:32px}
+#music .featured {margin:12px 0 4px;padding:16px;border-radius:16px;background:#f4ebe6;color:#302925}
+#music .sheet .featured :is(.quote,time,.likes:not(.liked),.foot button) {color:#775d50}
+@media(prefers-color-scheme:dark){
+  #music .featured {background:#382e2b;color:#f8f2ef}
+  #music .sheet .featured :is(.quote,time,.likes:not(.liked),.foot button) {color:#dcc5b8}
+}
+#music .featured blockquote {font:600 18px/1.55 Georgia,"Songti SC",serif;margin:4px 0 10px}
+#music .featured .meta .likes {margin-left:auto}
+#music .featured .foot {padding-left:37px}
+#music .floor {margin-left:40px}
+#music .floor .comment {padding:4px 0;border:0}
+#music .floor .avatar {width:24px;height:24px;font-size:13px}
+#music .floor p {font-size:13px}
+#music .sheet .likes.liked {color:#ff82a7}
+#music .likes.liked svg {fill:currentColor}
+#music .foot button,#music .more {color:LinkText;padding:3px 0}
+</style>
+<header><b>MeloX</b><span>歌曲评论与私信</span><small>iOS 交互原型</small><nav class="switch" aria-label="原型场景"><button data-scene="music">歌曲评论</button><button data-scene="mail">私信</button></nav></header>
+<main class="board"><section id="music"><div class="caption"><b>歌曲评论</b><small>歌曲菜单 → 评论 Sheet → 展开楼层</small></div><div class="phone"></div></section><section id="mail"><div class="caption"><b>私信</b><small>设置 Sheet → 私信 → 会话</small></div><div class="phone"></div></section></main>
+<script>
+const icons={close:'M6 6l12 12M18 6L6 18',back:'M15 5l-7 7 7 7',next:'M9 5l7 7-7 7',play:'M7 4l13 8-13 8z',pause:'M8 5v14m8-14v14',music:'M9 16V6l10-2v10M9 16c0 3-6 4-6 1s6-4 6-1zm10-2c0 3-6 4-6 1s6-4 6-1z',heart:'M20 5c-3-3-7-1-8 2-2-3-6-5-9-1-4 5 3 10 9 14 5-4 12-10 8-15z',edit:'M14 5H5v15h15v-9M10 14l1-4 8-8 3 3-8 8z',mail:'M3 5h18v14H3z M3 6l9 7 9-7',chat:'M4 4h16v12H9l-5 4z'};
+const icon=k=>'<svg aria-hidden="true" class="icon" viewBox="0 0 24 24"><path d="'+icons[k]+'"/></svg>';
+const names=['七月来信','夜航船','雨落之前','松间','小岛电台','晚风集'];
+const letters=['J','N','R','S','F','W'];
+const colors=['linear-gradient(135deg,#9c806d,#534946)','linear-gradient(35deg,#41445b,#aab7b6)','linear-gradient(55deg,#9e635c,#dca796)','linear-gradient(155deg,#596654,#a3b8a1)','linear-gradient(30deg,#535f76,#949bb7)','linear-gradient(120deg,#ba956d,#705954)'];
+const avatar=i=>'<span aria-hidden="true" class="avatar" style="--av:'+colors[i]+'">'+letters[i]+'</span>';
+const artwork='<img alt="fairy stage 封面" src="fairy-stage.jpg">';
+const button=(action,content,label='',cls='')=>'<button type="button" data-action="'+action+'" class="'+cls+'"'+(label?' aria-label="'+label+'"':'')+'>'+content+'</button>';
+const backBar=(back,label,right='')=>'<div class="top">'+button(back,icon('back')+label)+right+'</div>';
+const share='<div class="share">'+artwork+'<div><b>fairy stage</b><small>C-CLAYS · 单曲</small></div>'+icon('music')+'</div>';
+const comments=[
+ {i:0,text:'听到这里，忽然觉得末班车也可以再慢一点。',time:'昨天',liked:true,likes:128,replies:[{id:10,i:4,text:'我是在回家的渡轮上听的，刚好看到岸上的灯亮起来。'},{id:11,i:5,parent:10,text:'我也记得那段航线，快靠岸的时候特别好听。'},{id:12,i:4,parent:11,text:'下次坐船还要带上耳机。'}]},
+ {i:1,text:'前奏那几下像灯光一盏一盏亮起来。耳机里听，比外放多了好多小细节。',time:'2 小时前',likes:47,replies:[{id:13,i:3,text:'右声道那一下真的很轻。'}]},
+ {i:3,text:'以前存在旧播放器里的歌，今天又遇到了。',time:'昨天',likes:32,replies:[]},
+ {i:2,text:'最后一段结束的时候，窗外的雨也刚好停了。',time:'12 分钟前',likes:3,replies:[]}
+];
+comments[0].replies.push(
+ {id:14,i:1,text:'前奏一出来，就想起夜班公交的报站声。'},
+ {id:15,i:2,parent:14,text:'我最喜欢快到站时的那段间奏。'},
+ {id:16,i:0,text:'原来有这么多人在路上听这首。'},
+ {id:17,i:3,text:'第一次听是在学校门口的小店里。'},
+ {id:18,i:5,parent:17,text:'我们学校广播站也放过！'},
+ {id:19,i:4,text:'那一小段鼓点像是在提醒我该下车了。'},
+ {id:20,i:0,parent:19,text:'我反而常常因为这一段多坐一站。'},
+ {id:21,i:2,text:'刚刚好在结尾走到家门口。'},
+ {id:22,i:1,parent:21,text:'给今天收了个好尾。'}
+);
+const conversations=[
+ {i:1,time:'09:36',preview:'这首的编曲你一定会喜欢。',unread:2,share:true},
+ {i:0,time:'08:42',preview:'好，那就周五晚上见！',unread:1},
+ {i:4,time:'昨天',preview:'新一期的选曲单整理好了。',unread:0},
+ {i:3,time:'周二',preview:'我又把那张专辑从头听了一遍。',unread:0},
+ {i:2,time:'周一',preview:'谢谢推荐，下雨天听刚刚好。',unread:0}];
+const state={music:'comments',mail:'inbox',sort:'hot',filter:'all',chat:1,playing:true,scene:'music'};
+const histories=new Map(),order=new Map(),expanded=new Map();
+const music=document.querySelector('#music .phone'),mail=document.querySelector('#mail .phone');
+function frame(body,cls=''){return '<div class="screen '+cls+'">'+body+'</div>'}
+function play(){return button('play',icon(state.playing?'pause':'play'),state.playing?'暂停播放':'继续播放','circle')}
+function mini(){return '<div class="mini">'+artwork+'<div class="fill"><b>fairy stage</b><small>C-CLAYS</small></div>'+play()+'</div>'}
+function comment(id,featured=false){
+ const c=comments[id],author='<span class="name">'+names[c.i]+'</span>',date='<time>'+c.time+'</time>';
+ const more=c.replies.length>0;
+ const toggle=more?button('thread-'+id,expanded.has(id)?'收起回复 ⌃':'展开 '+c.replies.length+' 条回复 ⌄'):'';
+ const likes='<span class="likes '+(c.liked?'liked':'')+'" aria-label="'+c.likes+' 人赞过">'+icon('heart')+c.likes+'</span>';
+ const root=featured?
+  '<article class="featured"><span class="quote" aria-hidden="true">“</span><blockquote>'+c.text+'</blockquote><div class="meta"><div class="person">'+avatar(c.i)+author+date+'</div>'+likes+'</div><div class="foot">'+toggle+'</div></article>':
+  '<article class="row comment">' +avatar(c.i)+'<div class="fill"><div class="meta">'+author+likes+'</div>'+date+'<p>'+c.text+'</p><div class="foot">'+toggle+'</div></div></article>';
+ if(!expanded.has(id))return root;
+ const count=expanded.get(id);
+ const rows=c.replies.slice(0,count).map(reply=>{
+  const target=c.replies.find(r=>r.id===reply.parent);
+  return '<article class="row comment">'+avatar(reply.i)+'<div class="fill"><b class="name">'+names[reply.i]+'</b><p>'+(target?'回复 @'+names[target.i]+'：':'')+reply.text+'</p></div></article>';
+ });
+ const next=count<c.replies.length?button('more-'+id,'查看更多回复','','more'):'';
+ return root+'<div class="floor">'+rows.join('')+next+'</div>';
+}
+function sheet(content, label, dismiss, options={}) {
+ const {nested=false, grip=true} = options;
+ return '<div class="layer'+(nested?' nested':'')+'"><section class="sheet" role="dialog" aria-label="'+label+'" data-dismiss="'+dismiss+'">'+(grip?'<div class="grip"></div>':'')+frame(content)+'</section></div>';
+}
+function behind(content) {return '<div inert style="position:absolute;inset:0">'+content+'</div>'}
+function closeBar(action,label) {return '<div class="top sheetbar">'+button(action,icon('close'),label)+'</div>'}
+function sortedComments(hot){return (hot?[0,1,2,3]:[3,1,0,2]).map((id,j)=>comment(id,hot&&j===0)).join('')}
+function drawMusic(){
+ const menu=state.music==='menu'?'<div class="menu">'+button('comments',icon('chat')+' 歌曲评论')+'</div>':'';
+ const player=frame('<div class="playerbody"><img class="largeart" src="fairy-stage.jpg" alt="fairy stage 封面"><small>正在播放</small><h2>fairy stage</h2>C-CLAYS<div class="meta">'+button(state.music==='menu'?'player':'menu','•••','歌曲菜单','action')+play()+'</div>'+menu+'</div>','player');
+ if(state.music==='player'||state.music==='menu'){music.innerHTML=player;return}
+ const hot=state.sort==='hot';
+ const feed=sheet(closeBar('player','关闭歌曲评论')+'<div class="scroll"><div class="hero"><div class="song"><img class="art" src="fairy-stage.jpg" alt="单曲封面"><div><h2>fairy stage</h2><small>C-CLAYS</small></div></div></div><div class="tabs">'+button('hot','热门','',hot?'sel':'')+button('latest','最新','',hot?'':'sel')+'</div><div class="feed">'+sortedComments(hot)+'</div></div>','歌曲评论','player');
+ music.innerHTML=behind(player)+feed;
+}
+function row(c){
+ const dot='<span class="unreadDot '+(c.unread?'on':'')+'" aria-label="'+(c.unread?c.unread+' 条未读':'已读')+'"></span>';
+ const preview='<span class="snippet">'+escapeText(c.preview)+'</span>';
+ const track=c.share?'<span class="snippet">'+icon('music')+' fairy stage</span>':'';
+ return button('chat-'+c.i,dot+avatar(c.i)+'<div class="fill"><div class="meta"><b>'+names[c.i]+'</b><time>'+c.time+'</time></div>'+preview+track+'</div>'+icon('next'),'','row inboxrow');
+}
+function escapeText(s){const el=document.createElement('span');el.textContent=s;return el.innerHTML}
+function drawMail(){
+ const home=frame('<div class="top"><b>MeloX</b>'+button('settings','设置')+'</div><h1 class="title">首页</h1><div class="homeart">fairy stage</div><div class="sectionpad"><b>最近播放</b><p>fairy stage · C-CLAYS</p></div><div class="fill"></div>'+mini());
+ if(state.mail==='home'){mail.innerHTML=home;return}
+ const settingsSheet=body=>behind(home)+sheet(body,'设置','home',{grip:false});
+ if(state.mail==='settings'){
+  mail.innerHTML=settingsSheet(closeBar('home','关闭设置')+'<h1 class="title">设置</h1><div class="account"><div class="row">听歌识曲</div>'+button('inbox','私信'+icon('next'),'打开私信','row')+'</div>');
+  return;
+ }
+ if(state.mail==='contacts'){mail.innerHTML=settingsSheet(backBar('inbox','私信')+'<h1 class="title">选择联系人</h1><div class="scroll list">'+names.map((name,i)=>button('chat-'+i,avatar(i)+name,'','row')).join('')+'</div>');return}
+ if(state.mail==='chat'){const id=state.chat,c=conversations.find(v=>v.i===id);
+ mail.innerHTML=settingsSheet(backBar(state.chatSource,state.chatSource==='contacts'?'联系人':'私信')+'<div class="contacthead">'+avatar(id)+'<div>'+names[id]+'</div></div><div class="scroll msg">'+(c&&c.initial?'<small class="muted">'+c.initialTime+'</small><div class="bubble">'+escapeText(c.initial)+'</div>'+(id===1?share:''):'')+(histories.get(id)||[]).map(x=>'<div class="bubble mine">'+escapeText(x)+'</div>').join('')+'</div><form class="compose"><input aria-label="消息内容" placeholder="发消息…" maxlength="2000" required><button>发送</button></form>');const sc=mail.querySelector('.scroll');sc.scrollTop=sc.scrollHeight;return}
+ const all=state.filter==='all',items=conversations.filter(c=>all||c.unread);
+ const tools='<div class="mailTools"><select aria-label="筛选会话" id="mailFilter"><option value="all">全部</option><option value="unread" '+(!all?'selected':'')+'>未读</option></select>'+button('contacts',icon('edit'),'新建私信','right')+'</div>';
+ mail.innerHTML=settingsSheet(backBar('settings','设置',tools)+'<h1 class="title">'+(all?'私信':'未读私信')+'</h1><div class="scroll list">'+(items.map(row).join('')||'<p class="empty">没有未读会话</p>')+'</div>');
+}
+conversations.forEach(c=>{c.initial=c.preview;c.initialTime=c.time});
+function act(a){
+ if(a==='play'){state.playing=!state.playing;document.querySelectorAll('[data-action=play]').forEach(b=>{b.innerHTML=icon(state.playing?'pause':'play');b.setAttribute('aria-label',state.playing?'暂停播放':'继续播放')});return}
+ if(a==='hot'||a==='latest'){
+  state.sort=a;
+  music.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('sel',b.dataset.action===a));
+  music.querySelector('.feed').innerHTML=sortedComments(a==='hot');
+  return;
+ }
+ if(['menu','player','comments'].includes(a)||a.startsWith('thread-')||a.startsWith('more-')){
+ const feed=music.querySelector('.scroll');if(state.music==='comments'&&feed)order.set(state.sort,feed.scrollTop);
+ if(a.startsWith('thread-')){const id=Number(a.slice(7));if(expanded.has(id))expanded.delete(id);else expanded.set(id,10)}else if(a.startsWith('more-')){const id=Number(a.slice(5));expanded.set(id,expanded.get(id)+10)}else state.music=a;
+ drawMusic();if(state.music==='comments')music.querySelector('.scroll').scrollTop=order.get(state.sort)||0;return}
+ if(a.startsWith('chat-')){state.chatSource=state.mail;state.chat=Number(a.slice(5));state.mail='chat';const c=conversations.find(v=>v.i===state.chat);if(c)c.unread=0}
+ else if(a==='all'||a==='unread')state.filter=a;else state.mail=a;
+ drawMail();
+}
+function scene(s){state.scene=s;document.querySelectorAll('.board>section').forEach(el=>el.hidden=matchMedia('(max-width:760px)').matches&&el.id!==s);document.querySelectorAll('[data-scene]').forEach(b=>b.classList.toggle('sel',b.dataset.scene===s))}
+mail.addEventListener('change',e=>{if(e.target.id==='mailFilter')act(e.target.value)});
+music.addEventListener('scroll',e=>{if(e.target.matches('.sheet .scroll'))e.target.closest('.sheet').classList.toggle('scrolled',e.target.scrollTop>0)},true);
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(b?.dataset.action)act(b.dataset.action);if(b?.dataset.scene)scene(b.dataset.scene)});
+let drag=null;
+document.addEventListener('pointerdown',e=>{
+ const bar=e.target.closest('.grip,.sheet .top');
+ if(!bar||e.target.closest('button'))return;
+ drag={id:e.pointerId,y:e.clientY,sheet:bar.closest('.sheet')};
+ bar.setPointerCapture(e.pointerId);
+});
+document.addEventListener('pointermove',e=>{
+ if(drag?.id===e.pointerId)drag.sheet.style.transform='translateY('+Math.max(0,e.clientY-drag.y)+'px)';
+});
+document.addEventListener('pointerup',e=>{
+ if(drag?.id!==e.pointerId)return;
+ const {sheet,y}=drag;drag=null;sheet.style.transform='';
+ if(e.clientY-y>70)act(sheet.dataset.dismiss);
+});
+document.addEventListener('pointercancel',()=>{if(drag)drag.sheet.style.transform='';drag=null});
+mail.addEventListener('submit',e=>{e.preventDefault();const input=e.target.querySelector('input'),v=input.value.trim();if(!v){input.focus();return}const id=state.chat,log=histories.get(id)||[];log.push(v);histories.set(id,log);const idx=conversations.findIndex(x=>x.i===id),c=idx<0?{i:id,unread:0}:conversations.splice(idx,1)[0];Object.assign(c,{preview:v,time:'刚刚',share:false});conversations.unshift(c);drawMail();mail.querySelector('input').focus()});
+drawMusic();drawMail();scene('music');matchMedia('(max-width:760px)').addEventListener('change',()=>scene(state.scene));
+</script></html>

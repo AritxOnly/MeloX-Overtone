@@ -162,7 +162,7 @@ struct LibraryAlbumsView: View {
                     queue.append(contentsOf: tracks.filter { seen.insert($0.id).inserted })
                 }
                 try Task.checkCancellation()
-                if !queue.isEmpty { await player.playAll(shuffled ? queue.shuffled() : queue) }
+                if !queue.isEmpty { await player.playAll(queue, shuffled: shuffled) }
             } catch {
                 if !Task.isCancelled { playbackError = error.localizedDescription }
             }

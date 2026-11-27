@@ -104,6 +104,14 @@ final class PlayerQueueEntries {
         queue(for: type).skip(item: item)
     }
 
+    func removeUpcoming(_ id: AudioEntryId) -> Bool {
+        lock.withLock {
+            guard let item = upcoming.items.first(where: { $0.id == id }) else { return false }
+            upcoming.remove(item: item)
+            return true
+        }
+    }
+
     func count(for type: PlayerQueueType) -> Int {
         lock.lock(); defer { lock.unlock() }
         return queue(for: type).count

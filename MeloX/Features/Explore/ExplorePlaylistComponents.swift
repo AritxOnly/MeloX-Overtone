@@ -4,6 +4,7 @@ struct ExploreCategoryPicker: View {
     let categories: [String]
     let selection: String
     let isPinned: Bool
+    let horizontalInset: CGFloat
     let select: (String) -> Void
 
     var body: some View {
@@ -20,8 +21,8 @@ struct ExploreCategoryPicker: View {
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(selected ? Color.white : .primary)
                                 .padding(.horizontal, 14)
-                                .padding(.vertical, 7)
-                                .frame(minHeight: 34)
+                                .padding(.vertical, 8)
+                                .frame(minHeight: 36)
                                 .background(isPinned ? .clear : fill, in: .capsule)
                                 .glassEffect(isPinned ? .regular.tint(selected ? .accentColor : nil).interactive() : .identity, in: .capsule)
                                 .contentShape(.capsule)
@@ -30,9 +31,9 @@ struct ExploreCategoryPicker: View {
                         .accessibilityAddTraits(selected ? .isSelected : [])
                     }
                 }
-                .padding(4)
             }
         }
+        .contentMargins(.horizontal, horizontalInset, for: .scrollContent)
         .scrollIndicators(.hidden)
         .accessibilityIdentifier("explore-categories")
     }

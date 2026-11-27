@@ -189,7 +189,10 @@ public class RemoteAudioSource: AudioStreamSource {
     }
 
     private func performOpen(seek seekOffset: Int) {
-        if seekOffset == 0 {
+        if seekOffset == 0, ["mp3", "flac"].contains(url.pathExtension.lowercased()) {
+            // These containers can be parsed directly from the first response.
+            doPerfomOpen(seek: 0)
+        } else if seekOffset == 0 {
             initialRequest { [weak self] in
                 guard let self else { return }
                 if self.parsedHeaderOutput?.isMp4 == true {
@@ -223,12 +226,22 @@ public class RemoteAudioSource: AudioStreamSource {
     private func initialRequest(completion: @escaping () -> Void) {
         let urlRequest = fetchUrlForPartialContent(with: url)
         let task: NetworkDataStream = networkingClient.stream(request: urlRequest)
+        streamRequest = task
         task.responseStream { [weak self] event in
             switch event {
             case let .response(urlResponse):
-                self?.parseResponseHeader(response: urlResponse)
+                guard let self else { return }
+                self.parseResponseHeader(response: urlResponse)
                 task.cancel()
-                completion()
+                self.networkingClient.remove(task: task)
+                if let status = urlResponse?.statusCode, (200..<300).contains(status) {
+                    completion()
+                } else if urlResponse == nil {
+                    self.delegate?.errorOccurred(source: self, error: NetworkError.serverError)
+                }
+            case let .stream(.failure(error)):
+                task.cancel()
+                if let self { self.delegate?.errorOccurred(source: self, error: error) }
             default:
                 break
             }
@@ -368,7 +381,7 @@ public class RemoteAudioSource: AudioStreamSource {
     private func buildUrlRequest(with url: URL, seekIfNeeded seekOffset: Int) -> URLRequest {
         var urlRequest = URLRequest(url: url)
         urlRequest.networkServiceType = .avStreaming
-        urlRequest.cachePolicy = .reloadIgnoringLocalCacheData
+        urlRequest.cachePolicy = seekOffset == 0 ? .useProtocolCachePolicy : .reloadIgnoringLocalCacheData
         urlRequest.timeoutInterval = 60
         urlRequest.httpMethod = httpMethod
         urlRequest.httpBody = httpBody

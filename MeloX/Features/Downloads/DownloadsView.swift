@@ -74,7 +74,7 @@ struct DownloadsView: View {
                 Section {
                     SongListPlaybackActions { shuffled in
                         let songs = downloads.downloadedSongs
-                        Task { await player.playAll(shuffled ? songs.shuffled() : songs) }
+                        Task { await player.playAll(songs, shuffled: shuffled) }
                     }
 
                     ForEach(downloads.downloads) { download in

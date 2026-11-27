@@ -23,7 +23,7 @@ nonisolated struct LibraryAlbumIndex {
         var added: Date?
         let sourceOrder: Int
         var id: Int { album.id }
-        var artistText: String { L10n.joined(artists.map(\.name), separatorKey: "ui.common.artist_separator") }
+        var artistText: String { L10n.artistNames(artists.map(\.name)) }
     }
 
     struct Group: Identifiable {

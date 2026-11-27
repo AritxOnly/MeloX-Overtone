@@ -159,6 +159,9 @@ final class PlayerStore {
     private let downloads: DownloadStore
 
     @ObservationIgnored
+    private let library: LibraryStore
+
+    @ObservationIgnored
     private let engine: AudioPlaybackEngine
 
     @ObservationIgnored
@@ -202,6 +205,12 @@ final class PlayerStore {
     private var hasRestoredPlayback = false
 
     @ObservationIgnored
+    private(set) var hasReceivedSystemPlayRequest = false
+
+    @ObservationIgnored
+    private var mediaSuggestionLoadGeneration: Int?
+
+    @ObservationIgnored
     private var shouldResumeAfterInterruption = false
 
     @ObservationIgnored
@@ -219,7 +228,11 @@ final class PlayerStore {
     @ObservationIgnored
     private var isUsingDownloadedSource = false
 
+    var isWaitingToPlay: Bool { isLoading && currentLoadShouldAutoplay }
+
     @ObservationIgnored
+    private var gaplessPreparation: Task<Void, Never>?
+
     private var currentLoadShouldAutoplay = false
 
     /// Engine failures retried for this song before the unavailable alert.
@@ -265,6 +278,7 @@ final class PlayerStore {
         self.api = api
         self.settings = settings
         self.downloads = downloads
+        self.library = library
         self.persistence = persistence ?? PlaybackPersistence()
         historyRecorder = PlaybackHistoryRecorder(
             api: api,
@@ -304,8 +318,14 @@ final class PlayerStore {
     }
 
     func restore() async {
-        guard !hasRestoredPlayback else { return }
+        guard restoreQueueIfNeeded() else { return }
+        await loadCurrentSong(autoplay: false, startAt: progress)
+    }
+
+    private func restoreQueueIfNeeded() -> Bool {
+        guard !hasRestoredPlayback else { return false }
         hasRestoredPlayback = true
+        guard queue.isEmpty else { return false }
         #if DEBUG && targetEnvironment(simulator)
         if MeloXDesignPreview.isEnabled {
             playbackQueue.replace(with: MeloXDesignPreview.songs, startingAt: 0)
@@ -313,13 +333,13 @@ final class PlayerStore {
             duration = 214
             progress = 36
             reanchorPlaybackTimeline(to: progress, rate: 0)
-            return
+            return false
         }
         #endif
         guard let snapshot = persistence.load(), !snapshot.queue.isEmpty else {
             lyricsLiveActivityController.synchronize(with: nil)
             lyricsNotificationController.clear()
-            return
+            return false
         }
 
         playbackQueue.restore(
@@ -345,10 +365,7 @@ final class PlayerStore {
         )
         applyVolumeControlMode()
 
-        await loadCurrentSong(
-            autoplay: false,
-            startAt: progress
-        )
+        return true
     }
 
     func beginListenTogetherSession() {
@@ -540,6 +557,7 @@ final class PlayerStore {
         let playbackPosition = maximumPosition > 0
             ? max(0, min(startAt, maximumPosition))
             : max(0, startAt)
+        mediaSuggestionLoadGeneration = loadGeneration + 1
         await loadCurrentSong(
             autoplay: true,
             startAt: playbackPosition,
@@ -548,11 +566,13 @@ final class PlayerStore {
         )
     }
 
-    func playAll(_ songs: [Song], sourceID: Int? = nil) async {
+    func playAll(_ songs: [Song], shuffled: Bool = false, sourceID: Int? = nil) async {
         await replaceQueueAndPlay(
             songs,
             sourceID: sourceID,
-            activatesHeartMode: false
+            activatesHeartMode: false,
+            shuffled: shuffled,
+            donatesMediaSuggestion: true
         )
     }
 
@@ -581,15 +601,26 @@ final class PlayerStore {
     private func replaceQueueAndPlay(
         _ songs: [Song],
         sourceID: Int?,
-        activatesHeartMode: Bool
+        activatesHeartMode: Bool,
+        shuffled: Bool? = nil,
+        donatesMediaSuggestion: Bool = false
     ) async {
         guard !songs.isEmpty else { return }
         recordCurrentPlayback()
         let queueChanged = songs.map(\.id) != listenTogetherDisplaySongIDs
-        playbackQueue.replace(with: songs, startingAt: 0)
+        let firstIndex = shuffled == true ? songs.indices.randomElement() ?? 0 : 0
+        playbackQueue.replace(with: songs, startingAt: firstIndex, shuffled: shuffled)
+        if let shuffled {
+            if isListenTogetherSessionActive { listenTogetherPlayModeTouched = true }
+            if repeatMode == .one { repeatMode = .off }
+            updateQueueModeIndicator(preferred: shuffled ? .shuffle : nil)
+        }
         historySourceID = sourceID
         isHeartModeActive = activatesHeartMode
         hasRecordedCurrentStart = false
+        if donatesMediaSuggestion {
+            mediaSuggestionLoadGeneration = loadGeneration + 1
+        }
         await loadCurrentSong(autoplay: true, reportsToRoom: true, queueChanged: queueChanged)
     }
 
@@ -599,10 +630,15 @@ final class PlayerStore {
             let shouldPlay = isLoading
                 ? (!isListenTogetherSessionActive || !currentLoadShouldAutoplay)
                 : !isPlaying
+            if shouldPlay {
+                mediaSuggestionLoadGeneration = loadGeneration
+            }
             setLocalPlaybackIntent(shouldPlay)
         } else {
             Task { @MainActor [weak self] in
-                await self?.retry()
+                guard let self, !self.isLoading else { return }
+                self.mediaSuggestionLoadGeneration = self.loadGeneration + 1
+                await self.retry()
             }
         }
     }
@@ -613,11 +649,37 @@ final class PlayerStore {
             playbackIssue = nil
             engine.play()
         } else {
+            mediaSuggestionLoadGeneration = nil
             engine.pause()
             persistSnapshot()
         }
         updateNowPlayingState()
         onListenTogetherTransport?(shouldPlay ? .play : .pause, currentSong?.id)
+    }
+
+    @discardableResult
+    func playFromSystem() async -> Bool {
+        if restoreQueueIfNeeded() {
+            hasReceivedSystemPlayRequest = true
+            await loadCurrentSong(autoplay: true, startAt: progress)
+        } else if currentSong != nil {
+            hasReceivedSystemPlayRequest = true
+            if isPlaying { return true }
+            if engine.hasCurrentItem || isLoading {
+                setLocalPlaybackIntent(true)
+            } else {
+                await retry()
+            }
+        } else if playbackQueue.currentSong != nil {
+            hasReceivedSystemPlayRequest = true
+            await loadCurrentSong(autoplay: true, reportsToRoom: true)
+        } else {
+            let songs = library.recentSongs.isEmpty ? downloads.downloadedSongs : library.recentSongs
+            guard !songs.isEmpty else { return false }
+            hasReceivedSystemPlayRequest = true
+            await replaceQueueAndPlay(songs, sourceID: nil, activatesHeartMode: false)
+        }
+        return isPlaying || isWaitingToPlay
     }
 
     func retry() async {
@@ -717,6 +779,7 @@ final class PlayerStore {
         recordCurrentPlayback()
         guard playbackQueue.select(index: index) else { return }
         hasRecordedCurrentStart = false
+        mediaSuggestionLoadGeneration = loadGeneration + 1
         await loadCurrentSong(autoplay: true, reportsToRoom: true)
     }
 
@@ -1085,12 +1148,12 @@ final class PlayerStore {
     func setAutoMixEnabled(_ isEnabled: Bool) {
         guard !isListenTogetherSessionActive else { return }
         guard isAutoMixEnabled != isEnabled else { return }
+        cancelAutoMixPreparation()
         isAutoMixEnabled = isEnabled
         if isEnabled {
             queueModeIndicator = .autoMix
         } else {
             updateQueueModeIndicator()
-            cancelAutoMixPreparation()
         }
         persistSnapshot()
         if isEnabled {
@@ -1301,8 +1364,11 @@ final class PlayerStore {
         if let playbackError = error as? AudioPlaybackError,
            case .itemFailed = playbackError,
            playbackRecoveryAttempts < 2,
-           currentSong != nil {
+           let currentSong {
+            let generation = loadGeneration
             playbackRecoveryAttempts += 1
+            await api.invalidatePlaybackSource(id: currentSong.id)
+            guard generation == loadGeneration else { return }
             let resumePosition = estimatedProgress()
             let shouldAutoplay = currentLoadShouldAutoplay
             await loadCurrentSong(
@@ -1367,6 +1433,11 @@ final class PlayerStore {
                 self.currentLoadShouldAutoplay = true
                 self.playbackRecoveryAttempts = 0
                 self.playbackIssue = nil
+                if self.mediaSuggestionLoadGeneration == self.loadGeneration,
+                   let song = self.currentSong {
+                    self.mediaSuggestionLoadGeneration = nil
+                    PlaybackIntentHandler.donateResumeQueue(for: song)
+                }
                 self.recordCurrentPlaybackStartIfNeeded()
                 self.scheduleBeatAnalysisIfNeeded()
                 self.prepareAutoMixIfNeeded()
@@ -1381,9 +1452,16 @@ final class PlayerStore {
             self.duration = value
             self.updateNowPlayingState()
         }
+        engine.onQueuedTrackStarted = { [weak self] context in
+            self?.gaplessPreparation = nil
+            self?.completePreparedTransition(context: context)
+        }
         engine.onPlaybackEnded = { [weak self] in
+            guard let self else { return }
+            let generation = self.loadGeneration
             Task { @MainActor in
-                await self?.handlePlaybackEnded()
+                guard generation == self.loadGeneration else { return }
+                await self.handlePlaybackEnded()
             }
         }
         engine.onFailure = { [weak self] error in
@@ -1480,7 +1558,7 @@ final class PlayerStore {
         }
         autoMixCoordinator.onTransitionCompleted = {
             [weak self] context in
-            self?.completeAutoMixTransition(
+            self?.completePreparedTransition(
                 context: context
             )
         }
@@ -1488,11 +1566,14 @@ final class PlayerStore {
 
     private func bindRemoteCommands() {
         nowPlayingSession.onPlay = { [weak self] in
+            await self?.playFromSystem()
+        }
+        nowPlayingSession.onTogglePlayPause = { [weak self] in
             guard let self else { return }
-            if self.engine.hasCurrentItem || self.isLoading {
-                self.setLocalPlaybackIntent(true)
+            if self.isPlaying || self.isWaitingToPlay {
+                self.setLocalPlaybackIntent(false)
             } else {
-                Task { @MainActor in await self.retry() }
+                await self.playFromSystem()
             }
         }
         nowPlayingSession.onPause = { [weak self] in
@@ -1521,7 +1602,8 @@ final class PlayerStore {
         nowPlayingSession.updatePlayback(
             position: progress,
             duration: duration,
-            isPlaying: isPlaying
+            isPlaying: isPlaying,
+            isWaitingToPlay: isWaitingToPlay
         )
     }
 
@@ -1905,10 +1987,38 @@ final class PlayerStore {
     }
 
     private func prepareAutoMixIfNeeded() {
+        guard isPlaying, !isListenTogetherSessionActive, repeatMode != .one else { return }
+        if !isAutoMixEnabled {
+            guard gaplessPreparation == nil, duration > 0,
+                  duration - estimatedProgress() <= 45 else { return }
+        }
         let nextSong = upcomingQueueIndices.first.flatMap {
             queue.indices.contains($0)
                 ? queue[$0]
                 : nil
+        }
+        if !isAutoMixEnabled {
+            guard let currentSong, let nextSong,
+                  !currentSong.isPodcastProgram, !nextSong.isPodcastProgram else { return }
+            gaplessPreparation = Task { @MainActor [weak self] in
+                guard let self else { return }
+                let local = downloads.localPlaybackSource(songID: nextSong.id)
+                let source: PlaybackSource
+                if let local {
+                    source = local
+                } else {
+                    guard let remote = try? await api.playbackSource(for: nextSong) else { return }
+                    source = remote
+                }
+                guard !Task.isCancelled, !isAutoMixEnabled, !isListenTogetherSessionActive,
+                      repeatMode != .one, self.currentSong?.id == currentSong.id,
+                      upcomingQueueIndices.first.map({ queue[$0].id }) == nextSong.id else { return }
+                await engine.enqueue(PreparedAutoMixContext(
+                    outgoingSongID: currentSong.id, incomingSong: nextSong,
+                    source: source, sourceIsDownloaded: local != nil
+                ))
+            }
+            return
         }
         autoMixCoordinator.prepareIfNeeded(
             isEnabled:
@@ -1932,10 +2042,13 @@ final class PlayerStore {
         autoMixTransitionProgress = nil
         autoMixTransitionKind = nil
         autoMixIncomingSongName = nil
+        engine.cancelQueuedEntry()
         autoMixCoordinator.cancel()
+        gaplessPreparation?.cancel()
+        gaplessPreparation = nil
     }
 
-    private func completeAutoMixTransition(
+    private func completePreparedTransition(
         context: PreparedAutoMixContext
     ) {
         guard context.outgoingSongID == currentSong?.id else {
@@ -1957,6 +2070,10 @@ final class PlayerStore {
         loadGeneration += 1
         let generation = loadGeneration
         currentSong = context.incomingSong
+        duration = TimeInterval(context.incomingSong.durationMS) / 1_000
+        progress = clampedPlaybackPosition(engine.currentPlaybackTime ?? 0)
+        reanchorPlaybackTimeline(to: progress, rate: isPlaying ? 1 : 0)
+        playbackRecoveryAttempts = 0
         resolveCurrentSongAudioAvailability(
             for: context.incomingSong,
             generation: generation

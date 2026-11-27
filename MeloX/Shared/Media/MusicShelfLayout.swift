@@ -3,7 +3,7 @@ import SwiftUI
 struct MusicShelfLayout {
     var containerWidth: CGFloat = 390
 
-    private var isWide: Bool { containerWidth >= 600 }
+    var isWide: Bool { containerWidth >= 600 }
     var horizontalPadding: CGFloat { isWide ? 28 : 16 }
     var spacing: CGFloat { isWide ? 20 : 14 }
 

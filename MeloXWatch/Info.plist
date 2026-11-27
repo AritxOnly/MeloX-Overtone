@@ -27,7 +27,7 @@
 		<string>audio</string>
 	</array>
 	<key>WKCompanionAppBundleIdentifier</key>
-	<string>com.aritxonly.MeloX</string>
+	<string>$(OVERTONE_BASE_BUNDLE_ID)</string>
 	<key>WKPrefersNetworkUponForeground</key>
 	<true/>
 	<key>WKRunsIndependentlyOfCompanionApp</key>

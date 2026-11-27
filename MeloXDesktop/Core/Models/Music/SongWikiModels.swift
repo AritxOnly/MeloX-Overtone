@@ -272,14 +272,7 @@ struct SongWiki {
                 id: id,
                 title: title,
                 artist:
-                    resource.uiElement?.subTitles
-                        .compactMap(\.title?.nonempty)
-                        .joined(
-                            separator: L10n.string(
-                                "ui.common.artist_separator"
-                            )
-                        )
-                        .nonempty,
+                    L10n.artistNames(resource.uiElement?.subTitles.compactMap(\.title?.nonempty) ?? []).nonempty,
                 note:
                     resource.uiElement?
                         .descriptionValues.first,

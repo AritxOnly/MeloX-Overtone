@@ -22,11 +22,11 @@ struct MiniPlayerView: View {
                             )
 
                         VStack(alignment: .leading, spacing: 0) {
-                            MiniPlayerMarquee(text: song.name)
+                            PlayerMarquee(text: song.name)
                                 .font(.footnote.weight(.semibold))
                                 .lineLimit(1)
 
-                            MiniPlayerMarquee(text: song.artistText)
+                            PlayerMarquee(text: song.artistText)
                                 .font(.footnote)
                                 .lineLimit(1)
                         }
@@ -38,7 +38,7 @@ struct MiniPlayerView: View {
                 .accessibilityLabel(Text(verbatim: song.name))
                 .accessibilityValue(Text(verbatim: song.artistText))
 
-                if player.isLoading {
+                if player.isWaitingToPlay {
                     ProgressView()
                         .controlSize(.small)
                         .frame(width: 36, height: 36)

@@ -10,6 +10,8 @@ struct NowPlayingQueuePage: View {
     let showsSongHeader: Bool
     let onSongHeaderHiddenChange: (Bool) -> Void
     let onSongHeaderOffsetChange: (CGFloat) -> Void
+    let onReorderingChange: (Bool) -> Void
+    @State private var isReordering = false
 
     @State private var songHeaderHeight = NowPlayingSongHeader.referenceHeight
     @State private var scrollOffset: CGFloat = 0
@@ -25,8 +27,10 @@ struct NowPlayingQueuePage: View {
         onSongHeaderHiddenChange:
             @escaping (Bool) -> Void = { _ in },
         onSongHeaderOffsetChange:
-            @escaping (CGFloat) -> Void = { _ in }
+            @escaping (CGFloat) -> Void = { _ in },
+        onReorderingChange: @escaping (Bool) -> Void = { _ in }
     ) {
+        self.onReorderingChange = onReorderingChange
         self.song = song
         self.presentation = presentation
         self.artworkNamespace = artworkNamespace
@@ -38,62 +42,19 @@ struct NowPlayingQueuePage: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            List {
-                // Reserve the header space once. Pinning the overlay must not
-                // resize the List or change its content at the scroll threshold.
-                Color.clear
-                    .frame(height: reservedSongHeaderHeight + 60)
-                    .listRowInsets(.init())
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
-                    .accessibilityHidden(true)
-
-                Section {
-                    Text("ui.player.continue_playing")
-                        .font(.title2.bold())
-                        .padding(.top, 14)
-                        .padding(.bottom, 10)
-                        .listRowInsets(.init())
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-
-                    if upcomingEntries.isEmpty {
-                        ContentUnavailableView(
-                            "ui.player.no_up_next",
-                            systemImage: "list.bullet"
-                        )
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .listRowInsets(
-                            .init(
-                                top: 24,
-                                leading: 0,
-                                bottom: 24,
-                                trailing: 0
-                            )
-                        )
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
-                    } else {
-                        ForEach(upcomingEntries) { entry in
-                            NowPlayingQueueRow(entry: entry)
-                        }
-                        .onMove(perform: moveQueueItems)
-                    }
-                }
-            }
-            .listStyle(.plain)
-            .songSwipeGroup()
-            .listSectionSpacing(0)
-            .scrollContentBackground(.hidden)
-            .scrollIndicators(.visible)
-            .contentMargins(.top, 0, for: .scrollContent)
-            // The mask also clips the system indicator. Start its track at
-            // the visible queue edge without changing the content offset.
-            .contentMargins(.top, visibleQueueTopInset, for: .scrollIndicators)
-            .environment(\.defaultMinListRowHeight, 1)
-            .environment(\.defaultMinListHeaderHeight, 0)
-            .environment(\.editMode, .constant(.active))
+            UpcomingQueueList(
+                entries: upcomingEntries,
+                headerInset: reservedSongHeaderHeight + 60,
+                indicatorInset: visibleQueueTopInset,
+                onScroll: { offset in
+                    updateSongHeaderState(for: min(max(offset, 0), reservedSongHeaderHeight))
+                },
+                onReordering: { active in
+                    isReordering = active
+                    onReorderingChange(active)
+                },
+                onMove: moveQueueItems
+            )
             .mask {
                 Rectangle()
                     .padding(.top, visibleQueueTopInset)
@@ -126,17 +87,10 @@ struct NowPlayingQueuePage: View {
                 }
             }
             .padding(.bottom, bottomContentInset)
-            .onScrollGeometryChange(
-                for: CGFloat.self,
-                of: { geometry in
-                    min(
-                        max(geometry.contentOffset.y + geometry.contentInsets.top, 0),
-                        reservedSongHeaderHeight
-                    )
-                }
-            ) { _, offset in
-                updateSongHeaderState(for: offset)
-            }
+        }
+        .onDisappear {
+            isReordering = false
+            onReorderingChange(false)
         }
         .onAppear {
             if presentation == .portrait {
@@ -171,7 +125,7 @@ struct NowPlayingQueuePage: View {
 
     private var bottomContentInset: CGFloat {
         presentation == .portrait
-            ? NowPlayingBottomControls.coreHeight
+            ? (isReordering ? 0 : NowPlayingBottomControls.coreHeight)
             : 12
     }
 
@@ -334,10 +288,12 @@ private struct NowPlayingQueueModeControls: View {
     }
 }
 
-private struct NowPlayingQueueRow: View {
+struct NowPlayingQueueRow: View {
     @Environment(PlayerStore.self) private var player
 
     let entry: UpcomingQueueEntry
+    let previewWidth: () -> CGFloat
+    private let previewShape = RoundedRectangle(cornerRadius: 28, style: .continuous)
 
     var body: some View {
         Button(action: play) {
@@ -362,21 +318,30 @@ private struct NowPlayingQueueRow: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .listRowInsets(
-            .init(
-                top: 4,
-                leading: 0,
-                bottom: 4,
-                trailing: 0
-            )
-        )
-        .listRowSeparator(.hidden)
-        .listRowBackground(Color.clear)
-        .songSwipeActions(entry.song, removal: .action("ui.player.remove_from_queue") {
-            player.removeQueuedSong(at: entry.queueIndex, matching: entry.song.id)
-        }, inline: true, next: {
-            Task { await player.promoteQueuedSong(at: entry.queueIndex, matching: entry.song) }
-        })
+        .padding(.vertical, 4)
+        .contentShape(.contextMenuPreview, previewShape)
+        .contextMenu {
+            QueueEntryActions(song: entry.song, index: entry.queueIndex)
+        } preview: {
+            HStack(spacing: 14) {
+                ArtworkImage(url: entry.song.album?.artworkURL, cornerRadius: 8)
+                    .frame(width: 76, height: 76)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(verbatim: entry.song.name).font(.headline).lineLimit(2)
+                    Text(verbatim: entry.song.artistText).font(.subheadline).lineLimit(2)
+                    if let album = entry.song.album, !album.name.isEmpty {
+                        Text(verbatim: album.name).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(16)
+            .frame(minWidth: 0, idealWidth: previewWidth(), maxWidth: .infinity, alignment: .leading)
+            .background(.regularMaterial, in: previewShape)
+            .clipShape(previewShape)
+            .contentShape(.contextMenuPreview, previewShape)
+            .preferredColorScheme(.dark)
+        }
     }
 
     private func play() {
@@ -386,7 +351,7 @@ private struct NowPlayingQueueRow: View {
     }
 }
 
-private struct UpcomingQueueEntry: Identifiable {
+struct UpcomingQueueEntry: Identifiable, Equatable {
     struct ID: Hashable {
         let songID: Int
         let occurrence: Int

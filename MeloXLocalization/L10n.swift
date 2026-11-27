@@ -120,6 +120,14 @@ nonisolated enum L10n {
             ?? values.joined(separator: ", ")
     }
 
+    static func artistNames(_ names: [String]) -> String {
+        let names = names.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        guard let last = names.last else { return "" }
+        guard names.count > 1 else { return last }
+        return names.dropLast().joined(separator: ", ") + " & " + last
+    }
+
     static func joined(
         _ values: [String],
         separatorKey: String

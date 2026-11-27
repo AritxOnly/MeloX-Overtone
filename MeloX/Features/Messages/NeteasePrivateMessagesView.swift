@@ -12,10 +12,25 @@ struct NeteasePrivateMessagesView: View {
     @State private var conversations: [NeteasePrivateConversation] = []
     @State private var currentUserID = 0
     @State private var phase: LoadingPhase = .loading
+    @State private var isLoadingConversations = false
+    @State private var mayHaveMoreUnreadConversations = false
+    @State private var isMarkingAllRead = false
+    @State private var markAllReadError: String?
+
+    @State private var unreadOnly = false
+
+    private var visibleConversations: [NeteasePrivateConversation] {
+        unreadOnly ? conversations.filter { $0.unreadCount > 0 } : conversations
+    }
+
+    private var canMarkAllRead: Bool {
+        currentUserID > 0 && !isLoadingConversations && !isMarkingAllRead
+            && (mayHaveMoreUnreadConversations || conversations.contains { $0.unreadCount > 0 })
+    }
 
     var body: some View {
         List {
-            ForEach(conversations) { conversation in
+            ForEach(visibleConversations) { conversation in
                 let contact = conversation.participant(
                     currentUserID: currentUserID
                 )
@@ -27,8 +42,34 @@ struct NeteasePrivateMessagesView: View {
             }
         }
         .listStyle(.plain)
-        .navigationTitle("ui.messages.private.title")
+        .navigationTitle(unreadOnly ? L10n.string("ui.messages.unread_title") : L10n.string("ui.messages.private.title"))
+        .navigationBarTitleDisplayMode(.large)
         .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                Button {
+                    isMarkingAllRead = true
+                } label: {
+                    if isMarkingAllRead {
+                        ProgressView()
+                    } else {
+                        Image(systemName: "envelope.open")
+                    }
+                }
+                .accessibilityLabel("ui.messages.mark_all_read")
+                .disabled(!canMarkAllRead)
+                .tint(.primary)
+
+                Menu {
+                    Picker("ui.messages.filter.title", selection: $unreadOnly) {
+                        Text("ui.messages.filter.all").tag(false)
+                        Text("ui.messages.filter.unread").tag(true)
+                    }
+                } label: {
+                    Label("ui.messages.filter.title", systemImage: unreadOnly
+                          ? "line.3.horizontal.decrease.circle.fill"
+                          : "line.3.horizontal.decrease.circle")
+                }
+            }
             ToolbarItem(placement: .primaryAction) {
                 NavigationLink(value: NeteasePrivateMessageRoute.contacts) {
                     Image(systemName: "square.and.pencil")
@@ -60,6 +101,8 @@ struct NeteasePrivateMessagesView: View {
                     )
                     .buttonStyle(.borderedProminent)
                 }
+            case .loaded where unreadOnly && visibleConversations.isEmpty:
+                ContentUnavailableView("ui.messages.all_read", systemImage: "envelope.open")
             default:
                 EmptyView()
             }
@@ -84,56 +127,80 @@ struct NeteasePrivateMessagesView: View {
         .task {
             await load()
         }
+        .task(id: isMarkingAllRead) {
+            if isMarkingAllRead {
+                await markAllRead()
+            }
+        }
+        .alert(
+            "ui.messages.mark_all_read_failed",
+            isPresented: Binding(
+                get: { markAllReadError != nil },
+                set: { if !$0 { markAllReadError = nil } }
+            )
+        ) {
+            Button("ui.common.ok", role: .cancel) {}
+        } message: {
+            Text(markAllReadError ?? "")
+        }
     }
 
     private func conversationRow(
         _ conversation: NeteasePrivateConversation,
         contact: NeteaseMessageContact
     ) -> some View {
-        HStack(spacing: 12) {
-            ArtworkImage(url: contact.artworkURL, cornerRadius: 1_000)
-                .frame(width: 52, height: 52)
-                .clipShape(.circle)
+        let unread = conversation.unreadCount > 0
+        return HStack(spacing: 9) {
+            Circle()
+                .fill(.blue)
+                .frame(width: 8, height: 8)
+                .opacity(unread ? 1 : 0)
+                .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 5) {
-                HStack(alignment: .firstTextBaseline) {
+            ArtworkImage(url: contact.artworkURL, cornerRadius: 24, placeholderSymbol: "person.fill")
+                .frame(width: 46, height: 46)
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(contact.displayName)
-                        .font(.headline)
+                        .font(.body.weight(unread ? .bold : .semibold))
                         .lineLimit(1)
-
-                    Spacer()
-
+                    Spacer(minLength: 0)
                     if conversation.lastMessageTime > 0 {
                         Text(formattedTime(conversation.lastMessageTime))
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
-
-                HStack {
-                    Text(conversation.lastMessage.summary)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-
-                    Spacer()
-
-                    if conversation.unreadCount > 0 {
-                        Text(
-                            conversation.unreadCount.formatted(
-                                .number.locale(L10n.locale)
-                            )
-                        )
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(.red, in: .capsule)
-                    }
-                }
+                messagePreview(conversation.lastMessage)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
+            .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(unread ? L10n.format("ui.messages.unread_count", conversation.unreadCount) : "")
+    }
+
+    @ViewBuilder
+    private func messagePreview(_ payload: NeteasePrivateMessagePayload) -> some View {
+        if let resource = payload.resource {
+            if !payload.text.isEmpty {
+                Text(payload.text)
+                    .lineLimit(1)
+            }
+            Label {
+                Text(resource.title)
+                    .lineLimit(1)
+            } icon: {
+                Image(systemName: "music.note")
+            }
+            .accessibilityLabel(L10n.format("ui.messages.resource_summary", resource.kindTitle, resource.title))
+        } else {
+            Text(payload.summary)
+                .lineLimit(2)
+        }
     }
 
     private func formattedTime(_ milliseconds: Int64) -> String {
@@ -164,6 +231,9 @@ struct NeteasePrivateMessagesView: View {
     }
 
     private func load() async {
+        guard !isLoadingConversations, !isMarkingAllRead else { return }
+        isLoadingConversations = true
+        defer { isLoadingConversations = false }
         phase = .loading
         do {
             if let profileID = library.profile?.id {
@@ -171,12 +241,32 @@ struct NeteasePrivateMessagesView: View {
             } else {
                 currentUserID = try await api.accountProfile().id
             }
-            conversations = try await api.privateMessageConversations()
+            let page = try await api.privateMessageConversationsPage()
+            conversations = page.messages
+            mayHaveMoreUnreadConversations = page.more == true
             phase = .loaded
         } catch is CancellationError {
             return
         } catch {
             phase = .failed(error.localizedDescription)
+        }
+    }
+
+    private func markAllRead() async {
+        defer { isMarkingAllRead = false }
+        do {
+            try await api.markAllPrivateMessagesRead(
+                currentUserID: currentUserID,
+                onMarkedRead: clearUnreadCount(for:)
+            )
+            for index in conversations.indices {
+                conversations[index].unreadCount = 0
+            }
+            mayHaveMoreUnreadConversations = false
+        } catch is CancellationError {
+            return
+        } catch {
+            markAllReadError = error.localizedDescription
         }
     }
 }

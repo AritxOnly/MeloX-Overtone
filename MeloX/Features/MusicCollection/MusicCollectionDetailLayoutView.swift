@@ -34,15 +34,23 @@ struct MusicCollectionDetailLayoutView<Header: View, Tracks: View>: View {
             ZStack {
                 backdrop(metrics: metrics)
 
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        header()
-                            .padding(.horizontal, metrics.usesAdaptiveHeader ? MusicCollectionDetailMetrics.horizontalPadding : 0)
-                        tracks()
-                            .padding(.horizontal, metrics.usesAdaptiveHeader ? 12 : 0)
-                    }
-                    .padding(.bottom, 32)
+                List {
+                    header()
+                        .padding(.horizontal, metrics.usesAdaptiveHeader ? MusicCollectionDetailMetrics.horizontalPadding : 0)
+                        .listRowInsets(.init())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+
+                    tracks()
+                        .listRowInsets(.init(top: 0, leading: metrics.usesAdaptiveHeader ? 12 : 0,
+                                             bottom: 0, trailing: metrics.usesAdaptiveHeader ? 12 : 0))
+                        .listRowBackground(Color.clear)
                 }
+                .listStyle(.plain)
+                .listRowSpacing(0)
+                .contentMargins(.horizontal, 0, for: .scrollContent)
+                .contentMargins(.bottom, 32, for: .scrollContent)
+                .scrollContentBackground(.hidden)
                 .scrollIndicators(.hidden)
                 .refreshable { await onRefresh() }
                 .ignoresSafeArea(

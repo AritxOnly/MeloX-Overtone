@@ -312,28 +312,22 @@ final class NeteaseAPI {
 
     func songComments(
         id: Int,
-        offset: Int = 0,
-        limit: Int = 20,
-        beforeTime: Int64 = 0
+        sort: SongCommentSort,
+        cursor: String,
+        page: Int,
+        limit: Int = 20
     ) async throws -> SongCommentsResponse {
-        let path = "/api/v1/resource/comments/R_SO_4_\(id)"
-        let data: [String: Any] = [
-            "rid": id,
-            "limit": limit,
-            "offset": offset,
-            "beforeTime": beforeTime,
-        ]
-        let response: SongCommentsResponse
-        do {
-            // @neteaseapireborn/api 对该路由使用 weapi。
-            response = try await client.weapi(path, data: data)
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch APIError.emptyResponse {
-            // CFNetwork 请求部分网易云 weapi 路由时会得到 HTTP 200 空包；
-            // 保留完全相同的原始路由和参数，仅切换到其支持的 eapi 传输。
-            response = try await client.eapi(path, data: data)
-        }
+        let response: SongCommentsResponse = try await client.eapi(
+            "/api/v2/resource/comments",
+            data: [
+                "threadId": "R_SO_4_\(id)",
+                "sortType": sort.rawValue,
+                "cursor": cursor,
+                "pageNo": page,
+                "pageSize": limit,
+                "showInner": false,
+            ]
+        )
         try validate(responseCode: response.code)
         return response
     }
@@ -342,7 +336,7 @@ final class NeteaseAPI {
         songID: Int,
         parentCommentID: Int64,
         time: Int64 = -1,
-        limit: Int = 20
+        limit: Int = 10
     ) async throws -> SongCommentFloorResponse {
         let path = "/api/resource/comment/floor/get"
         let data: [String: Any] = [
@@ -354,7 +348,7 @@ final class NeteaseAPI {
         let response: SongCommentFloorResponse
         do {
             // @neteaseapireborn/api/module/comment_floor.js 使用同一路由和 weapi 参数。
-            response = try await client.weapi(path, data: data)
+            response = try await client.weapi(path, data: data, retryEmptyResponse: false)
         } catch is CancellationError {
             throw CancellationError()
         } catch APIError.emptyResponse {
@@ -419,10 +413,21 @@ final class NeteaseAPI {
         }
     }
 
+    func invalidatePlaybackSource(id: Int) async {
+        await PlaybackSourceCache(cookie: settings.cookie).invalidate(id: id)
+    }
+
     private func requestPlaybackSource(
         id: Int,
         quality: MusicQuality
     ) async throws -> PlaybackSource {
+        let cookie = settings.cookie
+        let cache = PlaybackSourceCache(cookie: cookie)
+        let cached = await cache.value(id: id, quality: quality)
+        try Task.checkCancellation()
+        guard settings.cookie == cookie else { throw APIError.invalidResponse }
+        if let cached { return cached }
+        let requestedAt = Date()
         // Mirrors @neteaseapireborn/api/module/song_url_v1.js.
         var data: [String: Any] = [
             "ids": "[\(id)]",
@@ -441,12 +446,18 @@ final class NeteaseAPI {
               let url = securePlaybackURL(from: string) else {
             throw APIError.noPlayableSource
         }
-        return PlaybackSource(
+        let result = PlaybackSource(
             url: url,
             bitrate: source.bitrate,
             format: source.format,
             quality: source.level.flatMap(MusicQuality.init(apiLevel:))
         )
+        guard settings.cookie == cookie else { throw APIError.invalidResponse }
+        if let lifetime = source.expiresIn, lifetime > 30, source.freeTrialInfo == nil {
+            await cache.store(result, id: id, quality: quality,
+                        expires: requestedAt.addingTimeInterval(min(lifetime, 3600) - 30))
+        }
+        return result
     }
 
     func downloadSource(

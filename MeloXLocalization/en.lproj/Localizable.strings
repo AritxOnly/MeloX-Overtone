@@ -146,6 +146,7 @@
 "ui.common.close" = "Close";
 "ui.common.display" = "Display";
 "ui.common.artist_separator" = " / ";
+"ui.album.with_artists" = "/w %@";
 "ui.common.compact_list_separator" = ", ";
 "ui.common.list_separator" = "; ";
 "ui.common.metadata_separator" = " · ";
@@ -178,6 +179,9 @@
 "ui.messages.private_message" = "Private Message";
 "ui.messages.resource_summary" = "[%@] %@";
 
+"ui.search.personal_library" = "Your Library";
+"ui.search.best" = "Top Results";
+"ui.search.recent" = "Recent Searches";
 "ui.search.kind.albums" = "Albums";
 "ui.search.kind.artists" = "Artists";
 "ui.search.kind.playlists" = "Playlists";
@@ -299,6 +303,7 @@
 "ui.settings.lyrics.interlude.precise.detail" = "Detects instrumental gaps using YRC syllable end times only.";
 "ui.settings.lyrics.interlude.automatic.detail" = "Uses precise YRC timing when available and estimates line endings from text length for standard LRC lyrics.";
 
+"ui.settings.title" = "Settings";
 "ui.settings.search.prompt" = "Search Settings";
 "ui.settings.close.hint" = "Closes Account & Settings";
 "ui.settings.reset.confirmation.title" = "Restore Default Player Settings?";
@@ -387,7 +392,6 @@
 "ui.settings.account.logout" = "Sign Out";
 "ui.settings.account.logout.message.downloads" = "The saved NetEase sign-in cookie and loaded account data will be removed from this device. Downloaded songs will not be deleted.";
 "ui.settings.account.logout.message" = "The saved NetEase sign-in cookie and loaded account data will be removed from this device.";
-"ui.settings.account.open.hint" = "Opens account information and your profile";
 "ui.settings.account.netease_account" = "NetEase Cloud Music Account";
 "ui.settings.account.loading" = "Loading Account Information";
 "ui.settings.account.login" = "Sign In to NetEase Cloud Music";
@@ -580,6 +584,19 @@
 "ui.settings.text_pv.style.haruhikage.detail" = "Blue-gray halftone background and fractured colorful crayon text";
 
 "ui.settings.playback.title" = "Playback & Audio";
+"ui.settings.bluetooth_devices.title" = "Bluetooth Device Mapping";
+"ui.settings.bluetooth_devices.subtitle" = "Choose the output icon for each Bluetooth device";
+"ui.settings.bluetooth_devices.keywords" = "Bluetooth|output device|headphones|AirPods|CarPlay|AirPlay";
+"ui.settings.bluetooth_devices.current" = "Current Bluetooth Output";
+"ui.settings.bluetooth_devices.saved" = "Saved Devices";
+"ui.settings.bluetooth_devices.empty" = "Select a Bluetooth audio device as the current output to add a mapping.";
+"ui.settings.bluetooth_devices.footer" = "Choose a device type or AirPods model to show its icon in Now Playing. Select Automatic to clear a saved mapping.";
+"ui.settings.bluetooth_devices.automatic" = "Automatic";
+"ui.settings.bluetooth_devices.headphones" = "Other Headphones";
+"ui.settings.bluetooth_devices.other" = "Car Audio or Other Bluetooth Device";
+"ui.settings.bluetooth_devices.airpods" = "AirPods (Model Unspecified)";
+"ui.settings.bluetooth_devices.airpods_5_wireless" = "AirPods 5 (Wireless Charging Case)";
+"ui.settings.bluetooth_devices.unknown" = "Unnamed Bluetooth Device";
 "ui.settings.playback.section.playback" = "Playback";
 "ui.settings.playback.wifi_quality" = "Wi-Fi Playback Quality";
 "ui.settings.playback.cellular_quality" = "Cellular Playback Quality";
@@ -613,6 +630,13 @@
 "ui.settings.automix.analysis_unavailable" = "When Analysis Is Unavailable";
 "ui.settings.automix.section.failure_strategy" = "Fallback";
 "ui.settings.content.title" = "Discovery & Recognition";
+"ui.settings.home_layout.title" = "Home Order";
+"ui.settings.home_layout.subtitle" = "Reorder home sections and shortcut cards";
+"ui.settings.home_layout.keywords" = "home screen|layout|sort|reorder|recommendations|shortcuts";
+"ui.settings.home_layout.sections" = "Home Sections";
+"ui.settings.home_layout.sections.footer" = "Drag the handles to change the order. Sections appear on Home when they have content.";
+"ui.settings.home_layout.quick_actions" = "Shortcut Cards";
+"ui.settings.home_layout.reset" = "Restore Default Order";
 "ui.settings.content.section.discovery" = "Discover Content";
 "ui.settings.content.album_region" = "New Album Region";
 "ui.settings.content.show_play_count" = "Show Playlist Play Counts";
@@ -913,6 +937,14 @@
 "ui.error.download.operation_failed" = "The download operation could not be completed.";
 "ui.error.floating_lyrics.title" = "Could Not Open Floating Lyrics";
 "ui.error.picture_in_picture.unavailable" = "System Picture in Picture is temporarily unavailable.";
+"ui.messages.unread_title" = "Unread Messages";
+"ui.messages.unread_count" = "%ld unread";
+"ui.messages.all_read" = "All caught up";
+"ui.messages.mark_all_read" = "Mark All as Read";
+"ui.messages.mark_all_read_failed" = "Could Not Mark All Messages as Read";
+"ui.messages.filter.title" = "Filter conversations";
+"ui.messages.filter.all" = "All";
+"ui.messages.filter.unread" = "Unread";
 "ui.messages.private.title" = "Private Messages";
 "ui.messages.private.open_hint" = "Open NetEase Cloud Music private messages";
 "ui.recognition.title" = "Song Recognition";
@@ -930,8 +962,15 @@
 "ui.recognition.capture.limited" = "Recognize for up to %@. Only an on-device audio fingerprint is uploaded.";
 "ui.recognition.error.capture_unavailable" = "Audio capture is unavailable. Stop other recordings and check system recording restrictions, then try again.";
 "ui.recognition.error.capture_timed_out" = "No audio was received. Make sure music is playing within the selected capture source. Some content may restrict recording.";
-"ui.account.settings_for_user" = "%@’s Account & Settings";
-"ui.account.settings" = "Account & Settings";
+"ui.account.profile_for_user" = "%@’s Profile";
+"ui.account.profile" = "Profile";
+"ui.account.listening_rank.title" = "Listening Rank";
+"ui.comments.write" = "Write a comment…";
+"ui.comments.send_failed" = "Couldn’t post comment";
+"ui.comments.confirm_delete" = "Delete this comment?";
+"ui.comments.delete" = "Delete Comment";
+"ui.comments.copy" = "Copy Text";
+"ui.comments.delete_failed" = "Couldn’t delete comment";
 "ui.account.login_settings" = "Sign In & Settings";
 "ui.launch.recommend.title" = "Enjoying Overtone?";
 "ui.launch.recommend.share_subject" = "Recommend Overtone";
@@ -1268,6 +1307,12 @@
 "ui.comments.loading_more" = "Loading More Comments";
 "ui.comments.close" = "Close Comments";
 "ui.comments.close_replies" = "Close Replies";
+"ui.comments.reply_to" = "Reply to @%1$@: %2$@";
+"ui.comments.like_count" = "%ld likes";
+"ui.comments.expand_replies" = "Show %ld replies";
+"ui.comments.more_replies" = "Show more replies";
+"ui.comments.count" = "Comments · %ld";
+"ui.comments.quoted" = "Quoted comments";
 "ui.comments.original" = "Original Comment";
 "ui.comments.all_replies" = "All Replies";
 "ui.comments.all_replies_count" = "All Replies · %ld";
@@ -1375,6 +1420,8 @@
 "ui.player.volume" = "Player Volume";
 "ui.player.system_volume" = "System Volume";
 "ui.player.queue" = "Playback Queue";
+"ui.queue.move_up" = "Move up";
+"ui.queue.move_down" = "Move down";
 "ui.player.continue_playing" = "Continue Playing";
 "ui.player.no_up_next" = "No Songs Up Next";
 "ui.player.shuffle_off" = "Turn Off Shuffle";
@@ -2206,3 +2253,6 @@
 "ui.settings.appearance.app_icon" = "App Icon";
 "ui.settings.appearance.icon_error" = "Couldn’t Change App Icon";
 "ui.player.remove_from_queue" = "Remove from Queue";
+
+"ui.comments.replying_to" = "Reply to %@";
+"ui.comments.tap_reply" = "Tap to reply";

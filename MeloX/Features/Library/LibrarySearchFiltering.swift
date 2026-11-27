@@ -1,6 +1,6 @@
 import Foundation
 
-func filterLibraryPlaylists(
+nonisolated func filterLibraryPlaylists(
     _ playlists: [Playlist],
     query: String
 ) -> [Playlist] {
@@ -20,7 +20,7 @@ func filterLibraryPlaylists(
     }
 }
 
-func filterLibraryPodcasts(
+nonisolated func filterLibraryPodcasts(
     _ podcasts: [Podcast],
     query: String
 ) -> [Podcast] {
@@ -64,11 +64,11 @@ func filterCloudSongs(
     }
 }
 
-func normalizedLibrarySearchQuery(_ query: String) -> String {
+nonisolated func normalizedLibrarySearchQuery(_ query: String) -> String {
     query.trimmingCharacters(in: .whitespacesAndNewlines)
 }
 
-private func librarySearchMatches(
+private nonisolated func librarySearchMatches(
     _ query: String,
     fields: [String?]
 ) -> Bool {

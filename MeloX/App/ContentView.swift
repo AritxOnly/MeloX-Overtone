@@ -3,6 +3,7 @@ import UIKit
 
 private enum ContentSheet: String, Identifiable {
     case settings
+    case songRecognition
 
     var id: String { rawValue }
 }
@@ -119,18 +120,29 @@ struct ContentView: View {
                 NeteaseShareSheet(presentation: presentation)
             }
             .sheet(item: $presentedSheet) { destination in
-                switch destination {
-                case .settings:
-                    NavigationStack {
+                NavigationStack {
+                    switch destination {
+                    case .settings:
                         SettingsView()
                             .musicDestinations(
                                 in: musicNavigationNamespace
                             )
+                    case .songRecognition:
+                        SongRecognitionView()
+                            .toolbar {
+                                ToolbarItem(placement: .cancellationAction) {
+                                    Button("ui.common.close", systemImage: "xmark") {
+                                        presentedSheet = nil
+                                    }
+                                    .labelStyle(.iconOnly)
+                                    .tint(.primary)
+                                }
+                            }
                     }
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.hidden)
-                    .presentationCornerRadius(32)
                 }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.hidden)
+                .presentationCornerRadius(32)
             }
             .task {
                 await player.restore()
@@ -291,7 +303,8 @@ struct ContentView: View {
               hasRestoredPlayback else {
             return
         }
-        guard settings.startsHeartModeOnLaunch else {
+        guard settings.startsHeartModeOnLaunch,
+              !player.hasReceivedSystemPlayRequest else {
             hasHandledHeartModeLaunch = true
             return
         }
@@ -320,24 +333,13 @@ struct ContentView: View {
 
     @ViewBuilder
     private var playerAwareTabView: some View {
-        if player.currentSong != nil {
-            if #available(iOS 26.1, *) {
-                tabs
-                    .tabViewBottomAccessory(
-                        isEnabled: !isTabViewBottomAccessorySuppressed
-                    ) {
-                        miniPlayer
-                    }
-            } else {
-                tabs
-                    .tabViewBottomAccessory {
-                        if !isTabViewBottomAccessorySuppressed {
-                            miniPlayer
-                        }
-                    }
-            }
+        let showsPlayer = player.currentSong != nil && !isTabViewBottomAccessorySuppressed
+        if #available(iOS 26.1, *) {
+            tabs.tabViewBottomAccessory(isEnabled: showsPlayer) { miniPlayer }
         } else {
-            tabs
+            tabs.tabViewBottomAccessory {
+                if showsPlayer { miniPlayer }
+            }
         }
     }
 
@@ -382,9 +384,10 @@ struct ContentView: View {
         .tabViewStyle(.sidebarAdaptable)
         .defaultAdaptableTabBarPlacement(usesTabletNavigation ? .sidebar : .automatic)
         .tabViewSidebarBottomBar {
-            SidebarAccountButton(accessibilityLabel: accountToolbarAccessibilityLabel) {
-                presentedSheet = .settings
-            } label: {
+            SidebarAccountButton(
+                accessibilityLabel: accountToolbarAccessibilityLabel,
+                action: openAccount
+            ) {
                 HStack(spacing: 10) {
                     accountToolbarLabel
                         .frame(width: 38, height: 38)
@@ -430,9 +433,7 @@ struct ContentView: View {
                 .modifier(TabRootNavigationBar())
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            presentedSheet = .settings
-                        } label: {
+                        Button(action: openAccount) {
                             accountToolbarLabel
                                 .padding(2)
                                 .glassEffect(.regular.interactive(), in: .circle)
@@ -446,6 +447,64 @@ struct ContentView: View {
                     .sharedBackgroundVisibility(.hidden)
                 }
                 .musicDestinations(in: musicNavigationNamespace)
+                .navigationDestination(for: AccountRoute.self) { route in
+                    switch route {
+                    case .home:
+                        accountHome
+                            .visibleDetailNavigationBar()
+                    case .privateMessages:
+                        NeteasePrivateMessagesView()
+                            .visibleDetailNavigationBar()
+                    }
+                }
+        }
+    }
+
+    @ViewBuilder
+    private var accountHome: some View {
+        if library.isLoggedIn, let profile = library.profile {
+            AccountHomeView(
+                initialProfile: profile,
+                initialDetail: library.accountDetail,
+                initialPlaylists: library.favoritePlaylists,
+                onOpenSettings: { presentedSheet = .settings },
+                onOpenSongRecognition: { presentedSheet = .songRecognition }
+            )
+            .id(profile.id)
+        } else {
+            Group {
+                if library.isLoggedIn && library.phase == .loading {
+                    ProgressView("ui.settings.account.loading")
+                } else {
+                    ContentUnavailableView {
+                        Label(
+                            L10n.string(library.isLoggedIn
+                                ? "ui.settings.account.unavailable"
+                                : "ui.account.login_required"),
+                            systemImage: "person.crop.circle.badge.exclamationmark"
+                        )
+                    } actions: {
+                        if library.isLoggedIn {
+                            Button("ui.common.retry") {
+                                Task { await library.refresh(force: true) }
+                            }
+                        }
+                        Button("ui.settings.title") {
+                            presentedSheet = .settings
+                        }
+                    }
+                }
+            }
+            .navigationTitle("ui.account.profile")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private func openAccount() {
+        if library.isLoggedIn {
+            navigate(to: AccountRoute.home)
+        } else {
+            presentedSheet = .settings
         }
     }
 
@@ -503,10 +562,10 @@ struct ContentView: View {
 
     private var accountToolbarAccessibilityLabel: String {
         if let profile = library.profile {
-            return L10n.format("ui.account.settings_for_user", profile.nickname)
+            return L10n.format("ui.account.profile_for_user", profile.nickname)
         }
         return library.isLoggedIn
-            ? L10n.string("ui.account.settings")
+            ? L10n.string("ui.account.profile")
             : L10n.string("ui.account.login_settings")
     }
 
@@ -565,7 +624,7 @@ struct ContentView: View {
         navigate(to: route)
     }
 
-    private func navigate(to route: MusicRoute) {
+    private func navigate(to route: some Hashable) {
         var path = navigationPaths[selectedTab] ?? NavigationPath()
         path.append(route)
         navigationPaths[selectedTab] = path

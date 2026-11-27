@@ -68,7 +68,7 @@ struct PlaylistDetailContent: View {
             MusicCollectionTrackContent(
                 tracks: filteredTracks,
                 sourceID: playlist.id,
-                showsArtwork: usesToplistLayout || UIDevice.current.userInterfaceIdiom == .pad,
+                style: .playlist,
                 loadingTitle: usesToplistLayout
                     ? L10n.string("ui.toplists.loading")
                     : L10n.string("ui.playlists.loading"),
@@ -108,7 +108,7 @@ struct PlaylistDetailContent: View {
 struct MusicCollectionTrackContent: View {
     let tracks: [Song]
     let sourceID: Int
-    let showsArtwork: Bool
+    let style: CollectionTrackStyle
     let loadingTitle: String
     let isLoading: Bool
     let failureMessage: String?
@@ -137,31 +137,26 @@ struct MusicCollectionTrackContent: View {
                 )
                 .frame(maxWidth: .infinity, minHeight: 220)
             } else {
-                VStack(spacing: 0) {
-                    PlaylistTrackList(
-                        tracks: tracks,
-                        sourceID: sourceID,
-                        showsArtwork: showsArtwork,
-                        onPlayTrack: onPlayTrack,
-                        onRemoveSong: onRemoveSong,
-                        downloadSelection: downloadSelection,
-                        highlightedSongID: highlightedSongID
-                    )
+                PlaylistTrackList(
+                    tracks: tracks,
+                    sourceID: sourceID,
+                    style: style,
+                    onPlayTrack: onPlayTrack,
+                    onRemoveSong: onRemoveSong,
+                    downloadSelection: downloadSelection,
+                    highlightedSongID: highlightedSongID
+                )
 
-                    if hasMoreTracks {
-                        MusicCollectionPaginationFooter(
-                            isLoading: isLoadingMoreTracks,
-                            failureMessage: loadMoreTracksError,
-                            loadToken: loadedTrackOffset,
-                            action: onLoadMore
-                        )
-                    }
+                if hasMoreTracks {
+                    MusicCollectionPaginationFooter(
+                        isLoading: isLoadingMoreTracks,
+                        failureMessage: loadMoreTracksError,
+                        loadToken: loadedTrackOffset,
+                        action: onLoadMore
+                    )
                 }
             }
         }
-        .transition(.opacity)
-        .animation(.easeInOut(duration: 0.2), value: isLoading)
-        .animation(.easeInOut(duration: 0.2), value: failureMessage)
     }
 }
 
@@ -400,7 +395,7 @@ struct MusicCollectionPrimaryActions: View {
             if let onPlayAll {
                 await onPlayAll(shuffled)
             } else {
-                await player.playAll(shuffled ? tracks.shuffled() : tracks, sourceID: sourceID)
+                await player.playAll(tracks, shuffled: shuffled, sourceID: sourceID)
             }
         }
     }

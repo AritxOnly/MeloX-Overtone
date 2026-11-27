@@ -7,11 +7,14 @@ struct SearchDiscoveryView: View {
     @State private var recommendations: [Playlist] = []
     @State private var phase: LoadingPhase = .loading
     @State private var reloadToken = 0
+    @State private var isWide = false
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12),
-    ]
+    private var columns: [GridItem] {
+        if isWide {
+            return [GridItem(.adaptive(minimum: 176), spacing: 12)]
+        }
+        return Array(repeating: GridItem(.flexible(), spacing: 12), count: 2)
+    }
 
     var body: some View {
         ScrollView {
@@ -34,6 +37,11 @@ struct SearchDiscoveryView: View {
                 .padding(.horizontal)
             }
             .padding(.vertical, 8)
+        }
+        .onGeometryChange(for: Bool.self) { proxy in
+            MusicShelfLayout(containerWidth: proxy.size.width).isWide
+        } action: { value in
+            isWide = value
         }
         .refreshable {
             await loadRecommendations()

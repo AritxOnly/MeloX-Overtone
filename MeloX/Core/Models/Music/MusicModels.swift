@@ -127,10 +127,7 @@ nonisolated struct Album: Codable, Hashable, Identifiable {
     }
 
     var artistText: String {
-        L10n.joined(
-            artists.map(\.name),
-            separatorKey: "ui.common.artist_separator"
-        )
+        L10n.artistNames(artists.map(\.name))
     }
 
     enum CodingKeys: String, CodingKey {
@@ -238,10 +235,7 @@ nonisolated struct Song: Codable, Hashable, Identifiable {
     let audioAvailability: SongAudioAvailability
 
     var artistText: String {
-        L10n.joined(
-            artists.map(\.name),
-            separatorKey: "ui.common.artist_separator"
-        )
+        L10n.artistNames(artists.map(\.name))
     }
 
     var durationText: String {

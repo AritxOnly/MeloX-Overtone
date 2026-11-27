@@ -1,6 +1,6 @@
 import Foundation
 
-struct PlaybackSource: Equatable, Sendable {
+struct PlaybackSource: Codable, Equatable, Sendable {
     let url: URL
     let bitrate: Int?
     let format: String?
@@ -22,8 +22,8 @@ struct PlaybackSource: Equatable, Sendable {
         guard !url.isFileURL else { return 0 }
         if quality?.prefersExtendedBuffering == true
             || (bitrate ?? 0) >= 1_000_000 {
-            return 16
+            return 24
         }
-        return 8
+        return 16
     }
 }

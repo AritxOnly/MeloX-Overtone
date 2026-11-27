@@ -146,6 +146,7 @@
 "ui.common.close" = "关闭";
 "ui.common.display" = "显示";
 "ui.common.artist_separator" = " / ";
+"ui.album.with_artists" = "/w %@";
 "ui.common.compact_list_separator" = "、";
 "ui.common.list_separator" = "；";
 "ui.common.metadata_separator" = " · ";
@@ -178,6 +179,9 @@
 "ui.messages.private_message" = "私信";
 "ui.messages.resource_summary" = "[%@] %@";
 
+"ui.search.personal_library" = "个人资料库";
+"ui.search.best" = "最佳结果";
+"ui.search.recent" = "最近搜索";
 "ui.search.kind.albums" = "专辑";
 "ui.search.kind.artists" = "艺人";
 "ui.search.kind.playlists" = "播放列表";
@@ -299,6 +303,7 @@
 "ui.settings.lyrics.interlude.precise.detail" = "只根据 YRC 的音节结束时间识别演奏空档。";
 "ui.settings.lyrics.interlude.automatic.detail" = "优先使用 YRC 精确时间；普通 LRC 则根据文字长度估算本句演唱结束时间。";
 
+"ui.settings.title" = "设置";
 "ui.settings.search.prompt" = "搜索设置";
 "ui.settings.close.hint" = "关闭账号与设置";
 "ui.settings.reset.confirmation.title" = "恢复播放器默认设置？";
@@ -387,7 +392,6 @@
 "ui.settings.account.logout" = "退出登录";
 "ui.settings.account.logout.message.downloads" = "本机保存的网易云登录 Cookie 和已加载的账号数据将被清除，已下载歌曲不会被删除。";
 "ui.settings.account.logout.message" = "本机保存的网易云登录 Cookie 和已加载的账号数据将被清除。";
-"ui.settings.account.open.hint" = "打开账号信息与个人主页";
 "ui.settings.account.netease_account" = "网易云音乐账号";
 "ui.settings.account.loading" = "正在读取账号信息";
 "ui.settings.account.login" = "登录网易云音乐";
@@ -580,6 +584,19 @@
 "ui.settings.text_pv.style.haruhikage.detail" = "蓝灰半调背景与彩色蜡笔碎裂文字";
 
 "ui.settings.playback.title" = "播放与音频";
+"ui.settings.bluetooth_devices.title" = "蓝牙设备映射";
+"ui.settings.bluetooth_devices.subtitle" = "为每台蓝牙设备设置播放页图标";
+"ui.settings.bluetooth_devices.keywords" = "蓝牙|输出设备|耳机|AirPods|车载|CarPlay|AirPlay";
+"ui.settings.bluetooth_devices.current" = "当前蓝牙输出";
+"ui.settings.bluetooth_devices.saved" = "已保存的设备";
+"ui.settings.bluetooth_devices.empty" = "将蓝牙音频设备选为当前输出后，即可添加映射。";
+"ui.settings.bluetooth_devices.footer" = "选择设备类型或 AirPods 型号，播放页会显示相应图标。选择「自动」可清除已保存的映射。";
+"ui.settings.bluetooth_devices.automatic" = "自动";
+"ui.settings.bluetooth_devices.headphones" = "其他耳机";
+"ui.settings.bluetooth_devices.other" = "车载音响或其他蓝牙设备";
+"ui.settings.bluetooth_devices.airpods" = "AirPods（未指定型号）";
+"ui.settings.bluetooth_devices.airpods_5_wireless" = "AirPods 5（无线充电盒）";
+"ui.settings.bluetooth_devices.unknown" = "未命名蓝牙设备";
 "ui.settings.playback.section.playback" = "播放";
 "ui.settings.playback.wifi_quality" = "无线网络播放音质";
 "ui.settings.playback.cellular_quality" = "蜂窝网络播放音质";
@@ -613,6 +630,13 @@
 "ui.settings.automix.analysis_unavailable" = "分析不可用时";
 "ui.settings.automix.section.failure_strategy" = "失败策略";
 "ui.settings.content.title" = "发现与识曲";
+"ui.settings.home_layout.title" = "主页排序";
+"ui.settings.home_layout.subtitle" = "调整主页区块与快捷卡片的顺序";
+"ui.settings.home_layout.keywords" = "首页|布局|顺序|推荐|快捷入口|拖动";
+"ui.settings.home_layout.sections" = "主页区块";
+"ui.settings.home_layout.sections.footer" = "拖动右侧手柄调整顺序。有内容的区块会显示在主页。";
+"ui.settings.home_layout.quick_actions" = "快捷卡片";
+"ui.settings.home_layout.reset" = "恢复默认顺序";
 "ui.settings.content.section.discovery" = "发现内容";
 "ui.settings.content.album_region" = "新碟地区";
 "ui.settings.content.show_play_count" = "显示播放列表播放量";
@@ -913,6 +937,14 @@
 "ui.error.download.operation_failed" = "无法完成下载操作。";
 "ui.error.floating_lyrics.title" = "无法打开悬浮歌词";
 "ui.error.picture_in_picture.unavailable" = "系统画中画暂时不可用。";
+"ui.messages.unread_title" = "未读私信";
+"ui.messages.unread_count" = "%ld 条未读消息";
+"ui.messages.all_read" = "消息都读完了";
+"ui.messages.mark_all_read" = "全部标为已读";
+"ui.messages.mark_all_read_failed" = "无法将所有私信标为已读";
+"ui.messages.filter.title" = "筛选会话";
+"ui.messages.filter.all" = "全部";
+"ui.messages.filter.unread" = "未读";
 "ui.messages.private.title" = "私信";
 "ui.messages.private.open_hint" = "打开网易云私信";
 "ui.recognition.title" = "听歌识曲";
@@ -930,8 +962,15 @@
 "ui.recognition.capture.limited" = "最长识别 %@，只上传设备端生成的音频指纹。";
 "ui.recognition.error.capture_unavailable" = "音频录制不可用，请结束其他录制任务并检查系统录制限制后重试。";
 "ui.recognition.error.capture_timed_out" = "没有收到音频，请确认所选录制范围内正在播放音乐。部分内容可能限制录制。";
-"ui.account.settings_for_user" = "%@的账号与设置";
-"ui.account.settings" = "账号与设置";
+"ui.account.profile_for_user" = "%@的个人主页";
+"ui.account.profile" = "个人主页";
+"ui.account.listening_rank.title" = "听歌排行";
+"ui.comments.write" = "写下你的评论…";
+"ui.comments.send_failed" = "评论发送失败";
+"ui.comments.confirm_delete" = "删除这条评论？";
+"ui.comments.delete" = "删除评论";
+"ui.comments.copy" = "复制文字";
+"ui.comments.delete_failed" = "评论删除失败";
 "ui.account.login_settings" = "登录与设置";
 "ui.launch.recommend.title" = "喜欢弦外吗？";
 "ui.launch.recommend.share_subject" = "推荐弦外";
@@ -1268,6 +1307,12 @@
 "ui.comments.loading_more" = "载入更多评论";
 "ui.comments.close" = "关闭评论";
 "ui.comments.close_replies" = "关闭回复";
+"ui.comments.reply_to" = "回复 @%1$@：%2$@";
+"ui.comments.like_count" = "%ld 人赞过";
+"ui.comments.expand_replies" = "展开 %ld 条回复";
+"ui.comments.more_replies" = "查看更多回复";
+"ui.comments.count" = "评论 · %ld";
+"ui.comments.quoted" = "引用的评论";
 "ui.comments.original" = "原评论";
 "ui.comments.all_replies" = "全部回复";
 "ui.comments.all_replies_count" = "全部回复 · %ld";
@@ -1375,6 +1420,8 @@
 "ui.player.volume" = "播放器音量";
 "ui.player.system_volume" = "系统音量";
 "ui.player.queue" = "播放队列";
+"ui.queue.move_up" = "向上移动";
+"ui.queue.move_down" = "向下移动";
 "ui.player.continue_playing" = "继续播放";
 "ui.player.no_up_next" = "没有待播放歌曲";
 "ui.player.shuffle_off" = "关闭随机播放";
@@ -2206,3 +2253,6 @@
 "ui.settings.appearance.app_icon" = "App 图标";
 "ui.settings.appearance.icon_error" = "无法更改 App 图标";
 "ui.player.remove_from_queue" = "从队列中移除";
+
+"ui.comments.replying_to" = "回复 %@";
+"ui.comments.tap_reply" = "轻点回复";

@@ -3,22 +3,25 @@ import SwiftUI
 extension MusicShelfLayout {
     var homeInset: CGFloat { max(horizontalPadding, 20) }
     var homeCoverSize: CGFloat {
-        containerWidth >= 600 ? artworkSize(compact: 160) : containerWidth * 0.4
+        isWide ? artworkSize(compact: 160) : containerWidth * 0.4
     }
 }
 
 struct HomeEditorialCard: View {
+    @Environment(\.musicShelfLayout) private var layout
     let action: HomeQuickAction
     let artworkURL: URL?
     let detail: String
 
+    private var aspectRatio: CGFloat { layout.isWide ? 1.2 : 3.0 / 4 }
+
     var body: some View {
         Rectangle()
             .fill(LinearGradient(colors: action.colors, startPoint: .topLeading, endPoint: .bottomTrailing))
-            .aspectRatio(3.0 / 4, contentMode: .fit)
+            .aspectRatio(aspectRatio, contentMode: .fit)
             .overlay {
                 if let artworkURL {
-                    ArtworkImage(url: artworkURL, cornerRadius: 0, aspectRatio: 3.0 / 4)
+                    ArtworkImage(url: artworkURL, cornerRadius: 0, aspectRatio: aspectRatio)
                 } else {
                     RadialGradient(colors: [.white.opacity(0.32), .clear], center: .trailing,
                                    startRadius: 0, endRadius: 180)
@@ -38,7 +41,7 @@ struct HomeEditorialCard: View {
             .overlay {
                 if artworkURL == nil {
                     Text(action.title)
-                        .font(.largeTitle.bold())
+                        .font(layout.isWide ? .title2.bold() : .largeTitle.bold())
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 16)
                 }
@@ -53,7 +56,7 @@ struct HomeEditorialCard: View {
                     }
                     Text(detail)
                         .font(.subheadline)
-                        .lineLimit(3)
+                        .lineLimit(layout.isWide ? 2 : 3)
                 }
                 .padding(16)
             }
@@ -69,16 +72,21 @@ struct HomePlaylistCard: View {
     @Environment(\.musicShelfLayout) private var layout
     let playlist: Playlist
 
+    private var subtitle: String? {
+        [playlist.copywriter, playlist.updateFrequency, playlist.creator?.nickname]
+            .lazy
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .first { !$0.isEmpty }
+    }
+
     var body: some View {
         MediaCardView(
             title: playlist.name,
-            subtitle:
-                playlist.copywriter
-                ?? playlist.updateFrequency
-                ?? playlist.creator?.nickname,
+            subtitle: subtitle,
             artworkURL: playlist.artworkURL,
             artworkSize: layout.homeCoverSize
         )
+        .fixedSize(horizontal: false, vertical: true)
         .frame(width: layout.homeCoverSize)
     }
 }

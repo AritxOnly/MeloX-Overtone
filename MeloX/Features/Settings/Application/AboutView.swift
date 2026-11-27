@@ -14,7 +14,7 @@ struct AboutView: View {
         Form {
             Section {
                 VStack(spacing: 10) {
-                    Image("MeloXLogo")
+                    Image("MeloXSettingsLogo")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 72, height: 72)

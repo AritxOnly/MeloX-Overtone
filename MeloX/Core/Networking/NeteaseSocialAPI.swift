@@ -1,10 +1,31 @@
 import Foundation
 
 extension NeteaseAPI {
-    func privateMessageConversations(
+    func postSongComment(_ content: String, songID: Int, replyingTo parentID: Int64? = nil) async throws -> SongCommentPostResponse {
+        var data: [String: Any] = ["threadId": "R_SO_4_\(songID)", "content": content]
+        if let parentID { data["commentId"] = parentID }
+        let response: SongCommentPostResponse = try await client.eapi(
+            parentID == nil ? "/api/resource/comments/add" : "/api/resource/comments/reply",
+            data: data,
+            authenticated: true
+        )
+        try validate(responseCode: response.code, message: response.message)
+        return response
+    }
+
+    func deleteSongComment(_ commentID: Int64, songID: Int) async throws {
+        let response: APIStatusResponse = try await client.eapi(
+            "/api/resource/comments/delete",
+            data: ["threadId": "R_SO_4_\(songID)", "commentId": commentID],
+            authenticated: true
+        )
+        try validate(responseCode: response.code, message: response.message)
+    }
+
+    func privateMessageConversationsPage(
         offset: Int = 0,
         limit: Int = 50
-    ) async throws -> [NeteasePrivateConversation] {
+    ) async throws -> NeteasePrivateConversationsResponse {
         let path = "/api/msg/private/users"
         let data: [String: Any] = [
             "offset": offset,
@@ -16,7 +37,40 @@ extension NeteaseAPI {
             data: data
         )
         try validate(responseCode: response.code, message: response.message)
-        return response.messages
+        return response
+    }
+
+    func markAllPrivateMessagesRead(
+        currentUserID: Int,
+        onMarkedRead: (Int) -> Void
+    ) async throws {
+        var offset = 0
+        var page: NeteasePrivateConversationsResponse
+        var unreadContactIDs = Set<Int>()
+        repeat {
+            try Task.checkCancellation()
+            page = try await privateMessageConversationsPage(offset: offset)
+            for conversation in page.messages where conversation.unreadCount > 0 {
+                let contactID = conversation.participant(currentUserID: currentUserID).id
+                guard contactID > 0 else { throw APIError.invalidResponse }
+                unreadContactIDs.insert(contactID)
+            }
+            offset += page.messages.count
+        } while page.more == true && !page.messages.isEmpty
+
+        var firstError: Error?
+        for contactID in unreadContactIDs.sorted() {
+            try Task.checkCancellation()
+            do {
+                _ = try await privateMessageHistory(userID: contactID, limit: 1)
+                onMarkedRead(contactID)
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                firstError = firstError ?? error
+            }
+        }
+        if let firstError { throw firstError }
     }
 
     func privateMessageHistory(

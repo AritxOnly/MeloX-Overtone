@@ -43,17 +43,21 @@ struct HomeRecommendationSectionView: View {
             }
         ) {
             ForEach(Array(stride(from: 0, to: songs.count, by: 3)), id: \.self) { start in
+                let end = min(start + 3, songs.count)
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(songs[start..<min(start + 3, songs.count)]) { song in
+                    ForEach(songs[start..<end]) { song in
+                        let isFirst = song.id == songs[start].id
+                        let isLast = song.id == songs[end - 1].id
                         Button {
                             Task { await player.play(song, in: songs) }
                         } label: {
                             TrackRowView(song: song, showsArtwork: true)
-                                .frame(minHeight: 58)
+                                .padding(.top, isFirst ? 0 : 7)
+                                .padding(.bottom, isLast ? 0 : 7)
+                                .contentShape(.rect)
                         }
                         .buttonStyle(.plain)
-                        .songSwipeActions(song, inline: true, reservesArtworkForScrolling: true)
-                        if song.id != songs[min(start + 2, songs.count - 1)].id {
+                        if !isLast {
                             Divider().padding(.leading, 56)
                         }
                     }
@@ -61,7 +65,6 @@ struct HomeRecommendationSectionView: View {
                 .frame(width: min(layout.containerWidth * 0.83, 390))
             }
         }
-        .songSwipeGroup()
     }
 
     private func podcastSection(
@@ -97,7 +100,7 @@ struct HomeMediaStrip<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .firstTextBaseline) {
                 if let destination {
                     NavigationLink(value: destination) {
@@ -113,8 +116,9 @@ struct HomeMediaStrip<Content: View>: View {
                     Text(title)
                 }
 
-                Spacer()
-
+                Spacer(minLength: playAll == nil ? 0 : 44)
+            }
+            .overlay(alignment: .trailing) {
                 if let playAll {
                     Button(action: playAll) {
                         Label("ui.common.play_all", systemImage: "play.fill")
@@ -122,6 +126,7 @@ struct HomeMediaStrip<Content: View>: View {
                     .labelStyle(.iconOnly)
                     .buttonStyle(.bordered)
                     .buttonBorderShape(.circle)
+                    .controlSize(.small)
                     .accessibilityLabel(L10n.format("ui.common.play_named", title))
                 }
             }

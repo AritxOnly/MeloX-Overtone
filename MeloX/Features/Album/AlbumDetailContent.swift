@@ -36,7 +36,7 @@ struct AlbumDetailContent: View {
                 onToggleSaved: onToggleSubscription,
                 onPlayAll: { shuffled in
                     library.recordCollectionPlayback(.album(album))
-                    await player.playAll(shuffled ? songs.shuffled() : songs, sourceID: album.id)
+                    await player.playAll(songs, shuffled: shuffled, sourceID: album.id)
                 }
             )
 
@@ -44,7 +44,7 @@ struct AlbumDetailContent: View {
             MusicCollectionTrackContent(
                 tracks: filteredTracks,
                 sourceID: album.id,
-                showsArtwork: false,
+                style: .album(artists: album.artists),
                 loadingTitle: L10n.string("ui.album.loading"),
                 isLoading: isLoading,
                 failureMessage: failureMessage,

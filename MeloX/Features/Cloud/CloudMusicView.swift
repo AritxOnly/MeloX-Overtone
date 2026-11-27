@@ -245,7 +245,7 @@ struct CloudMusicView: View {
         guard !cloud.hasMore, !Task.isCancelled, settings.cookie == cookie,
               let result = try? await indexRequest.build() else { return }
         let queue = result.flatMap { $0.items.map(\.simpleSong) }
-        if !queue.isEmpty { await player.playAll(shuffled ? queue.shuffled() : queue) }
+        if !queue.isEmpty { await player.playAll(queue, shuffled: shuffled) }
     }
 
     private var isPreparingSearchResults: Bool {

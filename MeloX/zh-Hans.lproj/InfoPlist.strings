@@ -1,3 +1,4 @@
 "CFBundleDisplayName" = "弦外";
 "CFBundleName" = "弦外";
 "NSMicrophoneUsageDescription" = "弦外需要使用麦克风聆听环境音乐并在设备端生成音频指纹；持续识别会在您手动停止前保持麦克风使用。";
+"NSSiriUsageDescription" = "弦外会向 Siri 提供播放活动，以便系统建议继续播放音乐或播客。";

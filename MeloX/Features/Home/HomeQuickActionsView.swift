@@ -101,6 +101,7 @@ struct HomeQuickActionsView: View {
     @Environment(LibraryStore.self) private var library
     @Environment(PlayerStore.self) private var player
 
+    let actions: [HomeQuickAction]
     let dailySongs: [Song]
     let hotChart: Playlist?
     let radar: Playlist?
@@ -109,7 +110,7 @@ struct HomeQuickActionsView: View {
     let perform: (HomeQuickAction) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 16) {
             Text("ui.home.section.quick_actions")
                 .font(.title3.bold())
                 .padding(.horizontal, layout.homeInset)
@@ -121,7 +122,7 @@ struct HomeQuickActionsView: View {
     private var cards: some View {
         ScrollView(.horizontal) {
             LazyHStack(alignment: .top, spacing: 12) {
-                ForEach(HomeQuickAction.allCases) { action in
+                ForEach(actions) { action in
                     Button {
                         perform(action)
                     } label: {
@@ -140,7 +141,7 @@ struct HomeQuickActionsView: View {
                             }
                         }
                     }
-                    .frame(width: min(layout.containerWidth * 0.615, 290))
+                    .frame(width: layout.isWide ? 260 : min(layout.containerWidth * 0.615, 290))
                     .buttonStyle(.plain)
                     .disabled(activeAction != nil)
                     .accessibilityHint(accessibilityHint(for: action))

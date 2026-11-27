@@ -1,9 +1,36 @@
 import SwiftUI
 
+enum CollectionTrackStyle {
+    case playlist
+    case album(artists: [Artist])
+
+    var showsArtwork: Bool {
+        if case .playlist = self { return true }
+        return false
+    }
+
+    func artistSubtitle(for song: Song) -> String? {
+        if case .album(let albumArtists) = self {
+            let guests = song.artists.filter { performer in
+                !albumArtists.contains { artist in
+                    if artist.id > 0 && performer.id > 0 { return artist.id == performer.id }
+                    return artist.name.localizedCaseInsensitiveCompare(performer.name) == .orderedSame
+                }
+            }
+            if guests.count < song.artists.count {
+                let credit = L10n.artistNames(guests.map(\.name))
+                return credit.isEmpty ? nil : L10n.format("ui.album.with_artists", credit)
+            }
+        }
+        let credit = song.artistText
+        return credit.isEmpty ? nil : credit
+    }
+}
+
 struct PlaylistTrackList: View {
     let tracks: [Song]
     let sourceID: Int
-    let showsArtwork: Bool
+    let style: CollectionTrackStyle
     var onPlayTrack: (() -> Void)?
     var onRemoveSong: ((Song) -> Void)?
     var downloadSelection: MusicCollectionDownloadCoordinator?
@@ -15,35 +42,23 @@ struct PlaylistTrackList: View {
                 .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity, minHeight: 180)
         } else {
-            LazyVStack(spacing: 0) {
-                Divider().padding(.horizontal, 20)
-                ForEach(Array(tracks.enumerated()), id: \.element.id) { index, song in
-                    PlaylistTrackRow(
-                        song: song,
-                        tracks: tracks,
-                        sourceID: sourceID,
-                        index: index,
-                        showsArtwork: showsArtwork,
-                        downloadSelection: downloadSelection,
-                        onPlayTrack: onPlayTrack,
-                        onRemoveSong: onRemoveSong,
-                        isHighlighted: highlightedSongID == song.id
-                    )
-                    .id(song.id)
-
-                    if song.id != tracks.last?.id {
-                        Divider()
-                            .overlay(Color.primary.opacity(0.12))
-                            .padding(
-                                .leading,
-                                (showsArtwork ? 80 : 51)
-                                    + (isSelectingDownloads ? 36 : 0)
-                            )
-                            .padding(.trailing, 20)
-                    }
+            ForEach(Array(tracks.enumerated()), id: \.element.id) { index, song in
+                PlaylistTrackRow(
+                    song: song,
+                    tracks: tracks,
+                    sourceID: sourceID,
+                    index: index,
+                    style: style,
+                    downloadSelection: downloadSelection,
+                    onPlayTrack: onPlayTrack,
+                    onRemoveSong: onRemoveSong,
+                    isHighlighted: highlightedSongID == song.id
+                )
+                .id(song.id)
+                .alignmentGuide(.listRowSeparatorLeading) { _ in
+                    (style.showsArtwork ? 80 : 51) + (isSelectingDownloads ? 36 : 0)
                 }
             }
-            .songSwipeGroup()
         }
     }
 
@@ -57,7 +72,7 @@ private struct PlaylistTrackRow: View {
     let tracks: [Song]
     let sourceID: Int
     let index: Int
-    let showsArtwork: Bool
+    let style: CollectionTrackStyle
     let downloadSelection: MusicCollectionDownloadCoordinator?
     let onPlayTrack: (() -> Void)?
     let onRemoveSong: ((Song) -> Void)?
@@ -90,9 +105,10 @@ private struct PlaylistTrackRow: View {
     }
 
     var body: some View {
+        let subtitle = style.artistSubtitle(for: song)
         HStack(spacing: 4) {
             Button(action: primaryAction) {
-                HStack(spacing: showsArtwork ? 12 : 7) {
+                HStack(spacing: style.showsArtwork ? 12 : 7) {
                     if isSelectingDownloads {
                         Image(
                             systemName: isSelectedForDownload
@@ -114,22 +130,22 @@ private struct PlaylistTrackRow: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(song.name)
                             .font(.body)
-                            .lineLimit(showsArtwork ? 1 : 2)
+                            .lineLimit(style.showsArtwork ? 1 : 2)
 
-                        if showsArtwork && !usesWideTrackColumns {
-                            Text(song.artistText)
+                        if let subtitle, !usesWideTrackColumns {
+                            Text(verbatim: subtitle)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
-                                .lineLimit(1)
+                                .lineLimit(style.showsArtwork ? 1 : nil)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                     if usesWideTrackColumns {
-                        Text(song.artistText)
+                        Text(verbatim: subtitle ?? "")
                             .font(.body)
                             .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                            .lineLimit(style.showsArtwork ? 1 : nil)
                             .frame(width: detailMetrics.viewport.width * 0.25, alignment: .leading)
                         Text(song.durationText)
                             .font(.subheadline.monospacedDigit())
@@ -249,7 +265,7 @@ private struct PlaylistTrackRow: View {
         }
         .padding(.leading, 20)
         .padding(.trailing, 12)
-        .padding(.vertical, showsArtwork ? 8 : 4)
+        .padding(.vertical, style.showsArtwork ? 8 : 4)
         .background(
             isHighlighted ? Color.accentColor.opacity(0.16)
                 : isCurrentSong ? Color.primary.opacity(0.10) : .clear
@@ -258,7 +274,7 @@ private struct PlaylistTrackRow: View {
         .accessibilityElement(children: .contain)
         .songSwipeActions(song, removal: onRemoveSong.map { remove in
             .action("ui.playlists.remove_song") { remove(song) }
-        } ?? .library, inline: true, enabled: !isSelectingDownloads)
+        } ?? (style.showsArtwork ? .library : .none), enabled: !isSelectingDownloads)
         .sheet(item: $presentedSheet) { sheet in
             switch sheet {
             case .comments(let selectedSong):
@@ -273,7 +289,7 @@ private struct PlaylistTrackRow: View {
 
     @ViewBuilder
     private var leadingContent: some View {
-        if showsArtwork {
+        if style.showsArtwork {
             SongRowArtwork(songID: song.id, url: song.album?.artworkURL)
                 .frame(width: 48, height: 48)
         } else if isCurrentSong && !isSelectingDownloads {

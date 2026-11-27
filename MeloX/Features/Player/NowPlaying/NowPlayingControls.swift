@@ -453,23 +453,19 @@ struct NowPlayingPageSelector: View {
                     Spacer()
                 }
             } else {
-                HStack {
+                HStack(spacing: 8) {
                     pageButton(
                         page: .lyrics,
                         systemImage: "quote.bubble",
                         accessibilityLabel: L10n.string("ui.settings.lyrics.title")
                     )
 
-                    Spacer()
-
                     if showsRoutePicker {
                         PlayerAirPlayButton()
-                            .frame(width: 44, height: 44)
                     } else {
                         FloatingLyricsButton()
+                            .frame(maxWidth: .infinity)
                     }
-
-                    Spacer()
 
                     pageButton(
                         page: .queue,
@@ -553,24 +549,77 @@ struct NowPlayingPageSelector: View {
 }
 
 private struct PlayerAirPlayButton: View {
-    @State private var isActive = usesAirPlay
-
-    private static var usesAirPlay: Bool {
-        AVAudioSession.sharedInstance().currentRoute.outputs.contains { $0.portType == .airPlay }
-    }
+    @Environment(AppSettings.self) private var settings
+    @State private var outputs = PlaybackAudioOutput.current
 
     var body: some View {
+        let externalOutputs = outputs.filter { !$0.isBuiltIn }
+        let name = externalOutputs.map(\.name).filter { !$0.isEmpty }.joined(separator: " · ")
+        let isUsingAirPlay = externalOutputs.contains { $0.portType == .airPlay }
+
         AudioRoutePicker()
+            .frame(width: 44, height: 44)
+            .accessibilityElement(children: .combine)
+            .accessibilityValue(Text(verbatim: name))
             .overlay {
-                Image(systemName: "airplay.audio")
+                outputIcon(for: externalOutputs)
                     .font(.title3.weight(.medium))
-                    .foregroundStyle(.white.opacity(isActive ? 1 : 0.72))
+                    .foregroundStyle(.white.opacity(isUsingAirPlay ? 1 : 0.72))
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }
-            .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { _ in
-                isActive = Self.usesAirPlay
+            .frame(maxWidth: .infinity)
+            // Use the space below the controls so route changes keep the buttons aligned.
+            .overlay(alignment: .top) {
+                if !name.isEmpty {
+                    Text(verbatim: name)
+                        .font(.caption.weight(.semibold))
+                        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .offset(y: 47)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
             }
+            .onAppear { outputs = PlaybackAudioOutput.current }
+            .onReceive(PlaybackAudioOutput.changes) { outputs = $0 }
+    }
+
+    @ViewBuilder
+    private func outputIcon(for outputs: [PlaybackAudioOutput]) -> some View {
+        switch icon(for: outputs) {
+        case .symbol(let name):
+            Image(systemName: name)
+        case .bluetooth:
+            BluetoothGlyph()
+                .stroke(style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round))
+                .frame(width: 20, height: 20)
+        }
+    }
+
+    private func icon(for outputs: [PlaybackAudioOutput]) -> PlaybackOutputIcon {
+        let icons = outputs.map { $0.icon(using: settings.bluetoothDeviceMappings[$0.id]) }
+        if let first = icons.first, icons.dropFirst().allSatisfy({ $0 == first }) {
+            return first
+        }
+        return !outputs.isEmpty && outputs.allSatisfy(\.isBluetooth) ? .bluetooth : .symbol("airplay.audio")
+    }
+}
+
+private struct BluetoothGlyph: Shape {
+    func path(in rect: CGRect) -> Path {
+        let path = Path { path in
+            path.move(to: CGPoint(x: 4, y: 5))
+            path.addLine(to: CGPoint(x: 15, y: 15))
+            path.addLine(to: CGPoint(x: 9, y: 19))
+            path.addLine(to: CGPoint(x: 9, y: 1))
+            path.addLine(to: CGPoint(x: 15, y: 5))
+            path.addLine(to: CGPoint(x: 4, y: 15))
+        }
+        return path.applying(
+            CGAffineTransform(a: rect.width / 20, b: 0, c: 0, d: rect.height / 20, tx: rect.minX, ty: rect.minY)
+        )
     }
 }
 

@@ -15,6 +15,11 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCES = [
+    "MeloX/Core/Networking/PlaybackSourceCache.swift",
+    "MeloX/Core/Playback/Queue/PlaybackSource.swift",
+    "MeloX/Core/Settings/Playback/MusicQuality.swift",
+    "MeloX/Core/Library/RecentMusicCollection.swift",
+    "MeloX/Core/Library/LibraryIndexCache.swift",
     "MeloX/Core/Storage/PageContentCache.swift",
     "MeloX/Core/Storage/AppStorageLocations.swift",
     "MeloX/Core/Models/Account/AccountModels.swift",
@@ -81,11 +86,13 @@ enum FixtureError: Error { case offline }
     func subscribedPodcasts(limit: Int) async throws -> PodcastPage {
         PodcastPage(podcasts: [], hasMore: false, totalCount: 0)
     }
-    func likedSongReferences(userID: Int, likedPlaylistID: Int?) async throws -> [TrackReference] { [TrackReference(id: 11)] }
-    func songDetailsPage(ids: [Int], offset: Int, limit: Int) async throws -> SongCollectionPage {
+    func likedSongReferences(userID: Int, likedPlaylistID: Int?) async throws -> ([TrackReference], String?) { ([TrackReference(id: 11)], nil) }
+    func songDetailsCollection(ids: [Int], prefetched: [Song]) async throws -> [Song] {
         guard !failFavorites else { throw FixtureError.offline }
-        return SongCollectionPage(songs: [Song(id: 11, name: "Loaded song", artists: [])], nextOffset: 1, totalCount: 1)
+        return [Song(id: 11, name: "Loaded song", artists: [])]
     }
+    func recentAlbums() async throws -> [RecentMusicCollection] { [] }
+    func recentPlaylists() async throws -> [RecentMusicCollection] { [] }
     func recentSongs() async throws -> [Song] { [] }
 }
 
@@ -100,6 +107,12 @@ enum FixtureError: Error { case offline }
     var favoriteArtists: [Artist] = []
     var subscribedPodcasts: [Podcast] = []
     var recentSongs: [Song] = []
+    var songIndex = LibraryIndexCache<Int, Int>()
+    var albumIndex = LibraryIndexCache<Int, Int>()
+    var artistIndex = LibraryIndexCache<Int, Int>()
+    var likedPlaylist: Playlist?
+    var playlistPlayDates: [Int: Date] = [:]
+    var recentCollections: [RecentMusicCollection] = []
     var likedPlaylistID: Int?
     var favoriteSongTotalCount = 0
     var favoriteSongsNextOffset = 0
@@ -135,6 +148,21 @@ enum FixtureError: Error { case offline }
         let directory = URL(fileURLWithPath: CommandLine.arguments[1])
         let settings = AppSettings()
         let cache = PageContentCache(settings: settings, directory: directory)
+        let storage = PageContentCacheStorage(directory: directory)
+        let sources = PlaybackSourceCache(cookie: settings.cookie, storage: storage)
+        let source = PlaybackSource(url: URL(fileURLWithPath: "/test.flac"), bitrate: nil, format: "flac", quality: .lossless)
+        let deadline = Date().addingTimeInterval(600)
+        await sources.store(source, id: 123, quality: .lossless, expires: deadline)
+        let reopenedSources = PlaybackSourceCache(cookie: settings.cookie, storage: PageContentCacheStorage(directory: directory))
+        let hit = await reopenedSources.value(id: 123, quality: .lossless)
+        let expired = await reopenedSources.value(id: 123, quality: .lossless, now: deadline)
+        let wrongQuality = await reopenedSources.value(id: 123, quality: .high)
+        let otherSources = PlaybackSourceCache(cookie: "another-account", storage: storage)
+        let wrongAccount = await otherSources.value(id: 123, quality: .lossless)
+        precondition(hit == source && expired == nil && wrongQuality == nil && wrongAccount == nil)
+        await sources.invalidate(id: 123)
+        let invalidated = await reopenedSources.value(id: 123, quality: .lossless)
+        precondition(invalidated == nil)
         let decoder = JSONDecoder()
         let payload = try decoder.decode(HomePagePayload.self, from: Data(#"""
         {"blocks":[{"blockCode":"HOMEPAGE_BLOCK_PLAYLIST_RCMD","creatives":[
@@ -249,7 +277,7 @@ class PageContentCacheTests(unittest.TestCase):
             harness = directory / "Harness.swift"
             source = (ROOT / "MeloX/Core/Library/LibraryStore.swift").read_text()
             methods = []
-            for signature in ("func refresh(force:", "private func isCurrentRefresh(", "func clearAccountData()", "private func clearRemoteContent()", "private func restoreContent(", "private func persistContent()"):
+            for signature in ("private func mergeRecentCollections(", "func refresh(force:", "private func isCurrentRefresh(", "func clearAccountData()", "private func clearRemoteContent()", "private func restoreContent(", "private func persistContent()"):
                 start = source.index(signature)
                 opening = source.index("{", start)
                 depth, end = 1, opening + 1

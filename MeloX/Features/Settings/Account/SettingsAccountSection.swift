@@ -62,33 +62,21 @@ struct SettingsAccountSection: View {
     @ViewBuilder
     private var accountOverviewContent: some View {
         if library.isLoggedIn, let profile = library.profile {
-            NavigationLink(value: SettingsRoute.accountHome) {
-                HStack(spacing: 16) {
-                    accountAvatar(profile)
+            HStack(spacing: 16) {
+                accountAvatar(profile)
 
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(profile.nickname)
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(profile.nickname)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
 
-                        Text(accountSubtitle(profile))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                    }
-                    .layoutPriority(1)
-
-                    Spacer(minLength: 8)
-
-                    Image(systemName: "chevron.forward")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
+                    Text(accountSubtitle(profile))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
                 }
-                .contentShape(.rect)
             }
-            .buttonStyle(.plain)
-            .accessibilityHint("ui.settings.account.open.hint")
         } else if library.isLoggedIn {
             HStack(spacing: 16) {
                 ProgressView()

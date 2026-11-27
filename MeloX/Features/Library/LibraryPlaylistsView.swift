@@ -59,7 +59,7 @@ struct LibraryPlaylistsView: View {
                     .musicMatchedTransitionSource(for: .playlist(playlist))
                     .listRowInsets(.init(top: 8, leading: 20, bottom: 8, trailing: 16))
                     .alignmentGuide(.listRowSeparatorLeading) { _ in 76 }
-                    .swipeActions { actions(for: playlist) }
+                    .swipeActions { actions(for: playlist).labelStyle(.iconOnly) }
                 }
             }
         }

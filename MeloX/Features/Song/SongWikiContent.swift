@@ -3,8 +3,6 @@ import SwiftUI
 struct SongWikiContent: View {
     let song: Song
     let wiki: SongWiki
-    @Environment(NeteaseAPI.self) private var api
-    @State private var relatedSongs: [Int: Song] = [:]
 
     var body: some View {
         List {
@@ -23,11 +21,6 @@ struct SongWikiContent: View {
             contributionSection
         }
         .listStyle(.insetGrouped)
-        .task(id: wiki.similarSongs.map(\.id)) {
-            let ids = wiki.similarSongs.map(\.id)
-            guard !ids.isEmpty, let songs = try? await api.songDetails(ids: ids), !Task.isCancelled else { return }
-            relatedSongs = Dictionary(songs.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        }
     }
 
     private var songSummary: some View {
@@ -53,7 +46,6 @@ struct SongWikiContent: View {
                 }
             }
             .accessibilityElement(children: .combine)
-            .songSwipeActions(song)
         }
     }
 
@@ -167,7 +159,7 @@ struct SongWikiContent: View {
         if !wiki.similarSongs.isEmpty {
             Section("ui.song.wiki.section.similar_songs") {
                 ForEach(wiki.similarSongs) { reference in
-                    let link = NavigationLink {
+                    NavigationLink {
                         SongWikiRelatedSongDestination(
                             reference: reference
                         )
@@ -200,11 +192,6 @@ struct SongWikiContent: View {
                             }
                         }
                         .accessibilityElement(children: .combine)
-                    }
-                    if let song = relatedSongs[reference.id] {
-                        link.songSwipeActions(song)
-                    } else {
-                        link
                     }
                 }
             }

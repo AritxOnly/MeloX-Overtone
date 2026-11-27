@@ -118,30 +118,31 @@ struct HomeRecommendedView: View {
     }
 
     private var content: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 32) {
-                HomeQuickActionsView(
-                    dailySongs: dailySongs,
-                    hotChart: hotSongsChart,
-                    radar: feed.firstRadarPlaylist,
-                    activeAction: activeAction,
-                    perform: perform
-                )
+        let feed = feed
+        let recommendations = Dictionary(uniqueKeysWithValues: feed.sections.map { ($0.slot, $0) })
+        let visibleSections = settings.homeSectionOrder.filter { section in
+            switch section {
+            case .quickActions:
+                true
+            case .recentlyPlayed:
+                settings.isContentFeatureEnabled(.listeningHistory) && !library.recentSongs.isEmpty
+            case .newAlbums:
+                !newAlbums.isEmpty
+            case .recommendation(let slot):
+                hasRecommendationPayload && recommendations[slot] != nil
+            }
+        }
 
-                if settings.isContentFeatureEnabled(.listeningHistory), !library.recentSongs.isEmpty {
-                    HomeMediaStrip(title: L10n.string("ui.navigation.recently_played"), destination: .recentlyPlayed) {
-                        ForEach(library.recentSongs.prefix(12)) { song in
-                            Button {
-                                Task { await player.play(song, in: library.recentSongs) }
-                            } label: {
-                                HomeSongCard(song: song)
-                            }
-                            .buttonStyle(.plain)
+        return ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(visibleSections) { section in
+                    VStack(alignment: .leading, spacing: 0) {
+                        if section != visibleSections.first {
+                            Spacer(minLength: 0)
+                                .frame(height: 32)
                         }
+                        sectionContent(section, recommendations: recommendations, radar: feed.firstRadarPlaylist)
                     }
-                }
-                if !newAlbums.isEmpty {
-                    HomeAlbumSection(albums: newAlbums)
                 }
 
                 if !hasRecommendationPayload {
@@ -151,36 +152,60 @@ struct HomeRecommendedView: View {
                             minHeight: 280
                         )
                         .padding(.horizontal)
-                } else {
-                    ForEach(feed.sections) { section in
-                        HomeRecommendationSectionView(
-                            section: section
+                } else if recommendations.isEmpty {
+                    ContentUnavailableView(
+                        "ui.home.no_personalized_recommendations",
+                        systemImage: "sparkles",
+                        description: Text(
+                            library.isLoggedIn
+                                ? L10n.string("ui.home.pull_to_refresh")
+                                : L10n.string("ui.home.login_for_personalized_content")
                         )
-                    }
-
-                    if feed.sections.isEmpty {
-                        ContentUnavailableView(
-                            "ui.home.no_personalized_recommendations",
-                            systemImage: "sparkles",
-                            description: Text(
-                                library.isLoggedIn
-                                    ? L10n.string("ui.home.pull_to_refresh")
-                                    : L10n.string("ui.home.login_for_personalized_content")
-                            )
-                        )
-                        .frame(
-                            maxWidth: .infinity,
-                            minHeight: 280
-                        )
-                        .padding(.horizontal)
-                    }
+                    )
+                    .frame(maxWidth: .infinity, minHeight: 280)
+                    .padding(.horizontal)
                 }
             }
-            .padding(.top, 16)
             .padding(.bottom, 28)
         }
         .refreshable {
             await load(refresh: true)
+        }
+    }
+
+    @ViewBuilder
+    private func sectionContent(
+        _ section: HomeSection,
+        recommendations: [HomeRecommendationSlot: HomeRecommendationSection],
+        radar: Playlist?
+    ) -> some View {
+        switch section {
+        case .quickActions:
+            HomeQuickActionsView(
+                actions: settings.homeQuickActionOrder,
+                dailySongs: dailySongs,
+                hotChart: hotSongsChart,
+                radar: radar,
+                activeAction: activeAction,
+                perform: perform
+            )
+        case .recentlyPlayed:
+            HomeMediaStrip(title: section.title, destination: .recentlyPlayed) {
+                ForEach(library.recentSongs.prefix(12)) { song in
+                    Button {
+                        Task { await player.play(song, in: library.recentSongs) }
+                    } label: {
+                        HomeSongCard(song: song)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        case .newAlbums:
+            HomeAlbumSection(albums: newAlbums)
+        case .recommendation(let slot):
+            if let recommendation = recommendations[slot] {
+                HomeRecommendationSectionView(section: recommendation)
+            }
         }
     }
 

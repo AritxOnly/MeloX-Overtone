@@ -3,7 +3,6 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppSettings.self) private var settings
-    @Environment(LibraryStore.self) private var library
     @Environment(PlayerStore.self) private var player
 
     @State private var searchText = ""
@@ -118,22 +117,10 @@ struct SettingsView: View {
             SongRecognitionView()
         case .privateMessages:
             NeteasePrivateMessagesView()
-        case .accountHome:
-            if let profile = library.profile {
-                AccountHomeView(
-                    initialProfile: profile,
-                    initialDetail: library.accountDetail,
-                    initialPlaylists: library.favoritePlaylists
-                )
-            } else {
-                ContentUnavailableView(
-                    "ui.settings.account.unavailable",
-                    systemImage:
-                        "person.crop.circle.badge.exclamationmark"
-                )
-            }
         case .playback:
             PlaybackSettingsView()
+        case .bluetoothDeviceMappings:
+            BluetoothDeviceMappingsView()
         case .playerAppearance:
             PlayerAppearanceSettingsView()
         case .lyrics:
@@ -146,6 +133,8 @@ struct SettingsView: View {
             ContentFeatureSettingsView()
         case .content:
             ContentSettingsView()
+        case .homeLayout:
+            HomeLayoutSettingsView()
         case .storage:
             StorageManagementView()
         case .skylineLyrics:

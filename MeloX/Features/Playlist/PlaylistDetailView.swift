@@ -654,7 +654,7 @@ struct PlaylistDetailView: View {
             guard playlist?.id == currentPlaylist.id, !songs.isEmpty else { return }
             library.recordCollectionPlayback(.playlist(currentPlaylist))
             await player.playAll(
-                shuffled ? songs.shuffled() : songs,
+                songs, shuffled: shuffled,
                 sourceID: currentPlaylist.id
             )
         } catch is CancellationError {

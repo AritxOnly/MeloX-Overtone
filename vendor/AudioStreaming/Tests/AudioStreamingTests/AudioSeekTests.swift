@@ -3,6 +3,47 @@ import XCTest
 @testable import AudioStreaming
 
 final class AudioSeekTests: XCTestCase {
+    func testReadAheadRendersBothTracksInOneOutputBuffer() throws {
+        let fixtures = Bundle.module
+        let first = try Data(contentsOf: XCTUnwrap(fixtures.url(forResource: "audio", withExtension: "m4a", subdirectory: "Fixtures")))
+        let second = try Data(contentsOf: XCTUnwrap(fixtures.url(forResource: "audio", withExtension: "flac", subdirectory: "Fixtures")))
+        let decoder = try Decoder(data: first, hint: kAudioFileM4AType)
+        try decoder.feed(first)
+        let outgoing = decoder.entry
+        let lastFrames = Array(decoder.samples.suffix(128))
+        // Leave 64 stereo frames in the ring, then decode the next track into it.
+        outgoing.framesState.lastFrameQueued = outgoing.framesState.queued
+        outgoing.framesState.played = outgoing.framesState.queued - 64
+        let ring = decoder.renderer.bufferContext
+        ring.frameStartIndex = UInt32(outgoing.framesState.played)
+        ring.frameUsedCount = 64
+
+        let reference = try Decoder(data: second, hint: kAudioFileFLACType)
+        try reference.feed(second)
+        let format = try XCTUnwrap(AVAudioFormat(commonFormat: .pcmFormatFloat32,
+            sampleRate: 44_100, channels: 2, interleaved: true))
+        let incoming = AudioEntry(source: reference.source, entryId: AudioEntryId(id: "next"), outputAudioFormat: format)
+        decoder.processor.closeFileStreamIfNeeded()
+        decoder.context.audioReadingEntry = incoming
+        XCTAssertEqual(decoder.processor.openFileStream(with: kAudioFileFLACType), noErr)
+        try decoder.feed(second)
+
+        let render = AudioPlayerRenderProcessor(playerContext: decoder.context,
+            rendererContext: decoder.renderer, outputAudioFormat: format.basicStreamDescription)
+        render.audioFinishedPlaying = { entry in
+            XCTAssertTrue(entry === outgoing)
+            decoder.context.audioPlayingEntry = incoming
+        }
+        decoder.context.setInternalState(to: .playing)
+        let pcm = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 128))
+        decoder.renderer.inOutAudioBufferList[0].mBuffers.mData = pcm.mutableAudioBufferList.pointee.mBuffers.mData
+        let result = try XCTUnwrap(render.inRender(inNumberFrames: 128))
+        let samples = try XCTUnwrap(result.pointee.mBuffers.mData).assumingMemoryBound(to: Float.self)
+        XCTAssertEqual(Array(UnsafeBufferPointer(start: samples, count: 256)),
+                       lastFrames + reference.samples.prefix(128))
+        XCTAssertEqual(incoming.framesState.played, 64)
+    }
+
     func testSeekDoesNotAdvanceWhileWaitingForDecodedAudio() throws {
         let url = try XCTUnwrap(Bundle.module.url(forResource: "vbr", withExtension: "mp3", subdirectory: "Fixtures"))
         let decoder = try Decoder(data: Data(contentsOf: url), hint: kAudioFileMP3Type)

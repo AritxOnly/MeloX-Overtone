@@ -29,7 +29,7 @@ struct LibrarySongsView: View {
             if !index.songs.isEmpty {
                 SongListPlaybackActions { shuffled in
                     let songs = index.songs
-                    Task { await player.playAll(shuffled ? songs.shuffled() : songs) }
+                    Task { await player.playAll(songs, shuffled: shuffled) }
                 }
             }
             ForEach(index.sections) { section in

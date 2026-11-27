@@ -37,6 +37,7 @@ final class AudioPlaybackEngine {
     var onStateChanged: ((AudioPlaybackState) -> Void)?
     var onPlaybackClockChanged: ((AudioPlaybackClockSample) -> Void)?
     var onDurationChanged: ((TimeInterval) -> Void)?
+    var onQueuedTrackStarted: ((PreparedAutoMixContext) -> Void)?
     var onPlaybackEnded: (() -> Void)?
     var onFailure: ((Error) -> Void)?
     var onAutoMixTransitionBegan: ((Int, AutoMixTransitionPlan) -> Void)?
@@ -175,6 +176,9 @@ final class AudioPlaybackEngine {
     }
     #endif
 
+    func enqueue(_ context: PreparedAutoMixContext) async { await activeDeck.enqueue(context) }
+    func cancelQueuedEntry() { activeDeck.cancelQueuedEntry() }
+
     func prepareAutoMix(_ source: PlaybackSource, identifier: Int, plan: AutoMixTransitionPlan) async {
         await autoMixController.prepare(source, identifier: identifier, plan: plan)
         autoMixController.startIfNeeded(wantsPlayback: wantsPlayback)
@@ -193,6 +197,12 @@ final class AudioPlaybackEngine {
             deck.onSeekCompleted = { [weak self] in
                 guard let self, index == self.activeDeckIndex else { return }
                 self.publishPlaybackClockSample(origin: .seekCompleted)
+            }
+            deck.onQueuedTrackStarted = { [weak self] context in
+                guard let self, index == self.activeDeckIndex else { return }
+                self.onQueuedTrackStarted?(context)
+                self.publishDurationIfAvailable()
+                self.updateStateFromPlayer(clockOrigin: .activeItemChanged)
             }
             deck.onEnded = { [weak self] in
                 guard let self else { return }

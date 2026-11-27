@@ -15,6 +15,7 @@ struct NowPlayingTabletPlayerColumn: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             NowPlayingPortraitArtwork(song: song, isArtworkPage: true)
+                .modifier(NowPlayingArtworkShadow())
                 .frame(width: layout.artworkSize, height: layout.artworkSize)
                 .scaleEffect(isArtworkExpanded ? 1 : NowPlayingArtworkPage.pausedArtworkScale)
                 .frame(maxWidth: .infinity)
@@ -47,10 +48,8 @@ private struct NowPlayingTabletMetadata: View {
     var body: some View {
         HStack(alignment: .bottom, spacing: 10) {
             VStack(alignment: .leading, spacing: 5) {
-                Text(song.name)
+                PlayerMarquee(text: song.name)
                     .font(.title2.weight(.bold))
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
 
                 HStack(spacing: 0) {
                     NowPlayingArtistLink(song: song)

@@ -201,7 +201,6 @@ struct ListenTogetherView: View {
                 }
                 .padding(.vertical, 3)
                 .accessibilityElement(children: .combine)
-                .songSwipeActions(song)
             } else {
                 Label(
                     "ui.listen_together.waiting_for_playback",

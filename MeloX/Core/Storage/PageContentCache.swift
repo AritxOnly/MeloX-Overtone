@@ -37,14 +37,14 @@ final class PageContentCache {
         await PageContentCacheStorage.shared.removeAll()
     }
 
-    private static func scope(for cookie: String) -> String {
+    static func scope(for cookie: String) -> String {
         let cookie = cookie.trimmingCharacters(in: .whitespacesAndNewlines)
         return SHA256.hash(data: Data(cookie.utf8))
             .map { String(format: "%02x", $0) }.joined()
     }
 }
 
-private actor PageContentCacheStorage {
+actor PageContentCacheStorage {
     static let shared = PageContentCacheStorage()
     private let database: DatabaseQueue?
 
@@ -100,6 +100,12 @@ private actor PageContentCacheStorage {
                     SELECT rowid FROM pageContent ORDER BY updatedAt DESC LIMIT 256
                 )
                 """)
+        }
+    }
+
+    func remove(scope: String, key: String) {
+        try? database?.write { db in
+            try db.execute(sql: "DELETE FROM pageContent WHERE scope = ? AND cacheKey = ?", arguments: [scope, key])
         }
     }
 

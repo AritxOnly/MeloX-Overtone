@@ -55,7 +55,7 @@ struct ArtistDetailView: View {
                     }
                     Menu {
                         Button("ui.player.shuffle", systemImage: "shuffle") {
-                            Task { await player.playAll(songs.shuffled(), sourceID: artist.id) }
+                            Task { await player.playAll(songs, shuffled: true, sourceID: artist.id) }
                         }
                         .disabled(songs.isEmpty)
                         Button(followTitle, systemImage: isFollowed ? "star.slash" : "star") {
@@ -219,7 +219,7 @@ struct ArtistDetailView: View {
             .buttonStyle(.plain)
             VStack(spacing: 0) {
                 ForEach(songs.prefix(5)) { song in
-                    songRow(song).songSwipeActions(song, inline: true)
+                    songRow(song)
                     if song.id != songs.prefix(5).last?.id {
                         Divider().padding(.leading, 60)
                     }
@@ -227,7 +227,6 @@ struct ArtistDetailView: View {
             }
         }
         .padding(.horizontal, 20)
-        .songSwipeGroup()
     }
 
     private func songRow(_ song: Song) -> some View {

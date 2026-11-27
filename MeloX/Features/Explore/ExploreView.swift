@@ -61,11 +61,11 @@ struct ExploreView: View {
                         categories: categories,
                         selection: category,
                         isPinned: isCategoryBarPinned,
+                        horizontalInset: featuredMetrics.horizontalPadding,
                         select: selectCategory
                     )
                 }
             }
-            .padding(.horizontal, featuredMetrics.horizontalPadding)
             .padding(.bottom, 28)
         }
         .onScrollGeometryChange(for: Bool.self) { geometry in
@@ -89,19 +89,20 @@ struct ExploreView: View {
     @ViewBuilder
     private var categoryContent: some View {
         if playlists.isEmpty {
-            switch phase {
-            case .loading:
-                ProgressView("ui.explore.loading")
-                    .frame(maxWidth: .infinity, minHeight: 320)
-            case .failed(let message):
-                ConnectionUnavailableView(message: message) {
-                    reloadToken += 1
+            Group {
+                switch phase {
+                case .loading:
+                    ProgressView("ui.explore.loading")
+                case .failed(let message):
+                    ConnectionUnavailableView(message: message) {
+                        reloadToken += 1
+                    }
+                case .loaded:
+                    ContentUnavailableView("ui.playlists.empty", systemImage: "music.note.list")
                 }
-                .frame(maxWidth: .infinity, minHeight: 320)
-            case .loaded:
-                ContentUnavailableView("ui.playlists.empty", systemImage: "music.note.list")
-                    .frame(maxWidth: .infinity, minHeight: 320)
             }
+            .frame(maxWidth: .infinity, minHeight: 320)
+            .padding(.horizontal, featuredMetrics.horizontalPadding)
         } else {
             featuredShelf
 
@@ -131,6 +132,7 @@ struct ExploreView: View {
                     }
                 }
             }
+            .padding(.horizontal, featuredMetrics.horizontalPadding)
 
             if phase == .loading {
                 ProgressView()
@@ -144,6 +146,7 @@ struct ExploreView: View {
             if featuredMetrics.usesPortraitCards {
                 Text(category == "推荐歌单" ? L10n.string("ui.explore.featured.title") : featuredBadge)
                     .font(.title2.weight(.bold))
+                    .padding(.horizontal, featuredMetrics.horizontalPadding)
             }
             ScrollView(.horizontal) {
                 LazyHStack(alignment: .top, spacing: featuredMetrics.spacing) {
@@ -160,6 +163,7 @@ struct ExploreView: View {
                 }
                 .scrollTargetLayout()
             }
+            .contentMargins(.horizontal, featuredMetrics.horizontalPadding, for: .scrollContent)
             .scrollIndicators(.hidden)
             .scrollTargetBehavior(.viewAligned)
         }

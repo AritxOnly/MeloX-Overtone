@@ -183,22 +183,23 @@ struct PodcastCategoryTile: View {
 
 struct FeaturedPodcastView: View {
     let podcast: Podcast
+    let isWide: Bool
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            ArtworkImage(
-                url: podcast.artworkURL,
-                cornerRadius: 22,
-                aspectRatio: 1.55
-            )
-
+        ArtworkImage(
+            url: podcast.artworkURL,
+            cornerRadius: 22,
+            aspectRatio: isWide ? 2.2 : 1.55
+        )
+        .overlay {
             LinearGradient(
                 colors: [.clear, .black.opacity(0.82)],
                 startPoint: .center,
                 endPoint: .bottom
             )
             .clipShape(.rect(cornerRadius: 22))
-
+        }
+        .overlay(alignment: .bottomLeading) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("ui.podcasts.editors_choice")
                     .font(.caption.weight(.bold))
@@ -219,6 +220,7 @@ struct FeaturedPodcastView: View {
             .padding(20)
             .padding(.trailing, 20)
         }
+        .frame(maxWidth: isWide ? 640 : .infinity)
         .contentShape(.rect)
         .accessibilityElement(children: .combine)
     }

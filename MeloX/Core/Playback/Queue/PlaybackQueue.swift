@@ -100,11 +100,15 @@ struct PlaybackQueue {
         }
     }
 
-    mutating func replace(with songs: [Song], startingAt index: Int) {
+    mutating func replace(with songs: [Song], startingAt index: Int, shuffled: Bool? = nil) {
+        if let shuffled { isShuffled = shuffled }
         self.songs = songs
         currentIndex = songs.isEmpty ? 0 : min(max(index, 0), songs.count - 1)
         if isShuffled {
             rebuildShuffleOrder()
+        } else {
+            shuffledOrder = []
+            shuffledPosition = 0
         }
     }
 

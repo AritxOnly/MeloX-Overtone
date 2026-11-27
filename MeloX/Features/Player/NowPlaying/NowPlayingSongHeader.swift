@@ -43,11 +43,10 @@ struct NowPlayingArtistLink: View {
     @Environment(\.openMusicRoute) private var openMusicRoute
 
     let song: Song
-    var title: String? = nil
 
     var body: some View {
         let artists = song.artists.filter { $0.id > 0 }
-        let label = Text(verbatim: title ?? song.artistText)
+        let label = PlayerMarquee(text: song.artistText)
         if song.isPodcastProgram || artists.isEmpty {
             label
         } else if artists.count == 1, let artist = artists.first {
@@ -96,16 +95,14 @@ struct NowPlayingSongHeader: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 8) {
-                    Text(song.name)
+                    PlayerMarquee(text: song.name)
                         .font(.headline)
-                        .lineLimit(1)
-                        .layoutPriority(1)
 
-                    HeartModeNowPlayingBadge()
-                    ListenTogetherNowPlayingBadge()
+                    HeartModeNowPlayingBadge().fixedSize()
+                    ListenTogetherNowPlayingBadge().fixedSize()
                 }
 
-                NowPlayingArtistLink(song: song, title: artistText)
+                NowPlayingArtistLink(song: song)
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.64))
                     .lineLimit(1)
@@ -141,10 +138,6 @@ struct NowPlayingSongHeader: View {
         usesReferenceLayout ? Self.referenceHeight : 68
     }
 
-    private var artistText: String {
-        guard usesReferenceLayout else { return song.artistText }
-        return song.artists.map(\.name).joined(separator: " & ")
-    }
 }
 
 struct NowPlayingLandscapeSongHeader: View {
@@ -163,13 +156,11 @@ struct NowPlayingLandscapeSongHeader: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 8) {
-                    Text(song.name)
+                    PlayerMarquee(text: song.name)
                         .font(.headline)
-                        .lineLimit(1)
-                        .layoutPriority(1)
 
-                    HeartModeNowPlayingBadge()
-                    ListenTogetherNowPlayingBadge()
+                    HeartModeNowPlayingBadge().fixedSize()
+                    ListenTogetherNowPlayingBadge().fixedSize()
                 }
 
                 NowPlayingArtistLink(song: song)

@@ -1,5 +1,10 @@
 import SwiftUI
 
+enum AccountRoute: Hashable {
+    case home
+    case privateMessages
+}
+
 struct PlaylistRouteContext: Hashable {
     let id: Int
     let name: String
@@ -249,11 +254,14 @@ enum PlayerPresentation: Hashable, Identifiable {
 }
 
 extension View {
-    func musicDestinations(in namespace: Namespace.ID) -> some View {
+    func musicDestinations(in namespace: Namespace.ID, onOpenProfilePlaylist: ((Playlist) -> Void)? = nil) -> some View {
         navigationDestination(for: MusicRoute.self) { route in
             MusicRouteDestination(route: route)
                 .visibleDetailNavigationBar()
                 .musicNavigationTransition(for: route, in: namespace)
+        }
+        .navigationDestination(for: AccountProfile.self) { profile in
+            AccountHomeView(initialProfile: profile, onOpenPlaylist: onOpenProfilePlaylist)
         }
     }
 }

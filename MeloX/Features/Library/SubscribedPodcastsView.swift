@@ -34,7 +34,7 @@ struct SubscribedPodcastsView: View {
                     .musicMatchedTransitionSource(for: .podcast(podcast))
                     .listRowInsets(.init(top: 8, leading: 20, bottom: 8, trailing: 16))
                     .alignmentGuide(.listRowSeparatorLeading) { _ in 76 }
-                    .swipeActions { unsubscribe(podcast) }
+                    .swipeActions { unsubscribe(podcast).labelStyle(.iconOnly) }
                 }
             }
 

@@ -2,8 +2,10 @@ import SwiftUI
 
 struct AccountHomeContent: View {
     let profile: AccountProfile
+    let isPersonalAccount: Bool
     let detail: AccountDetail?
     let playlists: [Playlist]
+    let onOpenPlaylist: ((Playlist) -> Void)?
     let palette: ArtworkDetailPalette
     let blurredBackdropImage: CGImage?
     let isLoading: Bool
@@ -22,12 +24,14 @@ struct AccountHomeContent: View {
                 LazyVStack(spacing: 0) {
                     AccountProfileDetailHero(
                         profile: profile,
+                        isPersonalAccount: isPersonalAccount,
                         detail: detail,
                         playlistCount: playlists.count
                     )
 
                     AccountPlaylistContent(
                         playlists: playlists,
+                        onOpenPlaylist: onOpenPlaylist,
                         isLoading: isLoading,
                         failureMessage: failureMessage,
                         onRetry: onRetry
@@ -46,6 +50,7 @@ struct AccountHomeContent: View {
 
 private struct AccountProfileDetailHero: View {
     let profile: AccountProfile
+    let isPersonalAccount: Bool
     let detail: AccountDetail?
     let playlistCount: Int
 
@@ -103,13 +108,13 @@ private struct AccountProfileDetailHero: View {
             .padding(.top, 20)
 
             NavigationLink {
-                UserListeningRankView(userID: profile.id)
+                UserListeningRankView(userID: profile.id, isPersonalAccount: isPersonalAccount)
             } label: {
-                Label("ui.library.my_listening_rank", systemImage: "chart.bar.xaxis")
+                Label(isPersonalAccount ? LocalizedStringKey("ui.library.my_listening_rank") : "ui.account.listening_rank.title", systemImage: "chart.bar.xaxis")
             }
             .buttonStyle(.bordered)
             .padding(.top, 14)
-            .accessibilityHint("ui.library.my_listening_rank.hint")
+            .accessibilityHint(isPersonalAccount ? LocalizedStringKey("ui.library.my_listening_rank.hint") : "ui.account.listening_rank.title")
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 26)
@@ -154,6 +159,7 @@ private struct AccountProfileMetrics: View {
 
 private struct AccountPlaylistContent: View {
     let playlists: [Playlist]
+    let onOpenPlaylist: ((Playlist) -> Void)?
     let isLoading: Bool
     let failureMessage: String?
     let onRetry: () -> Void
@@ -209,11 +215,19 @@ private struct AccountPlaylistContent: View {
     private var playlistRows: some View {
         LazyVStack(spacing: 0) {
             ForEach(playlists) { playlist in
-                NavigationLink(value: MusicRoute.playlist(playlist)) {
-                    AccountPlaylistRow(playlist: playlist)
+                Group {
+                    if let onOpenPlaylist {
+                        Button { onOpenPlaylist(playlist) } label: {
+                            AccountPlaylistRow(playlist: playlist)
+                        }
+                    } else {
+                        NavigationLink(value: MusicRoute.playlist(playlist)) {
+                            AccountPlaylistRow(playlist: playlist)
+                        }
+                        .musicMatchedTransitionSource(for: .playlist(playlist))
+                    }
                 }
                 .buttonStyle(.plain)
-                .musicMatchedTransitionSource(for: .playlist(playlist))
 
                 if playlist.id != playlists.last?.id {
                     Divider()

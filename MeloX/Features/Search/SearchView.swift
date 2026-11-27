@@ -2,414 +2,257 @@ import SwiftUI
 
 struct SearchView: View {
     let focusRequestToken: Int
-    @FocusState private var isSearchFieldFocused: Bool
-
-    @Environment(NeteaseAPI.self) private var api
+    @FocusState private var focused: Bool
     @Environment(PlayerStore.self) private var player
     @Environment(LibraryStore.self) private var library
+    @Environment(DownloadStore.self) private var downloads
     @Environment(AppSettings.self) private var settings
+    @Environment(\.openMusicRoute) private var openRoute
 
     @State private var query = ""
-    @State private var suggestions: [String] = []
-    @State private var resultCache = SearchResultCache()
-    @State private var scope: SearchKind = .songs
-    @State private var phase: LoadingPhase = .loaded
-    @State private var songs: [Song] = []
-    @State private var albums: [Album] = []
-    @State private var artists: [Artist] = []
-    @State private var playlists: [Playlist] = []
-    @State private var podcasts: [Podcast] = []
-    @State private var completedRequest: SearchRequest?
-    @State private var recognizedLink: NeteaseMusicLink?
-    @State private var linkedSong: Song?
-    @State private var presentedListenTogetherLink:
-        NeteaseListenTogetherLink?
+    @State private var presented = false
+    @State private var submitted: String?
+    @State private var inLibrary = false
+    @State private var kind: SearchKind?
+    @State private var cache = SearchResultCache()
+    @State private var invitation: NeteaseListenTogetherLink?
+    @AppStorage("search.recentItems") private var historyData = Data()
+
+    private var keywords: String { normalizedLibrarySearchQuery(query) }
+    private var kinds: [SearchKind] {
+        [.artists, .albums, .songs, .playlists] + (settings.isContentFeatureEnabled(.podcasts) ? [.podcasts] : [])
+    }
 
     var body: some View {
-        Group {
-            if trimmedQuery.isEmpty {
-                SearchDiscoveryView()
-            } else if let recognizedLink {
-                linkResult(for: recognizedLink)
+        VStack(spacing: 0) {
+            if submitted != nil || presented || !keywords.isEmpty {
+                if submitted != nil, link == nil {
+                    filters
+                }
+
+                if keywords.isEmpty {
+                    recentList
+                } else if case .listenTogether(let value) = link {
+                    ContentUnavailableView {
+                        Label("ui.listen_together.invitation", systemImage: "person.2.wave.2")
+                    } description: {
+                        Text("ui.search.listen_together_link_recognized")
+                    } actions: {
+                        Button("ui.clipboard.view_invitation") { invitation = value }
+                    }
+                } else {
+                    matches
+                }
             } else {
-                searchResults
+                SearchDiscoveryView()
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationTitle("ui.navigation.search")
-        .searchable(
-            text: $query,
-            placement: searchPlacement,
-            prompt: "ui.search.prompt"
-        )
-        .searchFocused($isSearchFieldFocused)
-        .onChange(of: focusRequestToken) { _, _ in
-            // The native search field may still be reattaching after navigation.
+        .visibleDetailNavigationBar()
+        .searchable(text: Binding(get: { query }, set: { value in
+            if value != query { submitted = nil }
+            query = value
+        }), isPresented: $presented, placement: placement, prompt: "ui.search.prompt")
+        .searchFocused($focused)
+        .searchScopes($inLibrary, activation: .onSearchPresentation) {
+            if submitted == nil {
+                Text("ui.service.netease").tag(false)
+                Text("ui.search.personal_library").tag(true)
+            }
+        }
+        .onSubmit(of: .search) { submit(keywords) }
+        .onChange(of: focused) { _, editing in
+            if editing { submitted = nil }
+        }
+        .onChange(of: focusRequestToken) {
             Task { @MainActor in
                 await Task.yield()
-                isSearchFieldFocused = true
+                presented = true
+                focused = true
             }
         }
-        .searchSuggestions {
-            if settings.searchSuggestionsEnabled {
-                ForEach(suggestions, id: \.self) { suggestion in
-                    Label {
-                        Text(verbatim: suggestion)
-                    } icon: {
-                        Image(systemName: "magnifyingglass")
-                    }
-                    .searchCompletion(suggestion)
-                }
-            }
+        .onChange(of: kinds) {
+            if let kind, !kinds.contains(kind) { self.kind = nil }
         }
-        .task(id: "\(settings.searchSuggestionsEnabled):\(query)") {
-            await loadSuggestions()
+        .sheet(item: $invitation) {
+            ListenTogetherView(invitationText: $0.invitationText)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
-        .searchScopes($scope) {
-            ForEach(availableSearchKinds) { kind in
-                Text(kind.title).tag(kind)
-            }
-        }
-        .overlay {
-            if !trimmedQuery.isEmpty, case .failed(let message) = phase {
-                ContentUnavailableView(
-                    recognizedLink == nil
-                        ? L10n.string("ui.search.failed")
-                        : L10n.string("ui.search.link_failed"),
-                    systemImage: recognizedLink == nil
-                        ? "exclamationmark.magnifyingglass"
-                        : "link.badge.plus",
-                    description: Text(message)
-                )
-            } else if recognizedLink == nil,
-                      !trimmedQuery.isEmpty,
-                      phase == .loaded,
-                      resultIsEmpty {
-                ContentUnavailableView.search(text: query)
-            }
-        }
-        .sheet(item: $presentedListenTogetherLink) { invitation in
-            ListenTogetherView(
-                invitationText: invitation.invitationText
-            )
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-        }
-        .alert(
-            "ui.error.favorite_failed",
-            isPresented: Binding(
-                get: { library.errorMessage != nil },
-                set: { if !$0 { library.clearError() } }
-            )
-        ) {
-            Button("ui.common.ok", role: .cancel) {
-                library.clearError()
-            }
+        .alert("ui.error.favorite_failed", isPresented: Binding(
+            get: { library.errorMessage != nil }, set: { if !$0 { library.clearError() } }
+        )) {
+            Button("ui.common.ok", role: .cancel) { library.clearError() }
         } message: {
-            Text(library.errorMessage ?? L10n.string("ui.common.unknown_error"))
-        }
-        .task(id: SearchRequest(query: query, kind: scope)) {
-            let request = SearchRequest(query: query, kind: scope)
-            guard completedRequest != request else { return }
-            await search(request)
-        }
-        .onChange(
-            of: settings.isContentFeatureEnabled(.podcasts)
-        ) { _, podcastsEnabled in
-            if !podcastsEnabled, scope == .podcasts {
-                scope = .songs
-            }
+            Text(library.errorMessage ?? "")
         }
     }
 
-    private var searchPlacement: SearchFieldPlacement {
-        if #available(iOS 27, *) {
-            return .toolbarPrincipal
-        }
+    private var placement: SearchFieldPlacement {
+        if #available(iOS 27, *) { return .toolbarPrincipal }
         return .navigationBarDrawer(displayMode: .always)
     }
 
-    private func loadSuggestions() async {
-        suggestions = []
-        let keywords = trimmedQuery
-        guard settings.searchSuggestionsEnabled, !keywords.isEmpty,
-              NeteaseMusicLinkParser.parse(keywords) == nil else { return }
-        do {
-            try await Task.sleep(for: .milliseconds(300))
-            let loaded = try await api.searchSuggestions(keywords)
-            try Task.checkCancellation()
-            suggestions = loaded
-        } catch {
-            return
-        }
+    private var link: NeteaseMusicLink? {
+        inLibrary ? nil : NeteaseMusicLinkParser.parse(keywords)
     }
 
-    private var availableSearchKinds: [SearchKind] {
-        SearchKind.allCases.filter {
-            $0 != .podcasts
-                || settings.isContentFeatureEnabled(.podcasts)
-        }
-    }
-
-    private var searchResults: some View {
-        List {
-            if phase == .loading {
-                HStack {
-                    Spacer()
-                    ProgressView("ui.search.searching")
-                    Spacer()
-                }
+    private var filters: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 4) {
+                chip(nil)
+                ForEach(kinds) { chip($0) }
             }
+            .padding(.horizontal)
+            .padding(.vertical, 6)
+        }
+        .scrollIndicators(.hidden)
+    }
 
-            switch scope {
-            case .songs:
-                ForEach(songs) { song in
-                    Button {
-                        Task { await player.play(song, in: songs) }
-                    } label: {
-                        TrackRowView(song: song, showsArtwork: true)
+    private func chip(_ value: SearchKind?) -> some View {
+        Button {
+            kind = value
+        } label: {
+            Text(value?.title ?? L10n.string("ui.search.best"))
+                .font(.subheadline.weight(.medium))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+                .foregroundStyle(kind == value ? Color.white : Color.primary)
+                .background(kind == value ? Color.accentColor : Color.clear, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(kind == value ? .isSelected : [])
+    }
+
+    private var matches: some View {
+        let preview = submitted == nil
+        let mixedKinds: [SearchKind] = [.songs, .artists, .albums] + (preview ? [] : kinds.filter { $0 == .playlists || $0 == .podcasts })
+        let request = SearchInput(query: keywords, preview: preview, library: inLibrary,
+                                  kinds: (!preview ? kind : nil).map { [$0] } ?? mixedKinds,
+                                  suggestions: settings.searchSuggestionsEnabled, link: link)
+        return SearchMatchesView(input: request, snapshot: inLibrary ? snapshot : nil,
+                                 cache: $cache, row: itemRow)
+            .id(request)
+    }
+
+    private var snapshot: SearchLibrarySnapshot {
+        SearchLibrarySnapshot(songs: library.favoriteSongs,
+                              downloads: AppFeatureAvailability.downloads ? downloads.downloadedSongs : [],
+                              albums: library.favoriteAlbums, artists: library.favoriteArtists,
+                              playlists: [library.likedPlaylist].compactMap { $0 } + library.favoritePlaylists.filter { $0.id != library.likedPlaylistID },
+                              podcasts: library.subscribedPodcasts)
+    }
+
+    private var historyKey: String { inLibrary ? "library-\(library.profile?.id ?? 0)" : "catalog" }
+    private var history: [String: [SearchItem]] {
+        (try? JSONDecoder().decode([String: [SearchItem]].self, from: historyData)) ?? [:]
+    }
+    private var recentList: some View {
+        let items = (history[historyKey] ?? []).filter {
+            if case .podcast = $0 { return kinds.contains(.podcasts) }
+            return true
+        }
+        let queue = items.compactMap(\.song)
+        return List {
+            Section {
+                ForEach(items) { item in itemRow(item, queue) }
+            } header: {
+                HStack {
+                    Text("ui.search.recent").font(.headline)
+                    Spacer()
+                    if !items.isEmpty {
+                        Button("ui.common.clear") { saveHistory([]) }
                     }
-                    .buttonStyle(.plain)
-                    .songSwipeActions(song)
                 }
-            case .albums:
-                ForEach(albums) { album in
-                    NavigationLink(value: MusicRoute.album(album)) {
-                        SearchMediaRow(
-                            title: album.name,
-                            subtitle: album.artistText,
-                            artworkURL: album.artworkURL,
-                            circular: false
-                        )
-                    }
-                    .musicMatchedTransitionSource(for: MusicRoute.album(album))
-                }
-            case .artists:
-                ForEach(artists) { artist in
-                    NavigationLink(value: MusicRoute.artist(artist.id)) {
-                        SearchMediaRow(
-                            title: artist.name,
-                            subtitle: artist.aliases.first,
-                            artworkURL: artist.artworkURL,
-                            circular: true
-                        )
-                    }
-                    .musicMatchedTransitionSource(for: MusicRoute.artist(artist.id))
-                }
-            case .playlists:
-                ForEach(playlists) { playlist in
-                    NavigationLink(value: MusicRoute.playlist(playlist)) {
-                        SearchMediaRow(
-                            title: playlist.name,
-                            subtitle: L10n.format("ui.common.song_count", playlist.trackCount),
-                            artworkURL: playlist.artworkURL,
-                            circular: false
-                        )
-                    }
-                    .musicMatchedTransitionSource(for: MusicRoute.playlist(playlist))
-                }
-            case .podcasts:
-                ForEach(podcasts) { podcast in
-                    NavigationLink(
-                        value: MusicRoute.podcast(podcast)
-                    ) {
-                        PodcastListRow(podcast: podcast)
-                    }
-                }
+                .textCase(nil)
             }
         }
         .listStyle(.plain)
     }
 
+    private func saveHistory(_ items: [SearchItem]) {
+        var all = history
+        all[historyKey] = items
+        if let data = try? JSONEncoder().encode(all) { historyData = data }
+    }
+
+    private func remember(_ item: SearchItem) {
+        let others = (history[historyKey] ?? []).filter { $0.id != item.id }
+        saveHistory([item] + others.prefix(29))
+    }
+
+    private func submit(_ text: String) {
+        let text = normalizedLibrarySearchQuery(text)
+        guard !text.isEmpty else { return }
+        query = text
+        submitted = text
+        kind = nil
+        focused = false
+        if link == nil { remember(.keyword(text)) }
+    }
+
     @ViewBuilder
-    private func linkResult(for link: NeteaseMusicLink) -> some View {
-        switch link {
-        case .song:
-            List {
-                if phase == .loading {
-                    HStack {
-                        Spacer()
-                        ProgressView("ui.search.reading_song_link")
-                        Spacer()
-                    }
-                } else if let linkedSong {
-                    Section("ui.search.section.linked_song") {
-                        NavigationLink(
-                            value: MusicRoute.song(linkedSong)
-                        ) {
-                            TrackRowView(
-                                song: linkedSong,
-                                showsArtwork: true
-                            )
-                        }
-                        .musicMatchedTransitionSource(
-                            for: MusicRoute.song(linkedSong)
-                        )
-                        .songSwipeActions(linkedSong)
-                    }
-                }
+    private func itemRow(_ item: SearchItem, _ queue: [Song]) -> some View {
+        switch item {
+        case .keyword(let text):
+            Button { submit(text) } label: {
+                Label(text, systemImage: "magnifyingglass")
+                    .frame(maxWidth: .infinity, alignment: .leading).contentShape(.rect)
             }
-            .listStyle(.plain)
-
-        case .listenTogether(let invitation):
-            ContentUnavailableView {
-                Label("ui.listen_together.invitation", systemImage: "person.2.wave.2")
-            } description: {
-                Text("ui.search.listen_together_link_recognized")
-            } actions: {
-                Button("ui.clipboard.view_invitation") {
-                    presentedListenTogetherLink = invitation
-                }
-                .buttonStyle(.borderedProminent)
+            .buttonStyle(.plain)
+        case .song(let song):
+            TrackRowView(song: song, showsArtwork: true,
+                         subtitleOverride: L10n.string("ui.common.song") + " · " + song.artistText) {
+                remember(item)
+                Task { await player.play(song, in: queue) }
             }
+            .songSwipeActions(song)
+        case .artist(let artist):
+            mediaRow(item, route: .artist(artist.id), artwork: artist.artworkURL,
+                     type: "ui.common.artist", circular: true)
+        case .album(let album):
+            mediaRow(item, route: .album(album), artwork: album.artworkURL,
+                     type: "ui.common.album", detail: album.artistText)
+        case .playlist(let playlist):
+            mediaRow(item, route: .playlist(playlist), artwork: playlist.artworkURL,
+                     type: "ui.common.playlist", detail: playlist.creator?.nickname)
+        case .podcast(let podcast):
+            mediaRow(item, route: .podcast(podcast), artwork: podcast.artworkURL,
+                     type: "ui.common.podcast", detail: podcast.host?.nickname)
         }
     }
 
-    private var trimmedQuery: String {
-        query.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private var resultIsEmpty: Bool {
-        switch scope {
-        case .songs: songs.isEmpty
-        case .albums: albums.isEmpty
-        case .artists: artists.isEmpty
-        case .playlists: playlists.isEmpty
-        case .podcasts: podcasts.isEmpty
-        }
-    }
-
-    private func search(_ request: SearchRequest) async {
-        let keywords = request.query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !keywords.isEmpty else {
-            clearResults()
-            resultCache.clear()
-            recognizedLink = nil
-            linkedSong = nil
-            phase = .loaded
-            completedRequest = request
-            return
-        }
-
-        if let link = NeteaseMusicLinkParser.parse(keywords) {
-            await resolve(link, for: request)
-            return
-        }
-
-        recognizedLink = nil
-        linkedSong = nil
-        if let cached = resultCache.value(for: keywords, kind: request.kind) {
-            apply(cached)
-            phase = .loaded
-            completedRequest = request
-            return
-        }
-        phase = .loading
-        try? await Task.sleep(for: .milliseconds(350))
-        guard !Task.isCancelled else { return }
-
-        do {
-            let result = try await api.search(keywords, kind: request.kind)
-            guard !Task.isCancelled else { return }
-            apply(result)
-
-            if request.kind == .songs, !songs.isEmpty {
-                let details = try? await api.songDetails(ids: songs.map(\.id))
-                guard !Task.isCancelled else { return }
-                if let details, !details.isEmpty {
-                    songs = details
+    private func mediaRow(_ item: SearchItem, route: MusicRoute, artwork: URL?,
+                          type: String, detail: String? = nil, circular: Bool = false) -> some View {
+        Button {
+            remember(item)
+            openRoute(route)
+        } label: {
+            HStack(spacing: 12) {
+                ArtworkImage(url: artwork, cornerRadius: circular ? 24 : 6,
+                             placeholderSymbol: circular ? "music.microphone" : "music.note")
+                    .frame(width: 48, height: 48)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(item.title).lineLimit(1)
+                    Text([L10n.string(type), detail].compactMap { $0 }.joined(separator: " · "))
+                        .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
                 }
+                Spacer()
+                Image(systemName: "chevron.right").font(.footnote.bold()).foregroundStyle(.tertiary)
             }
-            resultCache.insert(
-                SearchPayload(songs: songs, albums: albums, artists: artists, playlists: playlists, podcasts: podcasts),
-                for: keywords,
-                kind: request.kind
-            )
-            phase = .loaded
-            completedRequest = request
-        } catch is CancellationError {
-            return
-        } catch {
-            phase = .failed(error.localizedDescription)
+            .contentShape(.rect)
         }
-    }
-
-    private func apply(_ result: SearchPayload) {
-        songs = result.songs ?? []
-        albums = result.albums ?? []
-        artists = result.artists ?? []
-        playlists = result.playlists ?? []
-        podcasts = result.podcasts ?? []
-    }
-
-    private func resolve(
-        _ link: NeteaseMusicLink,
-        for request: SearchRequest
-    ) async {
-        recognizedLink = link
-        linkedSong = nil
-        clearResults()
-
-        switch link {
-        case .song(let id):
-            phase = .loading
-            do {
-                let details = try await api.songDetails(ids: [id])
-                try Task.checkCancellation()
-                guard let song = details.first else {
-                    phase = .failed(
-                        L10n.string("ui.clipboard.error.song_not_found")
-                    )
-                    return
-                }
-                linkedSong = song
-                phase = .loaded
-                completedRequest = request
-            } catch is CancellationError {
-                return
-            } catch {
-                phase = .failed(error.localizedDescription)
-            }
-
-        case .listenTogether:
-            phase = .loaded
-            completedRequest = request
-        }
-    }
-
-    private func clearResults() {
-        songs = []
-        albums = []
-        artists = []
-        playlists = []
-        podcasts = []
+        .buttonStyle(.plain)
+        .musicMatchedTransitionSource(for: route)
     }
 }
 
-private struct SearchRequest: Hashable {
+struct SearchInput: Hashable {
     let query: String
-    let kind: SearchKind
-}
-
-private struct SearchMediaRow: View {
-    let title: String
-    let subtitle: String?
-    let artworkURL: URL?
-    let circular: Bool
-
-    var body: some View {
-        HStack(spacing: 12) {
-            ArtworkImage(url: artworkURL, cornerRadius: circular ? 1_000 : 7)
-                .frame(width: 54, height: 54)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .lineLimit(1)
-                if let subtitle, !subtitle.isEmpty {
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-            }
-        }
-    }
+    let preview: Bool
+    let library: Bool
+    let kinds: [SearchKind]
+    let suggestions: Bool
+    let link: NeteaseMusicLink?
 }

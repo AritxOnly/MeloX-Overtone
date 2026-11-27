@@ -39,6 +39,18 @@ struct NeteaseConversationView: View {
         }
         .navigationTitle(contact.displayName)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if contact.id > 0 {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink(value: AccountProfile(
+                        userID: contact.id, nickname: contact.nickname, avatarURLString: contact.avatarURLString
+                    )) {
+                        Label("ui.account.profile", systemImage: "person.crop.circle")
+                    }
+                    .tint(.primary)
+                }
+            }
+        }
         .safeAreaInset(edge: .bottom) {
             composer
         }

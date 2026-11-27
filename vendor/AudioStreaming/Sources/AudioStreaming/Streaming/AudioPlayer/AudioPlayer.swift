@@ -34,6 +34,10 @@ open class AudioPlayer {
         set { rateNode.rate = newValue }
     }
 
+    public var readingEntryID: AudioEntryId? {
+        playerContext.entriesLock.withLock { playerContext.audioReadingEntry?.id }
+    }
+
     /// The player's current state.
     public var state: AudioPlayerState {
         playerContext.state.value
@@ -154,7 +158,7 @@ open class AudioPlayer {
 
     var entriesQueue: PlayerQueueEntries
 
-    public init(configuration: AudioPlayerConfiguration = .default, outputFormat: AVAudioFormat? = nil) {
+    public init(configuration: AudioPlayerConfiguration = .default, outputFormat: AVAudioFormat? = nil, responseCache: URLCache? = nil) {
         if let outputFormat { self.outputAudioFormat = outputFormat }
         self.configuration = configuration.normalizeValues()
         let engine = AVAudioEngine()
@@ -166,8 +170,10 @@ open class AudioPlayer {
         serializationQueue = DispatchQueue(label: "streaming.core.queue", qos: .userInitiated)
         sourceQueue = DispatchQueue(label: "source.queue", qos: .default)
 
+        let networkConfiguration = URLSessionConfiguration.networkingConfiguration
+        networkConfiguration.urlCache = responseCache
         entryProvider = AudioEntryProvider(
-            networkingClient: NetworkingClient(),
+            networkingClient: NetworkingClient(configuration: networkConfiguration),
             underlyingQueue: sourceQueue,
             outputAudioFormat: outputAudioFormat
         )
@@ -284,6 +290,18 @@ open class AudioPlayer {
     /// - Parameter url: A `URL` specifying the audio content to be played.
     public func queue(url: URL) {
         queue(url: url, headers: [:])
+    }
+
+    /// Returns a token so clients can distinguish successive entries with the same URL.
+    public func enqueue(url: URL) -> AudioEntryId {
+        let entry = entryProvider.provideAudioEntry(url: url)
+        queue(audioEntry: entry)
+        return entry.id
+    }
+
+    /// Once decoding has started, removing the entry also requires discarding its PCM.
+    public func removeUpcoming(_ id: AudioEntryId) -> Bool {
+        entriesQueue.removeUpcoming(id)
     }
 
     /// Queues the specified URLs
@@ -695,7 +713,7 @@ open class AudioPlayer {
             if entriesQueue.count(for: .upcoming) > 0 {
                 let entry = entriesQueue.dequeue(type: .upcoming)
                 let shouldStartPlaying = playerContext.audioPlayingEntry == nil
-                playerContext.setInternalState(to: .waitingForData)
+                if shouldStartPlaying { playerContext.setInternalState(to: .waitingForData) }
                 setCurrentReading(entry: entry, startPlaying: shouldStartPlaying, shouldClearQueue: false)
             } else if playerContext.audioPlayingEntry == nil {
                 if playerContext.internalState != .stopped {
@@ -800,7 +818,12 @@ open class AudioPlayer {
                 }
             }
             if !isPlayingSameItemProbablySeek {
-                playerContext.setInternalState(to: .waitingForData)
+                // Reading ahead can leave the successor ready in the same PCM ring.
+                // Keep the playing state across that boundary.
+                let buffered = rendererContext.lock.withLock { rendererContext.bufferContext.frameUsedCount }
+                if entry == nil || Double(buffered) < rendererContext.framesRequiredToStartPlaying {
+                    playerContext.setInternalState(to: .waitingForData)
+                }
 
                 asyncOnMain { [weak self] in
                     guard let self = self else { return }

@@ -23,7 +23,7 @@ struct DailySongsView: View {
                 List {
                     if !songs.isEmpty {
                         SongListPlaybackActions { shuffled in
-                            Task { await player.playAll(shuffled ? songs.shuffled() : songs) }
+                            Task { await player.playAll(songs, shuffled: shuffled) }
                         }
                     }
                     ForEach(songs) { song in

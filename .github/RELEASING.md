@@ -4,6 +4,23 @@
 
 ## English
 
+### iOS signing
+
+Xcode Run and `bash build_ios_unsigned.sh` use the personal app ID `com.aritxonly.MeloX`. The app and widget share `group.com.aritxonly.MeloX`. When signing the unsigned IPA yourself, enable that group in both profiles.
+
+For TestFlight, select the MeloX scheme in Xcode and choose Product → Archive. Release uses Deadliner's team (`6Z4232N2L9`) and pins the three App Store profile UUIDs. Install those profiles and their matching Apple Distribution identities on the signing Mac. In Organizer choose Distribute App → App Store Connect. The identifiers are:
+
+- App: `top.aritxonly.overtone`
+- Lyrics widget: `top.aritxonly.overtone.lyricswidget`
+- Watch app: `top.aritxonly.overtone.watchkitapp`
+- App Group for the app and widget: `group.top.aritxonly.overtone`
+
+```sh
+python3 Tools/archive_testflight.py App.mobileprovision Lyrics.mobileprovision Watch.mobileprovision
+```
+
+As an alternative to Product → Archive, the command above matches the files to their targets and archives with their team and profile UUIDs. Open the resulting archive in Organizer to distribute it through App Store Connect.
+
 ### Release Notes
 
 `RELEASE_NOTES.md` always contains both platform sections:
@@ -31,6 +48,20 @@ GitHub Actions produces `MeloX-Overtone-macOS-Apple-Silicon.dmg` and `MeloX-Over
 macOS DMGs distributed through the cloud drive are built locally with `Tools/MacRelease/build_macos_release.py`. Apple silicon (`arm64`) and Intel (`x86_64`) are built, signed, and notarized separately. The website may label these downloads as notarized only after the tool completes Developer ID signing, Apple notarization, ticket stapling, and Gatekeeper verification for both DMGs.
 
 ## 简体中文
+
+### iOS 签名
+
+Xcode 本地运行和 `bash build_ios_unsigned.sh` 均使用个人主包名 `com.aritxonly.MeloX`。主 App 和歌词组件共用 `group.com.aritxonly.MeloX`。给 unsigned IPA 自签时，请在这两个 target 的签名配置中启用该组。
+
+在 Xcode 选择 MeloX scheme，点击 Product → Archive 即可使用 Release 配置。该配置绑定 Deadliner 团队（`6Z4232N2L9`）的三份 App Store 描述文件 UUID。主 App 为 `top.aritxonly.overtone`，歌词组件为 `top.aritxonly.overtone.lyricswidget`，Watch 为 `top.aritxonly.overtone.watchkitapp`。主 App 和歌词组件均需绑定 `group.top.aritxonly.overtone`。
+
+在签名所用的 Mac 上将描述文件导入 Xcode，确认钥匙串中有各描述文件对应的 Apple Distribution 证书和私钥。也可以用命令行归档：
+
+```sh
+python3 Tools/archive_testflight.py App.mobileprovision Lyrics.mobileprovision Watch.mobileprovision
+```
+
+脚本按包名匹配三个 target，并使用描述文件里的团队和 UUID 归档。归档完成后，可在 Xcode Organizer 中选择 App Store Connect 分发。
 
 ### 更新日志
 

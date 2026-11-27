@@ -11,9 +11,7 @@ struct QueueView: View {
                 TrackRowView(song: song, showsArtwork: true, representsCurrentEntry: index == player.currentIndex)
             }
             .buttonStyle(.plain)
-            .songSwipeActions(song, removal: index == player.currentIndex ? .none : .action("ui.player.remove_from_queue") {
-                player.removeQueuedSong(at: index, matching: song.id)
-            }, next: { Task { await player.promoteQueuedSong(at: index, matching: song) } })
+            .contextMenu { QueueEntryActions(song: song, index: index) }
         }
         .listStyle(.plain)
         .navigationTitle("ui.player.up_next")
