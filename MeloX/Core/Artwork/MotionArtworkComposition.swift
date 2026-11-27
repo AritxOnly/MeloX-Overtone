@@ -2,11 +2,12 @@ import AVFoundation
 import CoreImage
 
 nonisolated enum MotionArtworkComposition {
-    static func frame(_ source: CIImage, size: CGSize, forLockScreen: Bool = false) -> CIImage {
+    static func frame(_ source: CIImage, size: CGSize, topInset: CGFloat = 0, forLockScreen: Bool = false) -> CIImage {
         let bounds = CGRect(origin: .zero, size: size)
         let extent = source.extent
         let sx = size.width / extent.width
-        let sy = size.height / extent.height
+        let top = bounds.maxY - topInset
+        let sy = top / extent.height
         // A square master can fill the system's 3:4 canvas by trimming one
         // eighth from either side. Wider masters keep their subject and use the fade.
         let fillTallVariant = forLockScreen && size.height > size.width && sy >= sx && sx / sy >= 0.75
@@ -16,12 +17,12 @@ nonisolated enum MotionArtworkComposition {
         let sharp = source.transformed(by: CGAffineTransform(
             a: scale, b: 0, c: 0, d: scale,
             tx: bounds.midX - extent.midX * scale,
-            ty: bounds.maxY - extent.maxY * scale
+            ty: top - extent.maxY * scale
         ))
         let art = sharp.extent
         let spaceBelow = max(0, art.minY)
         let spaceBeside = max(0, art.minX)
-        guard max(spaceBelow, spaceBeside) > 1 else { return sharp.cropped(to: bounds) }
+        guard max(topInset, spaceBelow, spaceBeside) > 1 else { return sharp.cropped(to: bounds) }
 
         // Extend edge pixels before blurring. Both layers then sample the same
         // part of the frame throughout the transition, including across its edge.
@@ -50,20 +51,27 @@ nonisolated enum MotionArtworkComposition {
             ])!.outputImage!
         }
 
-        let mask: CIImage
+        var mask: CIImage
         if spaceBelow > 1 {
             // Match the album header: the lower half of the art dissolves into
-            // its own colors; the top remains sharp all the way to the status bar.
+            // its own colors; the top remains sharp at the artwork origin.
             let fade = min(art.height * 0.5, spaceBelow * 1.5)
             mask = blendMask(from: CGPoint(x: 0, y: art.minY),
                              to: CGPoint(x: 0, y: art.minY + fade))
-        } else {
+        } else if spaceBeside > 1 {
             let fade = min(art.width * 0.25, spaceBeside)
             let left = blendMask(from: CGPoint(x: art.minX, y: 0),
                                  to: CGPoint(x: art.minX + fade, y: 0))
             let right = blendMask(from: CGPoint(x: art.maxX, y: 0),
                                   to: CGPoint(x: art.maxX - fade, y: 0))
             mask = left.applyingFilter("CIMinimumCompositing", parameters: [kCIInputBackgroundImageKey: right])
+        } else {
+            mask = CIImage(color: .white)
+        }
+        if topInset > 0 {
+            let upperEdge = blendMask(from: CGPoint(x: 0, y: bounds.maxY),
+                                      to: CGPoint(x: 0, y: art.maxY))
+            mask = mask.applyingFilter("CIMinimumCompositing", parameters: [kCIInputBackgroundImageKey: upperEdge])
         }
         return extended.applyingFilter("CIBlendWithMask", parameters: [
             kCIInputBackgroundImageKey: soft, kCIInputMaskImageKey: mask

@@ -124,7 +124,11 @@ struct NowPlayingMotionArtwork: UIViewRepresentable {
             guard let lastFrame, let renderer, let buffer = commands?.makeCommandBuffer(),
                   let drawable = currentDrawable else { return }
             let size = drawableSize
-            let image = MotionArtworkComposition.frame(lastFrame, size: size)
+            guard bounds.height > 15 else { return }
+            // The surface extends under the status bar. Convert the 15-point
+            // inset to drawable pixels independently of screen scale or resolution.
+            let topInset = 15 * size.height / bounds.height
+            let image = MotionArtworkComposition.frame(lastFrame, size: size, topInset: topInset)
             renderer.render(image, to: drawable.texture, commandBuffer: buffer,
                             bounds: CGRect(origin: .zero, size: size), colorSpace: colorSpace)
             buffer.present(drawable)
