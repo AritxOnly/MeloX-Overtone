@@ -5,7 +5,7 @@ struct SongCommentThread: View {
     @Environment(NeteaseAPI.self) private var api
     @Environment(\.colorScheme) private var colorScheme
 
-    let songID: Int
+    let threadID: String
     let root: SongComment
     let featured: Bool
 
@@ -108,8 +108,8 @@ struct SongCommentThread: View {
         loading = true
         defer { loading = false }
         do {
-            let page = try await api.songCommentReplies(
-                songID: songID, parentCommentID: root.id, time: cursor, limit: Self.batchSize
+            let page = try await api.resourceCommentReplies(
+                threadID: threadID, parentCommentID: root.id, time: cursor, limit: Self.batchSize
             ).data
             try Task.checkCancellation()
             var seen = Set(replies.map(\.id))

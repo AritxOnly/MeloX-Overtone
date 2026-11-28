@@ -331,10 +331,15 @@ final class NeteaseAPI {
         page: Int,
         limit: Int = 20
     ) async throws -> SongCommentsResponse {
+        try await resourceComments(threadID: "R_SO_4_\(id)", sort: sort, cursor: cursor, page: page, limit: limit)
+    }
+
+    func resourceComments(threadID: String, sort: SongCommentSort, cursor: String, page: Int,
+                          limit: Int = 20) async throws -> SongCommentsResponse {
         let response: SongCommentsResponse = try await client.eapi(
             "/api/v2/resource/comments",
             data: [
-                "threadId": "R_SO_4_\(id)",
+                "threadId": threadID,
                 "sortType": sort.rawValue,
                 "cursor": cursor,
                 "pageNo": page,
@@ -352,10 +357,16 @@ final class NeteaseAPI {
         time: Int64 = -1,
         limit: Int = 10
     ) async throws -> SongCommentFloorResponse {
+        try await resourceCommentReplies(threadID: "R_SO_4_\(songID)", parentCommentID: parentCommentID,
+                                         time: time, limit: limit)
+    }
+
+    func resourceCommentReplies(threadID: String, parentCommentID: Int64, time: Int64,
+                                limit: Int = 20) async throws -> SongCommentFloorResponse {
         let path = "/api/resource/comment/floor/get"
         let data: [String: Any] = [
             "parentCommentId": parentCommentID,
-            "threadId": "R_SO_4_\(songID)",
+            "threadId": threadID,
             "time": time,
             "limit": limit,
         ]

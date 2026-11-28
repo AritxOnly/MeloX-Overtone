@@ -209,6 +209,7 @@ struct SongCommentFloorResponse: Decodable {
 }
 
 struct SongCommentFloorData: Decodable {
+    let ownerComment: SongComment?
     let time: Int64?
     let bestComments: [SongComment]
     let comments: [SongComment]
@@ -216,12 +217,13 @@ struct SongCommentFloorData: Decodable {
     let hasMore: Bool
 
     enum CodingKeys: String, CodingKey {
-        case time, bestComments, comments, totalCount, hasMore
+        case ownerComment, time, bestComments, comments, totalCount, hasMore
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         time = try container.decodeIfPresent(Int64.self, forKey: .time)
+        ownerComment = try container.decodeIfPresent(SongComment.self, forKey: .ownerComment)
         bestComments = try container.decodeIfPresent([SongComment].self, forKey: .bestComments) ?? []
         comments = try container.decodeIfPresent([SongComment].self, forKey: .comments) ?? []
         totalCount = try container.decodeIfPresent(Int.self, forKey: .totalCount) ?? comments.count

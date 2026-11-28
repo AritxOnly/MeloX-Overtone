@@ -26,6 +26,7 @@ struct NeteaseConversationView: View {
                 }
                 .padding()
             }
+            .scrollEdgeEffectStyle(.soft, for: .top)
             .defaultScrollAnchor(.bottom)
             .refreshable {
                 await load()
@@ -37,22 +38,20 @@ struct NeteaseConversationView: View {
                 }
             }
         }
+        .background { ConversationBarTransition() }
         .navigationTitle(contact.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if contact.id > 0 {
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink(value: AccountProfile(
-                        userID: contact.id, nickname: contact.nickname, avatarURLString: contact.avatarURLString
-                    )) {
-                        Label("ui.account.profile", systemImage: "person.crop.circle")
-                    }
-                    .tint(.primary)
+            ToolbarItem(placement: .principal) {
+                contactLink {
+                    ArtworkImage(url: contact.artworkURL, cornerRadius: 22, placeholderSymbol: "person.fill")
+                        .frame(width: 44, height: 44)
+                        .clipShape(Circle())
+                        .scaleEffect(1.15, anchor: .top)
+                        .offset(y: 3)
                 }
+                .accessibilityHidden(true)
             }
-        }
-        .safeAreaInset(edge: .bottom) {
-            composer
         }
         .overlay {
             switch phase {
@@ -72,6 +71,26 @@ struct NeteaseConversationView: View {
                 EmptyView()
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            contactLink {
+                HStack(spacing: 5) {
+                    Text(contact.displayName)
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
+                    if contact.id > 0 {
+                        Image(systemName: "chevron.right")
+                            .font(.caption2.bold()).foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.horizontal, 12).padding(.vertical, 5)
+                .glassEffect(.regular.interactive(), in: .capsule)
+                .padding(.horizontal, 44)
+                .frame(minHeight: 44, alignment: .top)
+                .offset(y: -6)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) { composer }
         .task(id: contact.id) {
             await load()
         }
@@ -82,7 +101,8 @@ struct NeteaseConversationView: View {
                 set: { if !$0 { sendError = nil } }
             )
         ) {
-            Button("ui.common.ok", role: .cancel) {
+            Button("ui.common.retry") { send() }
+            Button("ui.common.cancel", role: .cancel) {
                 sendError = nil
             }
         } message: {
@@ -90,33 +110,43 @@ struct NeteaseConversationView: View {
         }
     }
 
+    @ViewBuilder
+    private func contactLink<Label: View>(@ViewBuilder label: () -> Label) -> some View {
+        if contact.id > 0 {
+            NavigationLink(value: AccountProfile(userID: contact.id, nickname: contact.nickname,
+                                                 avatarURLString: contact.avatarURLString), label: label)
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.format("ui.account.profile_for_user", contact.displayName))
+        } else {
+            label()
+        }
+    }
+
     private var composer: some View {
-        HStack(alignment: .bottom, spacing: 10) {
+        HStack(alignment: .bottom, spacing: 4) {
             TextField("ui.messages.input_private_message", text: $draft, axis: .vertical)
                 .lineLimit(1...5)
-                .textFieldStyle(.roundedBorder)
+                .textFieldStyle(.plain)
+                .padding(.leading, 16)
+                .padding(.vertical, 11)
+                .disabled(isSending)
                 .submitLabel(.send)
-                .onSubmit {
-                    send()
-                }
+                .onSubmit(send)
 
-            Button {
-                send()
-            } label: {
-                if isSending {
-                    ProgressView()
-                        .frame(width: 32, height: 32)
-                } else {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.title)
+            Button(action: send) {
+                Group {
+                    if isSending { ProgressView() }
+                    else { Image(systemName: "arrow.up.circle.fill").font(.title) }
                 }
+                .frame(width: 44, height: 44)
             }
             .disabled(trimmedDraft.isEmpty || isSending)
             .accessibilityLabel("ui.common.send")
         }
-        .padding(.horizontal)
-        .padding(.vertical, 10)
-        .background(.bar)
+        .padding(.trailing, 2)
+        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 24))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
     }
 
     private func messageRow(_ message: NeteasePrivateMessage) -> some View {
@@ -151,7 +181,7 @@ struct NeteaseConversationView: View {
         isOutgoing: Bool
     ) -> some View {
         if let resource = payload.resource {
-            NavigationLink(value: musicRoute(for: resource)) {
+            NavigationLink(value: resource.messageRoute) {
                 VStack(alignment: .leading, spacing: 7) {
                     if !payload.text.isEmpty {
                         Text(payload.text)
@@ -215,19 +245,6 @@ struct NeteaseConversationView: View {
             Date.FormatStyle(date: .abbreviated, time: .shortened)
                 .locale(L10n.locale)
         )
-    }
-
-    private func musicRoute(
-        for resource: NeteaseShareResource
-    ) -> MusicRoute {
-        switch resource {
-        case .song(let song):
-            .song(song)
-        case .playlist(let playlist):
-            .playlist(playlist)
-        case .album(let album):
-            .album(album)
-        }
     }
 
     private func artworkURL(for resource: NeteaseShareResource) -> URL? {
@@ -305,6 +322,83 @@ struct NeteaseConversationView: View {
             } catch {
                 sendError = error.localizedDescription
             }
+        }
+    }
+}
+
+/// Keep the tab bar and its player accessory on the same push or pop transition.
+private struct ConversationBarTransition: UIViewControllerRepresentable {
+    @Environment(\.setTabViewBottomAccessorySuppressed) private var suppressPlayer
+
+    func makeUIViewController(context: Context) -> Controller { Controller() }
+
+    func updateUIViewController(_ controller: Controller, context: Context) {
+        controller.suppressPlayer = suppressPlayer
+    }
+
+    final class Controller: UIViewController {
+        var suppressPlayer = SetTabViewBottomAccessorySuppressedAction()
+
+        override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            updateBars(hidden: true, animated: animated)
+        }
+
+        override func viewWillDisappear(_ animated: Bool) {
+            super.viewWillDisappear(animated)
+            updateBars(hidden: false, animated: animated)
+        }
+
+        private func updateBars(hidden: Bool, animated: Bool) {
+            guard let tabs = tabBarController else { return }
+            let coordinator = transitionCoordinator
+            let duration = coordinator?.transitionDuration ?? 0.3
+            func settle(hidden: Bool) {
+                tabs.setTabBarHidden(hidden, animated: false)
+                suppressPlayer(hidden)
+                tabs.tabBar.alpha = 1
+                tabs.bottomAccessory?.contentView.alpha = 1
+            }
+            guard animated || coordinator != nil, !UIAccessibility.isReduceMotionEnabled else {
+                settle(hidden: hidden)
+                return
+            }
+            if !hidden {
+                UIView.performWithoutAnimation {
+                    tabs.setTabBarHidden(false, animated: false)
+                    tabs.tabBar.alpha = 0
+                    tabs.view.layoutIfNeeded()
+                }
+                withAnimation(.easeInOut(duration: duration)) { suppressPlayer(false) }
+            }
+            let fade = {
+                tabs.tabBar.alpha = hidden ? 0 : 1
+                tabs.bottomAccessory?.contentView.alpha = hidden ? 0 : 1
+            }
+            if let coordinator,
+               coordinator.animate(alongsideTransition: { _ in fade() }, completion: { context in
+                   settle(hidden: context.isCancelled ? !hidden : hidden)
+               }) {
+                return
+            }
+            UIView.animate(withDuration: duration, delay: 0, options: [.beginFromCurrentState, .allowUserInteraction]) {
+                fade()
+            } completion: { finished in
+                if finished { settle(hidden: hidden) }
+            }
+        }
+    }
+}
+
+extension NeteaseShareResource {
+    var messageRoute: MusicRoute {
+        switch self {
+        case .song(let song):
+            .song(song)
+        case .playlist(let playlist):
+            .playlist(playlist)
+        case .album(let album):
+            .album(album)
         }
     }
 }

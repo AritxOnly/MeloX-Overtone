@@ -2272,3 +2272,27 @@
 
 "ui.comments.replying_to" = "回复 %@";
 "ui.comments.tap_reply" = "轻点回复";
+"ui.messages.feed.followers" = "新增粉丝";
+"ui.messages.feed.comments" = "评论";
+"ui.messages.feed.mentions" = "@提及";
+"ui.messages.feed.notices" = "赞和通知";
+"ui.messages.followed_you" = "关注了你";
+"ui.messages.interactions" = "评论和 @提及";
+"ui.messages.load_more" = "载入更多";
+"ui.messages.no_activity" = "暂无动态";
+"ui.messages.following_user" = "已关注";
+"ui.messages.follow_user" = "关注";
+"ui.messages.reply" = "回复评论";
+"ui.messages.inbox" = "我的消息";
+"ui.messages.search" = "搜索会话";
+"ui.messages.read_all_chats" = "将全部私信标为已读";
+"ui.messages.pin" = "置顶";
+"ui.messages.unpin" = "取消置顶";
+"ui.messages.pinned" = "已置顶";
+"ui.messages.mark_read" = "标为已读";
+"ui.messages.mark_unread" = "标为未读";
+"ui.messages.mark_read_failed" = "无法标为已读";
+"ui.messages.open_event" = "查看原动态";
+"ui.messages.open_all_comments" = "查看全部评论";
+"ui.messages.related_comments" = "相关评论";
+"ui.comments.target_unavailable" = "这条评论已无法定位。";

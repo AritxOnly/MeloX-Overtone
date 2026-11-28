@@ -2,10 +2,20 @@ import Nuke
 import NukeUI
 import SwiftUI
 
+struct CommentDiscussion: Identifiable {
+    let threadID: String
+    let resource: NeteaseShareResource?
+    var commentID: Int64?
+    var parentID: Int64?
+    var originalComment: SongComment?
+    var eventURL: URL?
+    var id: String { "\(threadID):\(commentID ?? 0)" }
+}
+
 struct SongCommentsView: View {
     @Environment(NeteaseAPI.self) private var api
     @Environment(LibraryStore.self) private var library
-    let song: Song
+    let discussion: CommentDiscussion
 
     @State private var sort: SongCommentSort = .popular
     @State private var displayedSort: SongCommentSort?
@@ -27,9 +37,19 @@ struct SongCommentsView: View {
     @State private var deletionError: String?
     @State private var deleting: Set<Int64> = []
 
+    @State private var hydratedSong: Song?
+    @State private var metadataFailed = false
+    private var headerResource: NeteaseShareResource? {
+        hydratedSong.map(NeteaseShareResource.song) ?? discussion.resource
+    }
+
+    @State private var locatedComment: SongComment?
+    @State private var locationError: String?
+    @State private var locating = false
+
     private var visibleComments: [SongComment] {
         let posted = sort == .latest ? edits.posted : []
-        return posted + comments.filter { !edits.deletedIDs.contains($0.id) }
+        return posted + comments.filter { !edits.deletedIDs.contains($0.id) && $0.id != locatedComment?.id }
     }
 
     var body: some View {
@@ -51,6 +71,25 @@ struct SongCommentsView: View {
                         .padding(.top, 8)
                 }
 
+                if let locatedComment, !edits.deletedIDs.contains(locatedComment.id) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("ui.messages.related_comments")
+                            .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        thread(for: locatedComment)
+                    }
+                    .padding(12)
+                    .background(.background, in: .rect(cornerRadius: 14))
+                    .id("notification-comment")
+                    .accessibilityIdentifier("notification-comment-\(locatedComment.id)")
+                } else if locating {
+                    ProgressView("ui.comments.loading")
+                } else if let locationError {
+                    VStack(alignment: .leading) {
+                        Text(locationError).font(.footnote).foregroundStyle(.secondary)
+                        Button("ui.common.retry") { Task { await locateComment() } }
+                    }
+                }
+
                 ForEach(visibleComments) { root in thread(for: root) }
 
                 switch phase {
@@ -65,11 +104,12 @@ struct SongCommentsView: View {
                     if let nextCursor {
                         ProgressView("ui.comments.loading_more")
                             .task(id: nextCursor) { await loadPage(reset: false) }
-                    } else if visibleComments.isEmpty {
+                    } else if visibleComments.isEmpty && locatedComment == nil {
                         ContentUnavailableView("ui.comments.empty", systemImage: "bubble.left")
                     }
                 }
             }
+            .scrollTargetLayout()
             .padding(.horizontal, 16)
             .padding(.bottom, 16)
         }
@@ -97,9 +137,14 @@ struct SongCommentsView: View {
                 await loadPage(reset: true)
             }
         }
+        .task(id: discussion.threadID) { await loadSongMetadata() }
+        .task(id: discussion.id) { await locateComment() }
+        .onChange(of: locatedComment?.id) { _, id in
+            if id != nil { scrollPosition.scrollTo(id: "notification-comment", anchor: .center) }
+        }
         .refreshable { await loadPage(reset: true) }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            SongCommentComposer(songID: song.id, replyTarget: $replyTarget, isSending: $sending) { comment, target in
+            SongCommentComposer(threadID: discussion.threadID, replyTarget: $replyTarget, isSending: $sending) { comment, target in
                 if let target {
                     floorEdits[target.rootID, default: SongCommentEdits()].add(comment)
                     firstPages.removeAll()
@@ -131,9 +176,40 @@ struct SongCommentsView: View {
         )) { Button("ui.common.ok", role: .cancel) {} } message: { Text(deletionError ?? "") }
     }
 
+    private func locateComment() async {
+        guard let id = discussion.commentID, id > 0, !locating else { return }
+        if let original = discussion.originalComment, original.id == id, !original.content.isEmpty {
+            locatedComment = original
+            return
+        }
+        locating = true
+        locationError = nil
+        defer { locating = false }
+        do {
+            let parent = discussion.parentID.flatMap { $0 > 0 ? $0 : nil } ?? id
+            var cursor: Int64 = -1
+            var requested = Set<Int64>()
+            while requested.insert(cursor).inserted {
+                let floor = try await api.resourceCommentReplies(threadID: discussion.threadID, parentCommentID: parent, time: cursor).data
+                try Task.checkCancellation()
+                let candidates = [floor.ownerComment].compactMap { $0 } + floor.bestComments + floor.comments
+                if let match = candidates.first(where: { $0.id == id }) {
+                    locatedComment = match
+                    return
+                }
+                guard floor.hasMore, let next = floor.time else { break }
+                cursor = next
+            }
+            if let match = comments.first(where: { $0.id == id }) { locatedComment = match }
+            else { locationError = L10n.string("ui.comments.target_unavailable") }
+        } catch {
+            if !Task.isCancelled { locationError = error.localizedDescription }
+        }
+    }
+
     private func thread(for root: SongComment) -> some View {
         SongCommentThread(
-            songID: song.id, root: root,
+            threadID: discussion.threadID, root: root,
             featured: sort == .popular && root.id == comments.first?.id,
             avatarPrefetcher: avatarPrefetcher,
             deletedIDs: edits.deletedIDs,
@@ -151,7 +227,7 @@ struct SongCommentsView: View {
               deleting.insert(comment.id).inserted else { return }
         defer { deleting.remove(comment.id) }
         do {
-            try await api.deleteSongComment(comment.id, songID: song.id)
+            try await api.deleteResourceComment(comment.id, threadID: discussion.threadID)
             if replyTarget?.comment.id == comment.id || replyTarget?.rootID == comment.id { replyTarget = nil }
             edits.delete(comment.id)
             if let floor = floorEdits.keys.first(where: { floorEdits[$0]?.posted.contains(comment) == true }) {
@@ -164,8 +240,25 @@ struct SongCommentsView: View {
         }
     }
 
+    private func loadSongMetadata() async {
+        let prefix = "R_SO_4_"
+        guard discussion.threadID.hasPrefix(prefix),
+              let id = Int(discussion.threadID.dropFirst(prefix.count)), id > 0 else { return }
+        if case .song(let song) = headerResource, song.id == id, !song.artists.isEmpty,
+           !song.name.isEmpty, song.name != L10n.string("ui.metadata.unknown_song"), song.album?.artworkURL != nil { return }
+        metadataFailed = false
+        do {
+            let songs = try await api.songDetails(ids: [id])
+            try Task.checkCancellation()
+            guard let song = songs.first(where: { $0.id == id }) else { throw APIError.invalidResponse }
+            hydratedSong = song
+        } catch {
+            if !Task.isCancelled { metadataFailed = true }
+        }
+    }
+
     private var songHero: some View {
-        LazyImage(url: song.album?.artworkURL) { state in
+        LazyImage(url: headerResource?.artworkURL ?? discussion.resource?.artworkURL) { state in
             let artwork = state.image
             HStack(alignment: .bottom, spacing: 16) {
                 Group {
@@ -183,12 +276,19 @@ struct SongCommentsView: View {
                 .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(song.name)
+                    Text(headerResource?.title ?? L10n.string("ui.comments.title"))
                         .font(.system(.title, design: .serif, weight: .semibold))
                         .accessibilityAddTraits(.isHeader)
-                    Text(song.artistText)
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.85))
+                    if let subtitle = headerResource?.subtitle {
+                        Text(subtitle).font(.subheadline).foregroundStyle(.white.opacity(0.85))
+                    }
+                    if metadataFailed {
+                        Button("ui.common.retry") { Task { await loadSongMetadata() } }
+                            .font(.subheadline)
+                    }
+                    if let url = discussion.eventURL {
+                        Link("ui.messages.open_event", destination: url).font(.subheadline)
+                    }
                 }
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -227,7 +327,7 @@ struct SongCommentsView: View {
         let page = reset ? 1 : nextPage
         if reset { phase = .loading }
         do {
-            let result = try await api.songComments(id: song.id, sort: requestedSort, cursor: cursor, page: page).data
+            let result = try await api.resourceComments(threadID: discussion.threadID, sort: requestedSort, cursor: cursor, page: page).data
             try Task.checkCancellation()
             guard generation == request, sort == requestedSort else { return }
             if reset { firstPages[requestedSort] = result }
@@ -253,7 +353,7 @@ struct SongCommentsView: View {
 }
 
 private struct SongCommentComposer: View {
-    let songID: Int
+    let threadID: String
     @Binding var replyTarget: CommentReplyTarget?
     @Binding var isSending: Bool
     let onPosted: (SongComment, CommentReplyTarget?) async -> Void
@@ -350,7 +450,7 @@ private struct SongCommentComposer: View {
                 if let current = library.profile { profile = current }
                 else { profile = try await api.accountProfile() }
                 let sentAt = Date()
-                let receipt = try await api.postSongComment(content, songID: songID, replyingTo: target?.comment.id)
+                let receipt = try await api.postResourceComment(content, threadID: threadID, replyingTo: target?.comment.id)
                 let author = SongCommentUser(id: profile.id, nickname: profile.nickname,
                                              avatarURLString: profile.avatarURLString)
                 draft = ""
@@ -371,11 +471,19 @@ struct SongCommentsSheet: View {
     @Environment(\.openMusicRoute) private var openMusicRoute
     @State private var selectedPlaylist: Playlist?
     @Namespace private var navigationNamespace
-    let song: Song
+    let discussion: CommentDiscussion
+
+    init(song: Song) {
+        discussion = CommentDiscussion(threadID: "R_SO_4_\(song.id)", resource: .song(song))
+    }
+
+    init(discussion: CommentDiscussion) {
+        self.discussion = discussion
+    }
 
     var body: some View {
         NavigationStack {
-            SongCommentsView(song: song)
+            SongCommentsView(discussion: discussion)
                 .ignoresSafeArea(.container, edges: .top)
                 .musicDestinations(in: navigationNamespace) { playlist in
                     selectedPlaylist = playlist

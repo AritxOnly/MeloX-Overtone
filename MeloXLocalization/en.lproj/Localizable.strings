@@ -2272,3 +2272,27 @@
 
 "ui.comments.replying_to" = "Reply to %@";
 "ui.comments.tap_reply" = "Tap to reply";
+"ui.messages.feed.followers" = "New Followers";
+"ui.messages.feed.comments" = "Comments";
+"ui.messages.feed.mentions" = "Mentions";
+"ui.messages.feed.notices" = "Likes and Notifications";
+"ui.messages.followed_you" = "Followed you";
+"ui.messages.interactions" = "Comments and Mentions";
+"ui.messages.load_more" = "Load More";
+"ui.messages.no_activity" = "No Activity Yet";
+"ui.messages.following_user" = "Following";
+"ui.messages.follow_user" = "Follow";
+"ui.messages.reply" = "Reply to comment";
+"ui.messages.inbox" = "My Messages";
+"ui.messages.search" = "Search Conversations";
+"ui.messages.read_all_chats" = "Mark All Conversations as Read";
+"ui.messages.pin" = "Pin";
+"ui.messages.unpin" = "Unpin";
+"ui.messages.pinned" = "Pinned";
+"ui.messages.mark_read" = "Mark as Read";
+"ui.messages.mark_unread" = "Mark as Unread";
+"ui.messages.mark_read_failed" = "Could Not Mark as Read";
+"ui.messages.open_event" = "View Original Post";
+"ui.messages.open_all_comments" = "View All Comments";
+"ui.messages.related_comments" = "Related Comments";
+"ui.comments.target_unavailable" = "This comment could not be located.";

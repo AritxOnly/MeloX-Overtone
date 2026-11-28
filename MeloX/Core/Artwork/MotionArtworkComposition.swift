@@ -14,20 +14,25 @@ nonisolated enum MotionArtworkComposition {
         let scale = fillTallVariant ? sy : min(sx, sy)
         // Core Image's origin is at the bottom. Align the artwork's top edge even
         // when the track transform has moved the source outside the first quadrant.
-        let sharp = source.transformed(by: CGAffineTransform(
+        let transform = CGAffineTransform(
             a: scale, b: 0, c: 0, d: scale,
             tx: bounds.midX - extent.midX * scale,
             ty: top - extent.maxY * scale
-        ))
-        let art = sharp.extent
+        )
+        let art = extent.applying(transform)
         let spaceBelow = max(0, art.minY)
         let spaceBeside = max(0, art.minX)
-        guard max(topInset, spaceBelow, spaceBeside) > 1 else { return sharp.cropped(to: bounds) }
+        guard max(topInset, spaceBelow, spaceBeside) > 1 else {
+            return source.transformed(by: transform).cropped(to: bounds)
+        }
+        // Clamp before scaling so fractional sampling near the source boundary
+        // never mixes transparent pixels into an otherwise opaque video.
+        let extended = source.clampedToExtent().transformed(by: transform)
+        let sharp = extended.cropped(to: art)
 
         // Extend edge pixels before blurring. Both layers then sample the same
         // part of the frame throughout the transition, including across its edge.
-        let extended = sharp.clampedToExtent()
-        let backdrop: CIImage
+        var backdrop = sharp
         if spaceBelow > 1 {
             // Reflect the frame at its lower edge so the continuation has depth
             // even on tall phones. Blurring a clamped last row alone leaves stripes.
@@ -35,11 +40,18 @@ nonisolated enum MotionArtworkComposition {
             let reflection = sharp.transformed(by: CGAffineTransform(
                 a: 1, b: 0, c: 0, d: -stretch, tx: 0, ty: art.minY * (1 + stretch)
             ))
-            backdrop = sharp.composited(over: reflection).clampedToExtent()
-        } else {
-            backdrop = extended
+            backdrop = backdrop.composited(over: reflection)
         }
-        let reduced = backdrop.transformed(by: CGAffineTransform(scaleX: 0.25, y: 0.25))
+        if topInset > 0 {
+            // Reflect the image into the margin so its colors continue to vary
+            // vertically instead of stretching the top row into a striped band.
+            let reflection = sharp.transformed(by: CGAffineTransform(
+                a: 1, b: 0, c: 0, d: -1, tx: 0, ty: 2 * art.maxY
+            ))
+            backdrop = backdrop.composited(over: reflection)
+        }
+        let reduced = backdrop.clampedToExtent()
+            .transformed(by: CGAffineTransform(scaleX: 0.25, y: 0.25))
         let soft = reduced
             .applyingGaussianBlur(sigma: min(art.width, art.height) * 0.035)
             .transformed(by: CGAffineTransform(scaleX: 4, y: 4))
@@ -53,8 +65,7 @@ nonisolated enum MotionArtworkComposition {
 
         var mask: CIImage
         if spaceBelow > 1 {
-            // Match the album header: the lower half of the art dissolves into
-            // its own colors; the top remains sharp at the artwork origin.
+            // Match the album header: the lower half dissolves into its own colors.
             let fade = min(art.height * 0.5, spaceBelow * 1.5)
             mask = blendMask(from: CGPoint(x: 0, y: art.minY),
                              to: CGPoint(x: 0, y: art.minY + fade))
@@ -69,9 +80,12 @@ nonisolated enum MotionArtworkComposition {
             mask = CIImage(color: .white)
         }
         if topInset > 0 {
-            let upperEdge = blendMask(from: CGPoint(x: 0, y: bounds.maxY),
-                                      to: CGPoint(x: 0, y: art.maxY))
-            mask = mask.applyingFilter("CIMinimumCompositing", parameters: [kCIInputBackgroundImageKey: upperEdge])
+            // Keep the entire margin soft. Reveal detail gradually *inside*
+            // the frame, where the foreground contains real image pixels.
+            let fade = min(topInset * 1.5, min(art.width, art.height) * 0.2)
+            let upperEdge = blendMask(from: CGPoint(x: 0, y: art.maxY),
+                                      to: CGPoint(x: 0, y: art.maxY - fade))
+            mask = mask.applyingFilter("CIMultiplyCompositing", parameters: [kCIInputBackgroundImageKey: upperEdge])
         }
         return extended.applyingFilter("CIBlendWithMask", parameters: [
             kCIInputBackgroundImageKey: soft, kCIInputMaskImageKey: mask

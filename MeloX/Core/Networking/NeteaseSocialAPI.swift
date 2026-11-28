@@ -2,7 +2,11 @@ import Foundation
 
 extension NeteaseAPI {
     func postSongComment(_ content: String, songID: Int, replyingTo parentID: Int64? = nil) async throws -> SongCommentPostResponse {
-        var data: [String: Any] = ["threadId": "R_SO_4_\(songID)", "content": content]
+        try await postResourceComment(content, threadID: "R_SO_4_\(songID)", replyingTo: parentID)
+    }
+
+    func postResourceComment(_ content: String, threadID: String, replyingTo parentID: Int64?) async throws -> SongCommentPostResponse {
+        var data: [String: Any] = ["threadId": threadID, "content": content]
         if let parentID { data["commentId"] = parentID }
         let response: SongCommentPostResponse = try await client.eapi(
             parentID == nil ? "/api/resource/comments/add" : "/api/resource/comments/reply",
@@ -14,9 +18,13 @@ extension NeteaseAPI {
     }
 
     func deleteSongComment(_ commentID: Int64, songID: Int) async throws {
+        try await deleteResourceComment(commentID, threadID: "R_SO_4_\(songID)")
+    }
+
+    func deleteResourceComment(_ commentID: Int64, threadID: String) async throws {
         let response: APIStatusResponse = try await client.eapi(
             "/api/resource/comments/delete",
-            data: ["threadId": "R_SO_4_\(songID)", "commentId": commentID],
+            data: ["threadId": threadID, "commentId": commentID],
             authenticated: true
         )
         try validate(responseCode: response.code, message: response.message)
@@ -183,6 +191,45 @@ extension NeteaseAPI {
             ],
             authenticated: true
         )
+        try validate(responseCode: response.code, message: response.message)
+    }
+
+    func inboxCounts() async throws -> InboxCounts {
+        let response: InboxCounts = try await socialRequest("/api/pl/count", data: [:])
+        try validate(responseCode: response.code)
+        return response
+    }
+
+    func inboxActivityPage(_ feed: InboxFeed, userID: Int, offset: Int, before: Int64) async throws -> InboxActivityResponse {
+        let path: String
+        var data: [String: Any] = ["limit": 30]
+        switch feed {
+        case .followers:
+            path = "/api/user/getfolloweds/\(userID)"
+            data.merge(["userId": userID, "offset": offset, "time": "0", "getcounts": "true"]) { _, new in new }
+        case .comments:
+            path = "/api/v1/user/comments/\(userID)"
+            data.merge(["uid": userID, "beforeTime": before, "total": "true"]) { _, new in new }
+        case .mentions:
+            path = "/api/forwards/get"
+            data.merge(["offset": offset, "total": "true"]) { _, new in new }
+        case .notices:
+            path = "/api/msg/notices"
+            data["time"] = before
+        }
+        let response: InboxActivityResponse = try await socialRequest(path, data: data)
+        try validate(responseCode: response.code, message: response.message)
+        return response
+    }
+
+    func followInboxUser(_ id: Int) async throws {
+        let response: APIStatusResponse = try await client.weapi("/api/user/follow/\(id)")
+        try validate(responseCode: response.code, message: response.message)
+    }
+
+    func replyToInboxComment(threadID: String, commentID: Int64, text: String) async throws {
+        let response: APIStatusResponse = try await client.eapi("/api/resource/comments/reply",
+            data: ["threadId": threadID, "commentId": commentID, "content": text], authenticated: true)
         try validate(responseCode: response.code, message: response.message)
     }
 

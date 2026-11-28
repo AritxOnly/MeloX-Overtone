@@ -30,15 +30,15 @@ struct NowPlayingView: View {
     @State private var readyMotionSource: ObjectIdentifier?
     @Namespace private var pageArtworkNamespace
 
-    private var visibleMotionSource: MotionArtworkSource? {
-        guard settings.motionArtworkEnabled, page == .artwork, !accessibilityReduceMotion, scenePhase == .active,
+    private var motionSource: MotionArtworkSource? {
+        guard settings.motionArtworkEnabled, !accessibilityReduceMotion,
               let source = player.motionArtwork, source.songID == player.currentSong?.id
         else { return nil }
         return source
     }
 
     private var showsMotion: Bool {
-        guard let source = visibleMotionSource else { return false }
+        guard page == .artwork, let source = motionSource else { return false }
         return readyMotionSource == ObjectIdentifier(source)
     }
 
@@ -57,11 +57,14 @@ struct NowPlayingView: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                if let source = visibleMotionSource {
+                if let source = motionSource, page == .artwork || readyMotionSource == ObjectIdentifier(source) {
                     let id = ObjectIdentifier(source)
-                    NowPlayingMotionArtwork(source: source, isPlaying: player.isPlaying) { ready in
-                        guard visibleMotionSource === source else { return }
-                        readyMotionSource = ready ? id : nil
+                    NowPlayingMotionArtwork(
+                        source: source, isPlaying: player.isPlaying,
+                        isActive: scenePhase == .active && page == .artwork
+                    ) {
+                        guard motionSource === source else { return }
+                        readyMotionSource = id
                     }
                     .id(id)
                     .overlay {
@@ -71,7 +74,7 @@ struct NowPlayingView: View {
                     .ignoresSafeArea()
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
-                    .onDisappear { if readyMotionSource == id { readyMotionSource = nil } }
+                    .opacity(page == .artwork ? 1 : 0)
                 }
 
                 if usesMonochromeLyricsBackground {
@@ -251,6 +254,9 @@ struct NowPlayingView: View {
         }
         .task(id: lyricsEntranceTaskID) {
             await presentLyricsEntrance()
+        }
+        .onChange(of: motionSource.map(ObjectIdentifier.init)) { old, _ in
+            if readyMotionSource == old { readyMotionSource = nil }
         }
         .onChange(of: page) { _, newPage in
             isReorderingQueue = false
