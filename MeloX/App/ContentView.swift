@@ -73,6 +73,7 @@ struct ContentView: View {
                     isTabViewBottomAccessorySuppressed = $0
                 }
             )
+            .opensMusicDeepLinks(openRoute: openMusicRoute)
             .fullScreenCover(
                 item: $playerPresentation,
                 onDismiss: finishPendingSongNavigation
